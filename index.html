@@ -64,9 +64,7 @@
    * DeepSeek API key — replace YOUR_DEEPSEEK_API_KEY_HERE with your real key.
    * Client-side keys are visible to visitors; use a backend proxy in production.
    */
-  const DEEPSEEK_API_KEY = "sk-740828cf1458472f89eeb34ce47c2f98";
  
- const API_URL = "https://api.deepseek.com/chat/completions";
  const MODEL = "deepseek-chat";
  const DOMAIN_SEARCH_BASE =
    "https://www.domaintools.com/research/domain-search/?q=";
@@ -203,49 +201,31 @@
  }
  
  async function fetchPodcastNames(keywords) {
-   if (DEEPSEEK_API_KEY === "YOUR_DEEPSEEK_API_KEY_HERE" || !DEEPSEEK_API_KEY.trim()) {
-     throw new Error(
-       "API key is not configured. Open app.js and replace YOUR_DEEPSEEK_API_KEY_HERE with your DeepSeek API key."
-     );
-   }
- 
-   const response = await fetch(API_URL, {
-     method: "POST",
-     headers: {
-       "Content-Type": "application/json",
-       Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
-     },
-     body: JSON.stringify({
-       model: MODEL,
-       temperature: 0.9,
-       messages: [
-         { role: "system", content: buildSystemPrompt() },
-         { role: "user", content: buildUserPrompt(keywords) },
-       ],
-     }),
-   });
- 
-   let data;
-   try {
-     data = await response.json();
-   } catch {
-     throw new Error("Unexpected response from the server. Please try again.");
-   }
- 
-   if (!response.ok) {
-     const apiMessage =
-       data?.error?.message || data?.message || `Request failed (${response.status}).`;
-     throw new Error(apiMessage);
-   }
- 
-   const content = data?.choices?.[0]?.message?.content;
-   if (!content) {
-     throw new Error("Empty response from the AI. Please try again.");
-   }
- 
-   const parsed = extractJsonArray(content);
-   return normalizeNames(parsed);
- }
+  const response = await fetch('/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ keywords: keywords })
+  });
+
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error("Unexpected response from the server. Please try again.");
+  }
+
+  if (!response.ok) {
+    throw new Error(data?.error || `Request failed (${response.status}).`);
+  }
+
+  // 现在数据直接是 { names: [...] }
+  const names = data.names;
+  if (!names || !Array.isArray(names) || names.length === 0) {
+    throw new Error("No names were returned. Please try again.");
+  }
+
+  return names.slice(0, 10);
+}
  
  async function handleGenerate() {
    hideError();
