@@ -11,6 +11,7 @@
   <title>AI Podcast Name Generator - Free Creative Show Title Ideas</title>
   <meta name="description" content="Generate unique podcast names instantly with our AI-powered tool. Enter your niche keywords and get 10 creative, usable show titles for free." />
   <link rel="canonical" href="https://aurora-name-ai.pages.dev/" />
+  <meta name="google-site-verification" content="FD5rOmiHKu0Bok0ojkNL6D6mAI9xYqyj8FN8r1be1Kg" />
 
   <link rel="icon" href="assets/favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
@@ -43,6 +44,23 @@
       "priceCurrency": "USD"
     }
   }
+  </script>
+
+  <!-- Google Analytics 4: replace G-XXXXXXXXXX below with your Measurement ID -->
+  <script>
+    (function () {
+      var GA_ID = "G-8WRYL44K94";
+      if (!GA_ID || GA_ID.indexOf("XXXX") !== -1) return;
+      window.GA_MEASUREMENT_ID = GA_ID;
+      var s = document.createElement("script");
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_ID;
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { dataLayer.push(arguments); };
+      gtag("js", new Date());
+      gtag("config", GA_ID);
+    })();
   </script>
 
 </head>
@@ -154,6 +172,18 @@
  const DOMAIN_SEARCH_BASE =
 
    "https://www.domaintools.com/research/domain-search/?q=";
+
+
+
+ function trackEvent(eventName, params) {
+
+   if (typeof gtag === "function" && window.GA_MEASUREMENT_ID) {
+
+     gtag("event", eventName, params);
+
+   }
+
+ }
 
 
 
@@ -547,10 +577,6 @@
 
    const names = data.names;
 
-   // #region agent log
-   fetch('http://127.0.0.1:7673/ingest/e32a71df-5a6d-45ff-9e1d-cb1cbe8e534b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'53db53'},body:JSON.stringify({sessionId:'53db53',location:'index.html:fetchPodcastNames',message:'names received',data:{count:names?.length,_debug:data?._debug,isMobile:/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)},timestamp:Date.now(),hypothesisId:'A,B'})}).catch(()=>{});
-   // #endregion
-
    if (!names || !Array.isArray(names) || names.length === 0) {
 
      throw new Error("No names were returned. Please try again.");
@@ -592,6 +618,14 @@
      const items = await fetchPodcastNames(keywords);
 
      renderResults(items);
+
+     trackEvent("generate_names", {
+
+       event_category: "engagement",
+
+       value: items.length
+
+     });
 
      resultsSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
