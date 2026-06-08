@@ -202,7 +202,7 @@
  
  async function fetchPodcastNames(keywords) {
   // #region agent log
-  fetch('http://127.0.0.1:7673/ingest/e32a71df-5a6d-45ff-9e1d-cb1cbe8e534b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'53db53'},body:JSON.stringify({sessionId:'53db53',location:'index.html:fetchPodcastNames:start',message:'fetch start',data:{keywords,url:'/api/generate'},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
+  fetch('http://127.0.0.1:7673/ingest/e32a71df-5a6d-45ff-9e1d-cb1cbe8e534b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'53db53'},body:JSON.stringify({sessionId:'53db53',location:'index.html:fetchPodcastNames:start',message:'fetch start',data:{keywords,url:'/api/generate',isMobile:/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent),runId:'post-fix'},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
   // #endregion
   let response;
   try {

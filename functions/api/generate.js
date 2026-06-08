@@ -1,3 +1,34 @@
+function extractJsonArray(text) {
+  const trimmed = String(text).trim();
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (Array.isArray(parsed)) return { names: parsed, method: 'direct' };
+  } catch {
+    /* fall through */
+  }
+
+  const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenceMatch) {
+    return { names: JSON.parse(fenceMatch[1].trim()), method: 'fence' };
+  }
+
+  const start = trimmed.indexOf('[');
+  const end = trimmed.lastIndexOf(']');
+  if (start !== -1 && end > start) {
+    return { names: JSON.parse(trimmed.slice(start, end + 1)), method: 'bracket' };
+  }
+
+  return null;
+}
+
+function normalizeNames(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => (typeof item === 'string' ? item.trim() : String(item).trim()))
+    .filter(Boolean)
+    .slice(0, 10);
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
   
@@ -41,10 +72,16 @@ export async function onRequestPost(context) {
       },
       body: JSON.stringify({
         model: 'deepseek-chat',
-        messages: [{
-          role: 'user',
-          content: `Generate 10 creative and unique podcast names based on these keywords: "${keywords}". Return ONLY a valid JSON array of strings, like ["Name 1", "Name 2", ...]. Do not include any other text or explanation.`
-        }]
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a podcast branding expert. Return ONLY a valid JSON array of exactly 10 strings. No markdown, no code fences, no explanation.'
+          },
+          {
+            role: 'user',
+            content: `Keywords: ${keywords}\nGenerate 10 podcast names as a JSON array.`
+          }
+        ]
       })
     });
     
@@ -81,9 +118,9 @@ export async function onRequestPost(context) {
       });
     }
 
-    let names;
+    let parseResult;
     try {
-      names = JSON.parse(rawContent.trim());
+      parseResult = extractJsonArray(rawContent);
     } catch (parseErr) {
       return new Response(JSON.stringify({
         error: 'Could not parse AI response',
@@ -99,17 +136,33 @@ export async function onRequestPost(context) {
       });
     }
 
-    if (!Array.isArray(names) || names.length === 0) {
+    if (!parseResult) {
+      return new Response(JSON.stringify({
+        error: 'Could not parse AI response',
+        _debug: {
+          step: 'jsonParseFail',
+          hypothesisId: 'B',
+          contentPreview: String(rawContent).slice(0, 120),
+          parseErr: 'no JSON array found'
+        }
+      }), {
+        status: 502,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const names = normalizeNames(parseResult.names);
+    if (names.length === 0) {
       return new Response(JSON.stringify({
         error: 'AI returned invalid name list',
-        _debug: { step: 'invalidNamesArray', hypothesisId: 'B', type: typeof names }
+        _debug: { step: 'invalidNamesArray', hypothesisId: 'B', parseMethod: parseResult.method }
       }), {
         status: 502,
         headers: { 'Content-Type': 'application/json' }
       });
     }
     
-    return new Response(JSON.stringify({ names }), {
+    return new Response(JSON.stringify({ names, _debug: { step: 'success', parseMethod: parseResult.method } }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
