@@ -1,3 +1,12 @@
+const TARGET_COUNT = 10;
+
+const SYSTEM_PROMPT = `You are a podcast branding expert for English-language shows.
+Return ONLY a valid JSON array. Each item is an object with:
+- "name": podcast show title (string)
+- "meaning": one short sentence on what the name conveys
+- "inspiration": one short sentence on the creative idea
+Keep meaning and inspiration under 20 words each. No markdown, no code fences, no extra text.`;
+
 function extractJsonArray(text) {
   const trimmed = String(text).trim();
   try {
@@ -40,8 +49,60 @@ function normalizeItems(raw) {
       }
       return null;
     })
-    .filter(Boolean)
-    .slice(0, 10);
+    .filter(Boolean);
+}
+
+function dedupeByName(items) {
+  const seen = new Set();
+  return items.filter((item) => {
+    const key = item.name.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+async function callDeepSeek(apiKey, messages) {
+  const response = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages,
+      max_tokens: 4096,
+      temperature: 0.9
+    })
+  });
+
+  const data = await response.json();
+  return { response, data };
+}
+
+function parseDeepSeekContent(data) {
+  const rawContent = data?.choices?.[0]?.message?.content;
+  const finishReason = data?.choices?.[0]?.finish_reason ?? null;
+  if (!rawContent) return { items: [], finishReason, rawLen: 0 };
+
+  let parsed;
+  try {
+    parsed = extractJsonArray(rawContent);
+  } catch {
+    return { items: [], finishReason, rawLen: rawContent.length, parseError: true };
+  }
+
+  if (!parsed) {
+    return { items: [], finishReason, rawLen: rawContent.length, parseError: true };
+  }
+
+  return {
+    items: normalizeItems(parsed),
+    finishReason,
+    rawLen: rawContent.length,
+    parsedLen: parsed.length
+  };
 }
 
 export async function onRequestPost(context) {
@@ -74,33 +135,13 @@ export async function onRequestPost(context) {
   }
 
   try {
-    const response = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a podcast branding expert for English-language shows.
-Return ONLY a valid JSON array of exactly 10 objects. Each object must have:
-- "name": the podcast show title (string)
-- "meaning": 1-2 sentences explaining what the name conveys (string)
-- "inspiration": 1-2 sentences on the creative idea behind it (string)
-No markdown, no code fences, no extra text.`
-          },
-          {
-            role: 'user',
-            content: `Keywords: ${keywords}\nGenerate 10 podcast names with meaning and inspiration for each.`
-          }
-        ]
-      })
-    });
-
-    const data = await response.json();
+    const { response, data } = await callDeepSeek(apiKey, [
+      { role: 'system', content: SYSTEM_PROMPT },
+      {
+        role: 'user',
+        content: `Keywords: ${keywords}\nGenerate exactly ${TARGET_COUNT} podcast names with meaning and inspiration for each.`
+      }
+    ]);
 
     if (!response.ok) {
       return new Response(JSON.stringify({ error: 'AI service request failed' }), {
@@ -109,40 +150,58 @@ No markdown, no code fences, no extra text.`
       });
     }
 
-    const rawContent = data?.choices?.[0]?.message?.content;
-    if (!rawContent) {
-      return new Response(JSON.stringify({ error: 'AI service returned empty content' }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    let result = parseDeepSeekContent(data);
+    let names = dedupeByName(result.items);
+
+    // #region agent log
+    const debugMeta = {
+      hypothesisId: 'A,B',
+      firstParsedLen: result.parsedLen ?? result.items.length,
+      firstFinishReason: result.finishReason,
+      firstRawLen: result.rawLen,
+      afterFirst: names.length
+    };
+    // #endregion
+
+    if (names.length < TARGET_COUNT) {
+      const need = TARGET_COUNT - names.length;
+      const existing = names.map((n) => n.name).join(', ');
+      const { response: retryRes, data: retryData } = await callDeepSeek(apiKey, [
+        { role: 'system', content: SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: `Keywords: ${keywords}\nGenerate exactly ${need} MORE podcast names (different from: ${existing}). Return a JSON array of ${need} objects only.`
+        }
+      ]);
+
+      if (retryRes.ok) {
+        const retryResult = parseDeepSeekContent(retryData);
+        names = dedupeByName(names.concat(retryResult.items)).slice(0, TARGET_COUNT);
+        // #region agent log
+        debugMeta.retryParsedLen = retryResult.parsedLen ?? retryResult.items.length;
+        debugMeta.retryFinishReason = retryResult.finishReason;
+        debugMeta.afterRetry = names.length;
+        // #endregion
+      }
     }
 
-    let parsed;
-    try {
-      parsed = extractJsonArray(rawContent);
-    } catch {
-      return new Response(JSON.stringify({ error: 'Could not parse AI response' }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    names = names.slice(0, TARGET_COUNT);
 
-    if (!parsed) {
-      return new Response(JSON.stringify({ error: 'Could not parse AI response' }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    const names = normalizeItems(parsed);
     if (names.length === 0) {
-      return new Response(JSON.stringify({ error: 'AI returned invalid name list' }), {
+      return new Response(JSON.stringify({
+        error: 'AI returned invalid name list',
+        _debug: debugMeta
+      }), {
         status: 502,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    return new Response(JSON.stringify({ names }), {
+    // #region agent log
+    debugMeta.finalCount = names.length;
+    // #endregion
+
+    return new Response(JSON.stringify({ names, _debug: debugMeta }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
