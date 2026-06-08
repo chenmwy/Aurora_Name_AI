@@ -1,288 +1,301 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="description" content="Generate creative podcast names with AI. Enter your niche keywords and get 10 ready-to-use show titles in seconds." />
-  <title>Podcast Name Generator — AI Show Title Ideas</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <div class="page">
-    <header class="header">
-      <div class="logo" aria-hidden="true">
-        <span class="logo-wave"></span>
-      </div>
-      <p class="eyebrow">AI Podcast Naming</p>
-      <h1 class="title">Find your perfect show title</h1>
-      <p class="subtitle">Enter 1–2 keywords about your podcast. We’ll suggest ten creative, usable names you can launch with today.</p>
-    </header>
-
-    <main class="main">
-      <form id="generator-form" class="generator" novalidate>
-        <label class="field" for="keywords">
-          <span class="field-label">Podcast keywords</span>
-          <span class="field-hint">e.g. tech, comedy, true crime</span>
-          <input
-            id="keywords"
-            name="keywords"
-            type="text"
-            autocomplete="off"
-            placeholder="tech, news"
-            maxlength="80"
-            required
-          />
-        </label>
-        <button type="submit" id="generate-btn" class="btn-primary">
-          <span class="btn-text">Generate 10 Names</span>
-          <span class="btn-spinner" aria-hidden="true"></span>
-        </button>
-      </form>
-
-      <div id="error-banner" class="error-banner" role="alert" hidden></div>
-
-      <section id="results" class="results" aria-live="polite" hidden>
-        <div class="results-header">
-          <h2 class="results-title">Your podcast names</h2>
-          <p class="results-meta"><span id="results-count">10</span> ideas · tap a domain to check availability</p>
-        </div>
-        <ul id="results-list" class="results-list"></ul>
-        <button type="button" id="regenerate-btn" class="btn-secondary">Generate again</button>
-      </section>
-    </main>
-
-    <footer class="footer">
-      <p>Built for creators. Names are AI suggestions — verify trademarks and domains before you launch.</p>
-    </footer>
-  </div>
-
-  <script>
-  /**
-   * DeepSeek API key — replace YOUR_DEEPSEEK_API_KEY_HERE with your real key.
-   * Client-side keys are visible to visitors; use a backend proxy in production.
-   */
- 
- const MODEL = "deepseek-chat";
- const DOMAIN_SEARCH_BASE =
-   "https://www.domaintools.com/research/domain-search/?q=";
- 
- const form = document.getElementById("generator-form");
- const keywordsInput = document.getElementById("keywords");
- const generateBtn = document.getElementById("generate-btn");
- const btnText = generateBtn.querySelector(".btn-text");
- const errorBanner = document.getElementById("error-banner");
- const resultsSection = document.getElementById("results");
- const resultsList = document.getElementById("results-list");
- const regenerateBtn = document.getElementById("regenerate-btn");
- 
- function setLoading(loading) {
-   generateBtn.disabled = loading;
-   regenerateBtn.disabled = loading;
-   generateBtn.classList.toggle("is-loading", loading);
-   btnText.textContent = loading ? "Generating..." : "Generate 10 Names";
- }
- 
- function showError(message) {
-   errorBanner.textContent = message;
-   errorBanner.hidden = false;
- }
- 
- function hideError() {
-   errorBanner.hidden = true;
-   errorBanner.textContent = "";
- }
- 
- function domainSlug(name) {
-   return name.replace(/\s+/g, "") + ".com";
- }
- 
- function domainCheckUrl(name) {
-   return DOMAIN_SEARCH_BASE + encodeURIComponent(domainSlug(name));
- }
- 
- function buildSystemPrompt() {
-   return `You are a podcast branding expert for English-language shows.
- Given user keywords, generate exactly 10 creative, memorable, and usable podcast show titles.
- Titles should feel modern and appeal to Western podcast creators (Spotify/Apple Podcasts style).
- Avoid generic filler. Vary tone and structure across the list.
- Return ONLY a valid JSON array of exactly 10 strings, e.g. ["Title One", "Title Two"].
- No markdown, no code fences, no explanation, no keys — only the JSON array.`;
- }
- 
- function buildUserPrompt(keywords) {
-   return `Keywords: ${keywords}\nGenerate 10 podcast names as a JSON array.`;
- }
- 
- function extractJsonArray(text) {
-   const trimmed = text.trim();
-   try {
-     const parsed = JSON.parse(trimmed);
-     if (Array.isArray(parsed)) return parsed;
-   } catch {
-     /* fall through */
-   }
- 
-   const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-   if (fenceMatch) {
-     return JSON.parse(fenceMatch[1].trim());
-   }
- 
-   const start = trimmed.indexOf("[");
-   const end = trimmed.lastIndexOf("]");
-   if (start !== -1 && end > start) {
-     return JSON.parse(trimmed.slice(start, end + 1));
-   }
- 
-   throw new Error("Could not parse names from the API response.");
- }
- 
- function normalizeNames(raw) {
-   if (!Array.isArray(raw)) {
-     throw new Error("Invalid response format.");
-   }
-   const names = raw
-     .map((item) => (typeof item === "string" ? item.trim() : String(item).trim()))
-     .filter(Boolean);
-   if (names.length === 0) {
-     throw new Error("No names were returned. Please try again.");
-   }
-   return names.slice(0, 10);
- }
- 
- function renderResults(names) {
-   resultsList.innerHTML = "";
-   names.forEach((name, index) => {
-     const li = document.createElement("li");
-     li.className = "name-card";
-     li.innerHTML = `
-       <span class="name-card__index" aria-hidden="true">${index + 1}</span>
-       <p class="name-card__title">${escapeHtml(name)}</p>
-       <a
-         class="btn-domain"
-         href="${escapeAttr(domainCheckUrl(name))}"
-         target="_blank"
-         rel="noopener noreferrer"
-       >Check Domain</a>
-     `;
-     resultsList.appendChild(li);
-   });
-   document.getElementById("results-count").textContent = String(names.length);
-   resultsSection.hidden = false;
- }
- 
- function escapeHtml(str) {
-   const div = document.createElement("div");
-   div.textContent = str;
-   return div.innerHTML;
- }
- 
- function escapeAttr(str) {
-   return str
-     .replace(/&/g, "&amp;")
-     .replace(/"/g, "&quot;")
-     .replace(/'/g, "&#39;")
-     .replace(/</g, "&lt;")
-     .replace(/>/g, "&gt;");
- }
- 
- function validateKeywords(value) {
-   const trimmed = value.trim();
-   if (!trimmed) {
-     return "Please enter at least one keyword.";
-   }
-   const parts = trimmed.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
-   if (parts.length > 2) {
-     return "Please use only 1–2 keywords (comma-separated).";
-   }
-   return null;
- }
- 
- async function fetchPodcastNames(keywords) {
-  // #region agent log
-  fetch('http://127.0.0.1:7673/ingest/e32a71df-5a6d-45ff-9e1d-cb1cbe8e534b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'53db53'},body:JSON.stringify({sessionId:'53db53',location:'index.html:fetchPodcastNames:start',message:'fetch start',data:{keywords,url:'/api/generate',isMobile:/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent),runId:'post-fix'},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
-  // #endregion
-  let response;
-  try {
-    response = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keywords: keywords })
-    });
-  } catch (fetchErr) {
-    // #region agent log
-    fetch('http://127.0.0.1:7673/ingest/e32a71df-5a6d-45ff-9e1d-cb1cbe8e534b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'53db53'},body:JSON.stringify({sessionId:'53db53',location:'index.html:fetchPodcastNames:fetchError',message:'fetch threw',data:{errName:fetchErr?.name,errMsg:fetchErr?.message},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
-    throw fetchErr;
-  }
-
-  // #region agent log
-  fetch('http://127.0.0.1:7673/ingest/e32a71df-5a6d-45ff-9e1d-cb1cbe8e534b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'53db53'},body:JSON.stringify({sessionId:'53db53',location:'index.html:fetchPodcastNames:response',message:'response received',data:{status:response.status,ok:response.ok,contentType:response.headers.get('content-type')},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
-  // #endregion
-
-  let data;
-  try {
-    data = await response.json();
-  } catch (parseErr) {
-    // #region agent log
-    fetch('http://127.0.0.1:7673/ingest/e32a71df-5a6d-45ff-9e1d-cb1cbe8e534b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'53db53'},body:JSON.stringify({sessionId:'53db53',location:'index.html:fetchPodcastNames:jsonParseFail',message:'response.json failed',data:{status:response.status,errMsg:parseErr?.message},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
-    throw new Error("Unexpected response from the server. Please try again.");
-  }
-
-  // #region agent log
-  fetch('http://127.0.0.1:7673/ingest/e32a71df-5a6d-45ff-9e1d-cb1cbe8e534b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'53db53'},body:JSON.stringify({sessionId:'53db53',location:'index.html:fetchPodcastNames:data',message:'parsed response body',data:{ok:response.ok,error:data?.error,hasNames:Array.isArray(data?.names),namesLen:data?.names?.length,_debug:data?._debug},timestamp:Date.now(),hypothesisId:'A,B,C,E'})}).catch(()=>{});
-  // #endregion
-
-  if (!response.ok) {
-    throw new Error(data?.error || `Request failed (${response.status}).`);
-  }
-
-  const names = data.names;
-  if (!names || !Array.isArray(names) || names.length === 0) {
-    throw new Error("No names were returned. Please try again.");
-  }
-
-  return names.slice(0, 10);
-}
- 
- async function handleGenerate() {
-   hideError();
-   const keywords = keywordsInput.value.trim();
-   const validationError = validateKeywords(keywords);
-   if (validationError) {
-     showError(validationError);
-     keywordsInput.focus();
-     return;
-   }
- 
-   setLoading(true);
-   try {
-     const names = await fetchPodcastNames(keywords);
-     renderResults(names);
-     resultsSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
-   } catch (err) {
-     const message =
-       err instanceof TypeError && err.message.includes("fetch")
-         ? "Network error. Check your connection and try again."
-         : err.message || "Something went wrong. Please try again.";
-     showError(message);
-     resultsSection.hidden = true;
-   } finally {
-     setLoading(false);
-   }
- }
- 
- form.addEventListener("submit", (e) => {
-   e.preventDefault();
-   handleGenerate();
- });
- 
-  regenerateBtn.addEventListener("click", () => {
-    handleGenerate();
-  });
-  </script>
-</body>
-</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Generate creative podcast names with AI. Enter your niche keywords and get 10 ready-to-use show titles in seconds." />
+  <title>Podcast Name Generator — AI Show Title Ideas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <div class="logo" aria-hidden="true">
+        <span class="logo-wave"></span>
+      </div>
+      <p class="eyebrow">AI Podcast Naming</p>
+      <h1 class="title">Find your perfect show title</h1>
+      <p class="subtitle">Enter 1–2 keywords about your podcast. We’ll suggest ten creative, usable names you can launch with today.</p>
+    </header>
+
+    <main class="main">
+      <form id="generator-form" class="generator" novalidate>
+        <label class="field" for="keywords">
+          <span class="field-label">Podcast keywords</span>
+          <span class="field-hint">e.g. tech, comedy, true crime</span>
+          <input
+            id="keywords"
+            name="keywords"
+            type="text"
+            autocomplete="off"
+            placeholder="tech, news"
+            maxlength="80"
+            required
+          />
+        </label>
+        <button type="submit" id="generate-btn" class="btn-primary">
+          <span class="btn-text">Generate 10 Names</span>
+          <span class="btn-spinner" aria-hidden="true"></span>
+        </button>
+      </form>
+
+      <div id="error-banner" class="error-banner" role="alert" hidden></div>
+
+      <section id="results" class="results" aria-live="polite" hidden>
+        <div class="results-header">
+          <h2 class="results-title">Your podcast names</h2>
+          <p class="results-meta"><span id="results-count">10</span> ideas · hover <span class="info-icon-inline" aria-hidden="true">i</span> for details</p>
+        </div>
+        <ul id="results-list" class="results-list"></ul>
+        <button type="button" id="regenerate-btn" class="btn-secondary">Generate again</button>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Built for creators. Names are AI suggestions — verify trademarks and domains before you launch.</p>
+    </footer>
+  </div>
+
+  <script>
+ const DOMAIN_SEARCH_BASE =
+   "https://www.domaintools.com/research/domain-search/?q=";
+
+ const form = document.getElementById("generator-form");
+ const keywordsInput = document.getElementById("keywords");
+ const generateBtn = document.getElementById("generate-btn");
+ const btnText = generateBtn.querySelector(".btn-text");
+ const errorBanner = document.getElementById("error-banner");
+ const resultsSection = document.getElementById("results");
+ const resultsList = document.getElementById("results-list");
+ const regenerateBtn = document.getElementById("regenerate-btn");
+ const supportsHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+ let tooltipDocListenerBound = false;
+
+ function setLoading(loading) {
+   generateBtn.disabled = loading;
+   regenerateBtn.disabled = loading;
+   generateBtn.classList.toggle("is-loading", loading);
+   btnText.textContent = loading ? "Generating..." : "Generate 10 Names";
+ }
+
+ function showError(message) {
+   errorBanner.textContent = message;
+   errorBanner.hidden = false;
+ }
+
+ function hideError() {
+   errorBanner.hidden = true;
+   errorBanner.textContent = "";
+ }
+
+ function domainSlug(name) {
+   return name.replace(/\s+/g, "") + ".com";
+ }
+
+ function domainCheckUrl(name) {
+   return DOMAIN_SEARCH_BASE + encodeURIComponent(domainSlug(name));
+ }
+
+ function escapeHtml(str) {
+   const div = document.createElement("div");
+   div.textContent = str;
+   return div.innerHTML;
+ }
+
+ function escapeAttr(str) {
+   return str
+     .replace(/&/g, "&amp;")
+     .replace(/"/g, "&quot;")
+     .replace(/'/g, "&#39;")
+     .replace(/</g, "&lt;")
+     .replace(/>/g, "&gt;");
+ }
+
+ function validateKeywords(value) {
+   const trimmed = value.trim();
+   if (!trimmed) {
+     return "Please enter at least one keyword.";
+   }
+   const parts = trimmed.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+   if (parts.length > 2) {
+     return "Please use only 1–2 keywords (comma-separated).";
+   }
+   return null;
+ }
+
+ function buildTooltipHtml(item) {
+   const meaning = item.meaning || "A creative title crafted for your niche.";
+   const inspiration = item.inspiration || "Inspired by your keywords and podcast branding trends.";
+   return `
+     <div class="name-info__section">
+       <span class="name-info__label">Meaning</span>
+       <p>${escapeHtml(meaning)}</p>
+     </div>
+     <div class="name-info__section">
+       <span class="name-info__label">Inspiration</span>
+       <p>${escapeHtml(inspiration)}</p>
+     </div>
+   `;
+ }
+
+ function renderResults(items) {
+   resultsList.innerHTML = "";
+   items.forEach((item, index) => {
+     const li = document.createElement("li");
+     li.className = "name-card";
+     li.innerHTML = `
+       <span class="name-card__index" aria-hidden="true">${index + 1}</span>
+       <div class="name-card__body">
+         <p class="name-card__title">${escapeHtml(item.name)}</p>
+         <div class="name-info">
+           <button
+             type="button"
+             class="name-info__trigger"
+             aria-label="Show meaning and inspiration for ${escapeAttr(item.name)}"
+             aria-expanded="false"
+           >
+             <svg class="name-info__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+               <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
+               <path d="M8 7.2V11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+               <circle cx="8" cy="5" r="0.9" fill="currentColor"/>
+             </svg>
+           </button>
+           <div class="name-info__tooltip" role="tooltip" hidden>
+             ${buildTooltipHtml(item)}
+           </div>
+         </div>
+       </div>
+       <a
+         class="btn-domain"
+         href="${escapeAttr(domainCheckUrl(item.name))}"
+         target="_blank"
+         rel="noopener noreferrer"
+       >Check Domain</a>
+     `;
+     resultsList.appendChild(li);
+   });
+   bindTooltipInteractions();
+   document.getElementById("results-count").textContent = String(items.length);
+   resultsSection.hidden = false;
+ }
+
+ function bindTooltipInteractions() {
+   resultsList.querySelectorAll(".name-info").forEach((wrapper) => {
+     const trigger = wrapper.querySelector(".name-info__trigger");
+     const tooltip = wrapper.querySelector(".name-info__tooltip");
+
+     if (supportsHover) {
+       wrapper.addEventListener("mouseenter", () => showTooltip(trigger, tooltip));
+       wrapper.addEventListener("mouseleave", () => hideTooltip(trigger, tooltip));
+       trigger.addEventListener("focus", () => showTooltip(trigger, tooltip));
+       wrapper.addEventListener("focusout", (e) => {
+         if (!wrapper.contains(e.relatedTarget)) {
+           hideTooltip(trigger, tooltip);
+         }
+       });
+     } else {
+       trigger.addEventListener("click", (e) => {
+         e.stopPropagation();
+         const isOpen = trigger.getAttribute("aria-expanded") === "true";
+         closeAllTooltips();
+         if (!isOpen) showTooltip(trigger, tooltip);
+       });
+     }
+   });
+
+   if (!supportsHover && !tooltipDocListenerBound) {
+     document.addEventListener("click", closeAllTooltips);
+     tooltipDocListenerBound = true;
+   }
+ }
+
+ function showTooltip(trigger, tooltip) {
+   closeAllTooltips();
+   tooltip.hidden = false;
+   trigger.setAttribute("aria-expanded", "true");
+   const wrapper = trigger.closest(".name-info");
+   if (wrapper) wrapper.classList.add("is-open");
+ }
+
+ function hideTooltip(trigger, tooltip) {
+   tooltip.hidden = true;
+   trigger.setAttribute("aria-expanded", "false");
+   const wrapper = trigger.closest(".name-info");
+   if (wrapper) wrapper.classList.remove("is-open");
+ }
+
+ function closeAllTooltips() {
+   resultsList.querySelectorAll(".name-info").forEach((wrapper) => {
+     const trigger = wrapper.querySelector(".name-info__trigger");
+     const tooltip = wrapper.querySelector(".name-info__tooltip");
+     hideTooltip(trigger, tooltip);
+   });
+ }
+
+ async function fetchPodcastNames(keywords) {
+   const response = await fetch("/api/generate", {
+     method: "POST",
+     headers: { "Content-Type": "application/json" },
+     body: JSON.stringify({ keywords })
+   });
+
+   let data;
+   try {
+     data = await response.json();
+   } catch {
+     throw new Error("Unexpected response from the server. Please try again.");
+   }
+
+   if (!response.ok) {
+     throw new Error(data?.error || `Request failed (${response.status}).`);
+   }
+
+   const names = data.names;
+   if (!names || !Array.isArray(names) || names.length === 0) {
+     throw new Error("No names were returned. Please try again.");
+   }
+
+   return names.slice(0, 10);
+ }
+
+ async function handleGenerate() {
+   hideError();
+   const keywords = keywordsInput.value.trim();
+   const validationError = validateKeywords(keywords);
+   if (validationError) {
+     showError(validationError);
+     keywordsInput.focus();
+     return;
+   }
+
+   setLoading(true);
+   try {
+     const items = await fetchPodcastNames(keywords);
+     renderResults(items);
+     resultsSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
+   } catch (err) {
+     const message =
+       err instanceof TypeError && err.message.includes("fetch")
+         ? "Network error. Check your connection and try again."
+         : err.message || "Something went wrong. Please try again.";
+     showError(message);
+     resultsSection.hidden = true;
+   } finally {
+     setLoading(false);
+   }
+ }
+
+ form.addEventListener("submit", (e) => {
+   e.preventDefault();
+   handleGenerate();
+ });
+
+ regenerateBtn.addEventListener("click", () => {
+   handleGenerate();
+ });
+  </script>
+</body>
+</html>
