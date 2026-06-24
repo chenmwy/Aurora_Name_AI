@@ -174,6 +174,200 @@
 
       </section>
 
+
+
+      <section class="coming-soon" id="coming-soon" aria-labelledby="coming-soon-title">
+
+        <div class="coming-soon__header">
+
+          <h2 id="coming-soon-title" class="coming-soon__title">Coming Soon</h2>
+
+          <p class="coming-soon__subtitle">Help us decide what to build next</p>
+
+        </div>
+
+
+
+        <ul class="coming-soon__list">
+
+          <li class="coming-soon__item" data-tool-id="business">
+
+            <div class="coming-soon__item-main">
+
+              <div class="coming-soon__item-info">
+
+                <span class="coming-soon__badge">Soon</span>
+
+                <h3 class="coming-soon__item-title">Business Name Generator</h3>
+
+                <p class="coming-soon__votes"><span class="coming-soon__vote-count">0</span> votes</p>
+
+              </div>
+
+              <div class="coming-soon__actions">
+
+                <button type="button" class="btn-vote" data-tool-id="business">Vote</button>
+
+                <button type="button" class="btn-notify" data-tool-id="business">Notify Me</button>
+
+              </div>
+
+            </div>
+
+            <div class="coming-soon__notify-panel" hidden>
+
+              <label class="coming-soon__notify-label" for="notify-business">Email for launch updates</label>
+
+              <div class="coming-soon__notify-row">
+
+                <input id="notify-business" class="coming-soon__notify-input" type="email" placeholder="you@email.com" autocomplete="email" />
+
+                <button type="button" class="btn-notify-submit" data-tool-id="business">Subscribe</button>
+
+              </div>
+
+              <p class="coming-soon__notify-success" role="status" hidden>You're on the list!</p>
+
+            </div>
+
+          </li>
+
+
+
+          <li class="coming-soon__item" data-tool-id="startup">
+
+            <div class="coming-soon__item-main">
+
+              <div class="coming-soon__item-info">
+
+                <span class="coming-soon__badge">Soon</span>
+
+                <h3 class="coming-soon__item-title">Startup Name Generator</h3>
+
+                <p class="coming-soon__votes"><span class="coming-soon__vote-count">0</span> votes</p>
+
+              </div>
+
+              <div class="coming-soon__actions">
+
+                <button type="button" class="btn-vote" data-tool-id="startup">Vote</button>
+
+                <button type="button" class="btn-notify" data-tool-id="startup">Notify Me</button>
+
+              </div>
+
+            </div>
+
+            <div class="coming-soon__notify-panel" hidden>
+
+              <label class="coming-soon__notify-label" for="notify-startup">Email for launch updates</label>
+
+              <div class="coming-soon__notify-row">
+
+                <input id="notify-startup" class="coming-soon__notify-input" type="email" placeholder="you@email.com" autocomplete="email" />
+
+                <button type="button" class="btn-notify-submit" data-tool-id="startup">Subscribe</button>
+
+              </div>
+
+              <p class="coming-soon__notify-success" role="status" hidden>You're on the list!</p>
+
+            </div>
+
+          </li>
+
+
+
+          <li class="coming-soon__item" data-tool-id="chinese">
+
+            <div class="coming-soon__item-main">
+
+              <div class="coming-soon__item-info">
+
+                <span class="coming-soon__badge">Soon</span>
+
+                <h3 class="coming-soon__item-title">Chinese Name Generator</h3>
+
+                <p class="coming-soon__votes"><span class="coming-soon__vote-count">0</span> votes</p>
+
+              </div>
+
+              <div class="coming-soon__actions">
+
+                <button type="button" class="btn-vote" data-tool-id="chinese">Vote</button>
+
+                <button type="button" class="btn-notify" data-tool-id="chinese">Notify Me</button>
+
+              </div>
+
+            </div>
+
+            <div class="coming-soon__notify-panel" hidden>
+
+              <label class="coming-soon__notify-label" for="notify-chinese">Email for launch updates</label>
+
+              <div class="coming-soon__notify-row">
+
+                <input id="notify-chinese" class="coming-soon__notify-input" type="email" placeholder="you@email.com" autocomplete="email" />
+
+                <button type="button" class="btn-notify-submit" data-tool-id="chinese">Subscribe</button>
+
+              </div>
+
+              <p class="coming-soon__notify-success" role="status" hidden>You're on the list!</p>
+
+            </div>
+
+          </li>
+
+
+
+          <li class="coming-soon__item" data-tool-id="youtube">
+
+            <div class="coming-soon__item-main">
+
+              <div class="coming-soon__item-info">
+
+                <span class="coming-soon__badge">Soon</span>
+
+                <h3 class="coming-soon__item-title">YouTube Name Generator</h3>
+
+                <p class="coming-soon__votes"><span class="coming-soon__vote-count">0</span> votes</p>
+
+              </div>
+
+              <div class="coming-soon__actions">
+
+                <button type="button" class="btn-vote" data-tool-id="youtube">Vote</button>
+
+                <button type="button" class="btn-notify" data-tool-id="youtube">Notify Me</button>
+
+              </div>
+
+            </div>
+
+            <div class="coming-soon__notify-panel" hidden>
+
+              <label class="coming-soon__notify-label" for="notify-youtube">Email for launch updates</label>
+
+              <div class="coming-soon__notify-row">
+
+                <input id="notify-youtube" class="coming-soon__notify-input" type="email" placeholder="you@email.com" autocomplete="email" />
+
+                <button type="button" class="btn-notify-submit" data-tool-id="youtube">Subscribe</button>
+
+              </div>
+
+              <p class="coming-soon__notify-success" role="status" hidden>You're on the list!</p>
+
+            </div>
+
+          </li>
+
+        </ul>
+
+      </section>
+
     </main>
 
 
@@ -955,6 +1149,262 @@
    });
 
  });
+
+
+
+ const VOTES_STORAGE_KEY = "nameai_votes";
+
+ const VOTED_STORAGE_KEY = "nameai_voted_tools";
+
+ const NOTIFY_STORAGE_KEY = "nameai_notify_signups";
+
+
+
+ function readJsonStorage(key, fallback) {
+
+   try {
+
+     const raw = localStorage.getItem(key);
+
+     return raw ? JSON.parse(raw) : fallback;
+
+   } catch {
+
+     return fallback;
+
+   }
+
+ }
+
+
+
+ function writeJsonStorage(key, value) {
+
+   localStorage.setItem(key, JSON.stringify(value));
+
+ }
+
+
+
+ function updateVoteDisplay(toolId) {
+
+   const item = document.querySelector(`.coming-soon__item[data-tool-id="${toolId}"]`);
+
+   if (!item) return;
+
+   const votes = readJsonStorage(VOTES_STORAGE_KEY, {});
+
+   const countEl = item.querySelector(".coming-soon__vote-count");
+
+   if (countEl) countEl.textContent = String(votes[toolId] || 0);
+
+ }
+
+
+
+ function markVoted(toolId) {
+
+   const item = document.querySelector(`.coming-soon__item[data-tool-id="${toolId}"]`);
+
+   if (!item) return;
+
+   const btn = item.querySelector(".btn-vote");
+
+   if (!btn) return;
+
+   btn.textContent = "Voted";
+
+   btn.disabled = true;
+
+   btn.classList.add("is-voted");
+
+ }
+
+
+
+ function initComingSoon() {
+
+   const voted = readJsonStorage(VOTED_STORAGE_KEY, []);
+
+   const signups = readJsonStorage(NOTIFY_STORAGE_KEY, {});
+
+
+
+   document.querySelectorAll(".coming-soon__item").forEach((item) => {
+
+     const toolId = item.dataset.toolId;
+
+     updateVoteDisplay(toolId);
+
+     if (voted.includes(toolId)) markVoted(toolId);
+
+     if (signups[toolId]) {
+
+       const panel = item.querySelector(".coming-soon__notify-panel");
+
+       const success = item.querySelector(".coming-soon__notify-success");
+
+       const notifyBtn = item.querySelector(".btn-notify");
+
+       if (panel) panel.hidden = false;
+
+       if (success) success.hidden = false;
+
+       if (notifyBtn) {
+
+         notifyBtn.textContent = "Subscribed";
+
+         notifyBtn.disabled = true;
+
+       }
+
+     }
+
+   });
+
+
+
+   document.querySelectorAll(".btn-vote").forEach((btn) => {
+
+     btn.addEventListener("click", () => {
+
+       const toolId = btn.dataset.toolId;
+
+       if (!toolId || btn.disabled) return;
+
+
+
+       const votedList = readJsonStorage(VOTED_STORAGE_KEY, []);
+
+       if (votedList.includes(toolId)) return;
+
+
+
+       const votes = readJsonStorage(VOTES_STORAGE_KEY, {});
+
+       votes[toolId] = (votes[toolId] || 0) + 1;
+
+       writeJsonStorage(VOTES_STORAGE_KEY, votes);
+
+       writeJsonStorage(VOTED_STORAGE_KEY, votedList.concat(toolId));
+
+
+
+       updateVoteDisplay(toolId);
+
+       markVoted(toolId);
+
+       trackEvent("vote_tool", { event_category: "coming_soon", tool_id: toolId });
+
+     });
+
+   });
+
+
+
+   document.querySelectorAll(".btn-notify").forEach((btn) => {
+
+     btn.addEventListener("click", () => {
+
+       const toolId = btn.dataset.toolId;
+
+       const item = btn.closest(".coming-soon__item");
+
+       const panel = item?.querySelector(".coming-soon__notify-panel");
+
+       if (!panel || btn.disabled) return;
+
+
+
+       const isOpen = !panel.hidden;
+
+       document.querySelectorAll(".coming-soon__notify-panel").forEach((p) => {
+
+         p.hidden = true;
+
+       });
+
+       panel.hidden = isOpen;
+
+       if (!panel.hidden) {
+
+         const input = panel.querySelector(".coming-soon__notify-input");
+
+         if (input) input.focus();
+
+       }
+
+     });
+
+   });
+
+
+
+   document.querySelectorAll(".btn-notify-submit").forEach((btn) => {
+
+     btn.addEventListener("click", () => {
+
+       const toolId = btn.dataset.toolId;
+
+       const item = btn.closest(".coming-soon__item");
+
+       const input = item?.querySelector(".coming-soon__notify-input");
+
+       const success = item?.querySelector(".coming-soon__notify-success");
+
+       const notifyBtn = item?.querySelector(".btn-notify");
+
+       if (!input || !toolId) return;
+
+
+
+       const email = input.value.trim();
+
+       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+
+         input.focus();
+
+         input.setAttribute("aria-invalid", "true");
+
+         return;
+
+       }
+
+
+
+       input.removeAttribute("aria-invalid");
+
+       const signups = readJsonStorage(NOTIFY_STORAGE_KEY, {});
+
+       signups[toolId] = email;
+
+       writeJsonStorage(NOTIFY_STORAGE_KEY, signups);
+
+
+
+       if (success) success.hidden = false;
+
+       if (notifyBtn) {
+
+         notifyBtn.textContent = "Subscribed";
+
+         notifyBtn.disabled = true;
+
+       }
+
+
+
+       trackEvent("notify_signup", { event_category: "coming_soon", tool_id: toolId });
+
+     });
+
+   });
+
+ }
+
+
+
+ initComingSoon();
 
 
 
