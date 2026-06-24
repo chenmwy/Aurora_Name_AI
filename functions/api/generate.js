@@ -5,6 +5,10 @@ Return ONLY a valid JSON array. Each item is an object with:
 - "name": podcast show title (string)
 - "meaning": one short sentence on what the name conveys
 - "inspiration": one short sentence on the creative idea
+- "score": overall name quality, number from 1.0 to 10.0 with one decimal (e.g. 8.6)
+- "memorability": exactly "High", "Medium", or "Low"
+- "brandability": exactly "High", "Medium", or "Low"
+- "professionalism": exactly "High", "Medium", or "Low"
 Keep meaning and inspiration under 20 words each. No markdown, no code fences, no extra text.`;
 
 function extractJsonArray(text) {
@@ -30,13 +34,37 @@ function extractJsonArray(text) {
   return null;
 }
 
+function normalizeLevel(value) {
+  const v = String(value || '').trim().toLowerCase();
+  if (v === 'high') return 'High';
+  if (v === 'medium' || v === 'med') return 'Medium';
+  if (v === 'low') return 'Low';
+  return 'Medium';
+}
+
+function normalizeScore(value) {
+  const n = parseFloat(value);
+  if (!Number.isFinite(n)) return 7.5;
+  return Math.min(10, Math.max(1, Math.round(n * 10) / 10));
+}
+
 function normalizeItems(raw) {
   if (!Array.isArray(raw)) return [];
   return raw
     .map((item) => {
       if (typeof item === 'string') {
         const name = item.trim();
-        return name ? { name, meaning: '', inspiration: '' } : null;
+        return name
+          ? {
+              name,
+              meaning: '',
+              inspiration: '',
+              score: 7.5,
+              memorability: 'Medium',
+              brandability: 'Medium',
+              professionalism: 'Medium'
+            }
+          : null;
       }
       if (item && typeof item === 'object') {
         const name = String(item.name || item.title || '').trim();
@@ -44,7 +72,11 @@ function normalizeItems(raw) {
         return {
           name,
           meaning: String(item.meaning || item.description || '').trim(),
-          inspiration: String(item.inspiration || item.idea || '').trim()
+          inspiration: String(item.inspiration || item.idea || '').trim(),
+          score: normalizeScore(item.score),
+          memorability: normalizeLevel(item.memorability),
+          brandability: normalizeLevel(item.brandability),
+          professionalism: normalizeLevel(item.professionalism)
         };
       }
       return null;
@@ -72,7 +104,7 @@ async function callDeepSeek(apiKey, messages) {
     body: JSON.stringify({
       model: 'deepseek-chat',
       messages,
-      max_tokens: 4096,
+      max_tokens: 8192,
       temperature: 0.9
     })
   });
@@ -139,7 +171,7 @@ export async function onRequestPost(context) {
       { role: 'system', content: SYSTEM_PROMPT },
       {
         role: 'user',
-        content: `Keywords: ${keywords}\nGenerate exactly ${TARGET_COUNT} podcast names with meaning and inspiration for each.`
+        content: `Keywords: ${keywords}\nGenerate exactly ${TARGET_COUNT} podcast names. For each include meaning, inspiration, score (1.0-10.0), memorability, brandability, and professionalism.`
       }
     ]);
 

@@ -334,6 +334,100 @@
 
 
 
+ function normalizeLevel(value) {
+
+   const v = String(value || "").trim().toLowerCase();
+
+   if (v === "high") return "High";
+
+   if (v === "medium" || v === "med") return "Medium";
+
+   if (v === "low") return "Low";
+
+   return "Medium";
+
+ }
+
+
+
+ function formatScore(value) {
+
+   const n = parseFloat(value);
+
+   if (!Number.isFinite(n)) return "7.5";
+
+   return String(Math.min(10, Math.max(1, Math.round(n * 10) / 10)));
+
+ }
+
+
+
+ function levelClass(level) {
+
+   return "name-scores__trait-value--" + level.toLowerCase();
+
+ }
+
+
+
+ function buildScoreHtml(item) {
+
+   const score = formatScore(item.score);
+
+   const memorability = normalizeLevel(item.memorability);
+
+   const brandability = normalizeLevel(item.brandability);
+
+   const professionalism = normalizeLevel(item.professionalism);
+
+   return `
+
+     <div class="name-scores">
+
+       <div class="name-scores__overall">
+
+         <span class="name-scores__label">Name Score</span>
+
+         <span class="name-scores__value">${escapeHtml(score)}<span class="name-scores__max">/10</span></span>
+
+       </div>
+
+       <div class="name-scores__traits">
+
+         <div class="name-scores__trait">
+
+           <span class="name-scores__trait-label">Memorability</span>
+
+           <span class="name-scores__trait-value ${levelClass(memorability)}">${escapeHtml(memorability)}</span>
+
+         </div>
+
+         <div class="name-scores__trait">
+
+           <span class="name-scores__trait-label">Brandability</span>
+
+           <span class="name-scores__trait-value ${levelClass(brandability)}">${escapeHtml(brandability)}</span>
+
+         </div>
+
+         <div class="name-scores__trait">
+
+           <span class="name-scores__trait-label">Professionalism</span>
+
+           <span class="name-scores__trait-value ${levelClass(professionalism)}">${escapeHtml(professionalism)}</span>
+
+         </div>
+
+       </div>
+
+     </div>
+
+   `;
+
+ }
+
+
+
  function buildTooltipHtml(item) {
 
    const meaning = item.meaning || "A creative title crafted for your niche.";
@@ -380,9 +474,11 @@
 
        <div class="name-card__body">
 
-         <p class="name-card__title">${escapeHtml(item.name)}</p>
+         <div class="name-card__header">
 
-         <div class="name-info">
+           <p class="name-card__title">${escapeHtml(item.name)}</p>
+
+           <div class="name-info">
 
            <button
 
@@ -415,6 +511,10 @@
            </div>
 
          </div>
+
+         </div>
+
+         ${buildScoreHtml(item)}
 
        </div>
 
