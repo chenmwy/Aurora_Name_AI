@@ -518,17 +518,39 @@
 
        </div>
 
-       <a
+       <div class="name-card__actions">
 
-         class="btn-domain"
+         <div class="btn-copy-wrap">
 
-         href="${escapeAttr(domainCheckUrl(item.name))}"
+           <button
 
-         target="_blank"
+             type="button"
 
-         rel="noopener noreferrer"
+             class="btn-copy"
 
-       >Check Domain</a>
+             data-name="${escapeAttr(item.name)}"
+
+             aria-label="Copy ${escapeAttr(item.name)}"
+
+           >Copy</button>
+
+           <span class="copy-toast" role="status" aria-live="polite">Copied!</span>
+
+         </div>
+
+         <a
+
+           class="btn-domain"
+
+           href="${escapeAttr(domainCheckUrl(item.name))}"
+
+           target="_blank"
+
+           rel="noopener noreferrer"
+
+         >Check Domain</a>
+
+       </div>
 
      `;
 
@@ -537,6 +559,8 @@
    });
 
    bindTooltipInteractions();
+
+   bindCopyButtons();
 
    document.getElementById("results-count").textContent = String(items.length);
 
@@ -601,6 +625,140 @@
      tooltipDocListenerBound = true;
 
    }
+
+ }
+
+
+
+ async function copyTextToClipboard(text) {
+
+   if (navigator.clipboard && window.isSecureContext) {
+
+     try {
+
+       await navigator.clipboard.writeText(text);
+
+       return true;
+
+     } catch {
+
+       /* fall through */
+
+     }
+
+   }
+
+
+
+   const textarea = document.createElement("textarea");
+
+   textarea.value = text;
+
+   textarea.setAttribute("readonly", "");
+
+   textarea.style.position = "fixed";
+
+   textarea.style.top = "0";
+
+   textarea.style.left = "0";
+
+   textarea.style.width = "2em";
+
+   textarea.style.height = "2em";
+
+   textarea.style.padding = "0";
+
+   textarea.style.border = "none";
+
+   textarea.style.outline = "none";
+
+   textarea.style.boxShadow = "none";
+
+   textarea.style.background = "transparent";
+
+   document.body.appendChild(textarea);
+
+   textarea.focus();
+
+   textarea.select();
+
+   textarea.setSelectionRange(0, text.length);
+
+
+
+   let copied = false;
+
+   try {
+
+     copied = document.execCommand("copy");
+
+   } catch {
+
+     copied = false;
+
+   }
+
+
+
+   document.body.removeChild(textarea);
+
+   return copied;
+
+ }
+
+
+
+ function showCopyFeedback(button) {
+
+   const wrap = button.closest(".btn-copy-wrap");
+
+   if (!wrap) return;
+
+   const toast = wrap.querySelector(".copy-toast");
+
+   if (!toast) return;
+
+
+
+   toast.classList.add("is-visible");
+
+   window.clearTimeout(wrap._copyToastTimer);
+
+   wrap._copyToastTimer = window.setTimeout(() => {
+
+     toast.classList.remove("is-visible");
+
+   }, 2000);
+
+ }
+
+
+
+ function bindCopyButtons() {
+
+   resultsList.querySelectorAll(".btn-copy").forEach((button) => {
+
+     button.addEventListener("click", async () => {
+
+       const name = button.dataset.name;
+
+       if (!name) return;
+
+
+
+       const copied = await copyTextToClipboard(name);
+
+       if (copied) {
+
+         showCopyFeedback(button);
+
+         trackEvent("copy_name", { event_category: "engagement" });
+
+       }
+
+     });
+
+   });
 
  }
 

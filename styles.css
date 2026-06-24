@@ -401,9 +401,75 @@ input:focus { border-color: #6c63ff; }
   text-decoration: none;
   transition: background 0.2s;
   flex-shrink: 0;
-  align-self: center;
 }
 .btn-domain:hover { background: rgba(255,255,255,0.2); }
+
+.name-card__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.btn-copy-wrap {
+  position: relative;
+}
+
+.btn-copy {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  border-radius: 6px;
+  background: rgba(108, 99, 255, 0.15);
+  color: #c7d2fe;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.btn-copy:hover {
+  background: rgba(108, 99, 255, 0.28);
+  border-color: rgba(129, 140, 248, 0.55);
+}
+
+.btn-copy:active {
+  transform: scale(0.98);
+}
+
+.btn-copy:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
+
+.copy-toast {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  background: #34d399;
+  color: #0f172a;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+  z-index: 10;
+}
+
+.copy-toast.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
 
 .btn-secondary {
   background: transparent;
@@ -450,6 +516,17 @@ input:focus { border-color: #6c63ff; }
     gap: 0.5rem;
   }
   .name-card { flex-direction: column; align-items: stretch; gap: 0.75rem; }
-  .btn-domain { align-self: flex-start; }
+  .name-card__actions {
+    flex-direction: row;
+    align-self: stretch;
+  }
+  .btn-copy-wrap { flex: 1; }
+  .btn-domain {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: auto;
+  }
   .name-info__tooltip { width: min(300px, calc(100vw - 2.5rem)); }
 }
