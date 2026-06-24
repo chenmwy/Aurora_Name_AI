@@ -83,9 +83,9 @@
 
       <p class="eyebrow">AI Podcast Naming</p>
 
-      <h1 class="title">Find your perfect show title</h1>
+      <h1 class="title">AI Podcast Name Generator</h1>
 
-      <p class="subtitle">Enter 1–2 keywords about your podcast. We’ll suggest ten creative, usable names you can launch with today.</p>
+      <p class="subtitle">Generate memorable podcast names based on your niche, audience, and content style.</p>
 
     </header>
 
@@ -94,6 +94,27 @@
     <main class="main">
 
       <form id="generator-form" class="generator" novalidate>
+
+        <div class="examples">
+          <p class="examples-label">Popular Examples</p>
+          <div class="examples-list">
+            <button type="button" class="example-chip" data-keywords="tech, news">
+              <span class="example-keywords">Tech + News</span>
+              <span class="example-arrow" aria-hidden="true">→</span>
+              <span class="example-result">TechPulse Daily</span>
+            </button>
+            <button type="button" class="example-chip" data-keywords="ai, business">
+              <span class="example-keywords">AI + Business</span>
+              <span class="example-arrow" aria-hidden="true">→</span>
+              <span class="example-result">The Automation Edge</span>
+            </button>
+            <button type="button" class="example-chip" data-keywords="history, storytelling">
+              <span class="example-keywords">History + Storytelling</span>
+              <span class="example-arrow" aria-hidden="true">→</span>
+              <span class="example-result">Echoes of Time</span>
+            </button>
+          </div>
+        </div>
 
         <label class="field" for="keywords">
 
@@ -658,6 +679,22 @@
    e.preventDefault();
 
    handleGenerate();
+
+ });
+
+
+
+ document.querySelectorAll(".example-chip").forEach((chip) => {
+
+   chip.addEventListener("click", () => {
+
+     keywordsInput.value = chip.dataset.keywords;
+
+     keywordsInput.focus();
+
+     trackEvent("example_click", { event_category: "engagement", keywords: chip.dataset.keywords });
+
+   });
 
  });
 
