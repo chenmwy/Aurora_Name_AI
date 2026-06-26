@@ -59,6 +59,14 @@ Resolved several important issues:
 
 ⸻
 
+2026-06-27  1:00
+
+Migrated completely from a standalone Cloudflare Worker to Cloudflare Pages with Functions.
+
+The legacy Worker was retired after confirming stable production deployment.
+
+⸻
+
 First Production Dataset
 
 The first official production records were intentionally preserved.
@@ -111,3 +119,4 @@ Production Ready
 ⸻
 
 Future versions will continue to be recorded in this document.
+
