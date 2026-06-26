@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aurora-name-ai",
+  "compatibility_date": "2026-05-31",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "."
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "d1_databases": [
+   {
+      "binding": "DB",
+      "database_name": "thenameai",
+      "database_id": "9f6e1af7-9f22-4ebe-bb6a-6acd9bb04b9f"
+    }
+  ]
+}

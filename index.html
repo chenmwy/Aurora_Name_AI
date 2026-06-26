@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <title>AI Podcast Name Generator - Free Creative Show Title Ideas</title>
+  <meta name="description" content="Generate unique podcast names instantly with our AI-powered tool. Enter your niche keywords and get 10 creative, usable show titles for free." />
+  <link rel="canonical" href="https://aurora-name-ai.pages.dev/" />
+  <meta name="google-site-verification" content="FD5rOmiHKu0Bok0ojkNL6D6mAI9xYqyj8FN8r1be1Kg" />
+
+  <link rel="icon" href="assets/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "AI Podcast Name Generator",
+    "alternateName": "nameAI",
+    "url": "https://aurora-name-ai.pages.dev/",
+    "description": "Generate unique podcast names instantly with AI. Enter your niche keywords and get 10 creative, usable show titles for free.",
+    "image": "https://aurora-name-ai.pages.dev/assets/logo.png",
+    "applicationCategory": "UtilityApplication",
+    "operatingSystem": "Any",
+    "browserRequirements": "Requires JavaScript",
+    "inLanguage": "en",
+    "isAccessibleForFree": true,
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
+  <!-- Google Analytics 4: replace G-XXXXXXXXXX below with your Measurement ID -->
+  <script>
+    (function () {
+      var GA_ID = "G-8WRYL44K94";
+      if (!GA_ID || GA_ID.indexOf("XXXX") !== -1) return;
+      window.GA_MEASUREMENT_ID = GA_ID;
+      var s = document.createElement("script");
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_ID;
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { dataLayer.push(arguments); };
+      gtag("js", new Date());
+      gtag("config", GA_ID);
+    })();
+  </script>
+
+</head>
+
+<body>
+
+  <div class="page">
+
+    <header class="header">
+
+      <div class="logo">
+        <img
+          class="logo-img"
+          src="assets/logo.png"
+          alt="nameAI — Podcast Name Generator"
+          width="120"
+          height="120"
+        />
+      </div>
+
+      <p class="eyebrow">AI Podcast Naming</p>
+
+      <h1 class="title">AI Podcast Name Generator</h1>
+
+      <p class="subtitle">Generate memorable podcast names based on your niche, audience, and content style.</p>
+
+    </header>
+
+
+
+    <main class="main">
+
+      <form id="generator-form" class="generator" novalidate>
+
+        <div class="examples">
+          <p class="examples-label">Popular Examples</p>
+          <div class="examples-list">
+            <button type="button" class="example-chip" data-keywords="tech, news">
+              <span class="example-keywords">Tech + News</span>
+              <span class="example-arrow" aria-hidden="true">→</span>
+              <span class="example-result">TechPulse Daily</span>
+            </button>
+            <button type="button" class="example-chip" data-keywords="ai, business">
+              <span class="example-keywords">AI + Business</span>
+              <span class="example-arrow" aria-hidden="true">→</span>
+              <span class="example-result">The Automation Edge</span>
+            </button>
+            <button type="button" class="example-chip" data-keywords="history, storytelling">
+              <span class="example-keywords">History + Storytelling</span>
+              <span class="example-arrow" aria-hidden="true">→</span>
+              <span class="example-result">Echoes of Time</span>
+            </button>
+          </div>
+        </div>
+
+        <label class="field" for="keywords">
+
+          <span class="field-label">Podcast keywords</span>
+
+          <span class="field-hint">e.g. tech, comedy, true crime</span>
+
+          <input
+
+            id="keywords"
+
+            name="keywords"
+
+            type="text"
+
+            autocomplete="off"
+
+            placeholder="tech, news"
+
+            maxlength="80"
+
+            required
+
+          />
+
+        </label>
+
+        <button type="submit" id="generate-btn" class="btn-primary">
+
+          <span class="btn-text">Generate 10 Names</span>
+
+          <span class="btn-spinner" aria-hidden="true"></span>
+
+        </button>
+
+      </form>
+
+
+
+      <div id="error-banner" class="error-banner" role="alert" hidden></div>
+
+
+
+      <section id="results" class="results" aria-live="polite" hidden>
+
+        <div class="results-header">
+
+          <h2 class="results-title">Your podcast names</h2>
+
+          <p class="results-meta"><span id="results-count">10</span> ideas · hover <span class="info-icon-inline" aria-hidden="true">i</span> for details</p>
+
+        </div>
+
+        <ul id="results-list" class="results-list"></ul>
+
+        <button type="button" id="regenerate-btn" class="btn-secondary">Generate again</button>
+
+      </section>
+
+
+
+      <section class="coming-soon" id="coming-soon" aria-labelledby="coming-soon-title">
+
+        <div class="coming-soon__header">
+
+          <h2 id="coming-soon-title" class="coming-soon__title">Coming Soon</h2>
+
+          <p class="coming-soon__subtitle">Help us decide what to build next</p>
+
+        </div>
+
+
+
+        <ul class="coming-soon__list">
+
+          <li class="coming-soon__item" data-tool-id="business">
+
+            <div class="coming-soon__item-main">
+
+              <div class="coming-soon__item-info">
+
+                <span class="coming-soon__badge">Soon</span>
+
+                <h3 class="coming-soon__item-title">Business Name Generator</h3>
+
+                <p class="coming-soon__votes"><span class="coming-soon__vote-count">0</span> votes</p>
+
+              </div>
+
+              <div class="coming-soon__actions">
+
+                <button type="button" class="btn-vote" data-tool-id="business">Vote</button>
+
+                <button type="button" class="btn-notify" data-tool-id="business">Notify Me</button>
+
+              </div>
+
+            </div>
+
+            <div class="coming-soon__notify-panel" hidden>
+
+              <label class="coming-soon__notify-label" for="notify-business">Email for launch updates</label>
+
+              <div class="coming-soon__notify-row">
+
+                <input id="notify-business" class="coming-soon__notify-input" type="email" placeholder="you@email.com" autocomplete="email" />
+
+                <button type="button" class="btn-notify-submit" data-tool-id="business">Subscribe</button>
+
+              </div>
+
+              <p class="coming-soon__notify-success" role="status" hidden>You're on the list!</p>
+
+            </div>
+
+          </li>
+
+
+
+          <li class="coming-soon__item" data-tool-id="startup">
+
+            <div class="coming-soon__item-main">
+
+              <div class="coming-soon__item-info">
+
+                <span class="coming-soon__badge">Soon</span>
+
+                <h3 class="coming-soon__item-title">Startup Name Generator</h3>
+
+                <p class="coming-soon__votes"><span class="coming-soon__vote-count">0</span> votes</p>
+
+              </div>
+
+              <div class="coming-soon__actions">
+
+                <button type="button" class="btn-vote" data-tool-id="startup">Vote</button>
+
+                <button type="button" class="btn-notify" data-tool-id="startup">Notify Me</button>
+
+              </div>
+
+            </div>
+
+            <div class="coming-soon__notify-panel" hidden>
+
+              <label class="coming-soon__notify-label" for="notify-startup">Email for launch updates</label>
+
+              <div class="coming-soon__notify-row">
+
+                <input id="notify-startup" class="coming-soon__notify-input" type="email" placeholder="you@email.com" autocomplete="email" />
+
+                <button type="button" class="btn-notify-submit" data-tool-id="startup">Subscribe</button>
+
+              </div>
+
+              <p class="coming-soon__notify-success" role="status" hidden>You're on the list!</p>
+
+            </div>
+
+          </li>
+
+
+
+          <li class="coming-soon__item" data-tool-id="chinese">
+
+            <div class="coming-soon__item-main">
+
+              <div class="coming-soon__item-info">
+
+                <span class="coming-soon__badge">Soon</span>
+
+                <h3 class="coming-soon__item-title">Chinese Name Generator</h3>
+
+                <p class="coming-soon__votes"><span class="coming-soon__vote-count">0</span> votes</p>
+
+              </div>
+
+              <div class="coming-soon__actions">
+
+                <button type="button" class="btn-vote" data-tool-id="chinese">Vote</button>
+
+                <button type="button" class="btn-notify" data-tool-id="chinese">Notify Me</button>
+
+              </div>
+
+            </div>
+
+            <div class="coming-soon__notify-panel" hidden>
+
+              <label class="coming-soon__notify-label" for="notify-chinese">Email for launch updates</label>
+
+              <div class="coming-soon__notify-row">
+
+                <input id="notify-chinese" class="coming-soon__notify-input" type="email" placeholder="you@email.com" autocomplete="email" />
+
+                <button type="button" class="btn-notify-submit" data-tool-id="chinese">Subscribe</button>
+
+              </div>
+
+              <p class="coming-soon__notify-success" role="status" hidden>You're on the list!</p>
+
+            </div>
+
+          </li>
+
+
+
+          <li class="coming-soon__item" data-tool-id="youtube">
+
+            <div class="coming-soon__item-main">
+
+              <div class="coming-soon__item-info">
+
+                <span class="coming-soon__badge">Soon</span>
+
+                <h3 class="coming-soon__item-title">YouTube Name Generator</h3>
+
+                <p class="coming-soon__votes"><span class="coming-soon__vote-count">0</span> votes</p>
+
+              </div>
+
+              <div class="coming-soon__actions">
+
+                <button type="button" class="btn-vote" data-tool-id="youtube">Vote</button>
+
+                <button type="button" class="btn-notify" data-tool-id="youtube">Notify Me</button>
+
+              </div>
+
+            </div>
+
+            <div class="coming-soon__notify-panel" hidden>
+
+              <label class="coming-soon__notify-label" for="notify-youtube">Email for launch updates</label>
+
+              <div class="coming-soon__notify-row">
+
+                <input id="notify-youtube" class="coming-soon__notify-input" type="email" placeholder="you@email.com" autocomplete="email" />
+
+                <button type="button" class="btn-notify-submit" data-tool-id="youtube">Subscribe</button>
+
+              </div>
+
+              <p class="coming-soon__notify-success" role="status" hidden>You're on the list!</p>
+
+            </div>
+
+          </li>
+
+        </ul>
+
+      </section>
+
+    </main>
+
+
+
+    <footer class="footer">
+
+      <p>Built for creators. Names are AI suggestions — verify trademarks and domains before you launch.</p>
+
+    </footer>
+
+  </div>
+
+
+
+  <script>
+
+ const DOMAIN_SEARCH_BASE =
+
+   "https://www.domaintools.com/research/domain-search/?q=";
+
+
+
+ function trackEvent(eventName, params) {
+
+   if (typeof gtag === "function" && window.GA_MEASUREMENT_ID) {
+
+     gtag("event", eventName, params);
+
+   }
+
+ }
+
+
+
+ const form = document.getElementById("generator-form");
+
+ const keywordsInput = document.getElementById("keywords");
+
+ const generateBtn = document.getElementById("generate-btn");
+
+ const btnText = generateBtn.querySelector(".btn-text");
+
+ const errorBanner = document.getElementById("error-banner");
+
+ const resultsSection = document.getElementById("results");
+
+ const resultsList = document.getElementById("results-list");
+
+ const regenerateBtn = document.getElementById("regenerate-btn");
+
+ const supportsHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+ let tooltipDocListenerBound = false;
+
+
+
+ function setLoading(loading) {
+
+   generateBtn.disabled = loading;
+
+   regenerateBtn.disabled = loading;
+
+   generateBtn.classList.toggle("is-loading", loading);
+
+   btnText.textContent = loading ? "Generating..." : "Generate 10 Names";
+
+ }
+
+
+
+ function showError(message) {
+
+   errorBanner.textContent = message;
+
+   errorBanner.hidden = false;
+
+ }
+
+
+
+ function hideError() {
+
+   errorBanner.hidden = true;
+
+   errorBanner.textContent = "";
+
+ }
+
+
+
+ function domainSlug(name) {
+
+   return name.replace(/\s+/g, "") + ".com";
+
+ }
+
+
+
+ function domainCheckUrl(name) {
+
+   return DOMAIN_SEARCH_BASE + encodeURIComponent(domainSlug(name));
+
+ }
+
+
+
+ function escapeHtml(str) {
+
+   const div = document.createElement("div");
+
+   div.textContent = str;
+
+   return div.innerHTML;
+
+ }
+
+
+
+ function escapeAttr(str) {
+
+   return str
+
+     .replace(/&/g, "&amp;")
+
+     .replace(/"/g, "&quot;")
+
+     .replace(/'/g, "&#39;")
+
+     .replace(/</g, "&lt;")
+
+     .replace(/>/g, "&gt;");
+
+ }
+
+
+
+ function validateKeywords(value) {
+
+   const trimmed = value.trim();
+
+   if (!trimmed) {
+
+     return "Please enter at least one keyword.";
+
+   }
+
+   const parts = trimmed.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+
+   if (parts.length > 2) {
+
+     return "Please use only 1–2 keywords (comma-separated).";
+
+   }
+
+   return null;
+
+ }
+
+
+
+ function normalizeLevel(value) {
+
+   const v = String(value || "").trim().toLowerCase();
+
+   if (v === "high") return "High";
+
+   if (v === "medium" || v === "med") return "Medium";
+
+   if (v === "low") return "Low";
+
+   return "Medium";
+
+ }
+
+
+
+ function formatScore(value) {
+
+   const n = parseFloat(value);
+
+   if (!Number.isFinite(n)) return "7.5";
+
+   return String(Math.min(10, Math.max(1, Math.round(n * 10) / 10)));
+
+ }
+
+
+
+ function levelClass(level) {
+
+   return "name-scores__trait-value--" + level.toLowerCase();
+
+ }
+
+
+
+ function buildScoreHtml(item) {
+
+   const score = formatScore(item.score);
+
+   const memorability = normalizeLevel(item.memorability);
+
+   const brandability = normalizeLevel(item.brandability);
+
+   const professionalism = normalizeLevel(item.professionalism);
+
+   return `
+
+     <div class="name-scores">
+
+       <div class="name-scores__overall">
+
+         <span class="name-scores__label">Name Score</span>
+
+         <span class="name-scores__value">${escapeHtml(score)}<span class="name-scores__max">/10</span></span>
+
+       </div>
+
+       <div class="name-scores__traits">
+
+         <div class="name-scores__trait">
+
+           <span class="name-scores__trait-label">Memorability</span>
+
+           <span class="name-scores__trait-value ${levelClass(memorability)}">${escapeHtml(memorability)}</span>
+
+         </div>
+
+         <div class="name-scores__trait">
+
+           <span class="name-scores__trait-label">Brandability</span>
+
+           <span class="name-scores__trait-value ${levelClass(brandability)}">${escapeHtml(brandability)}</span>
+
+         </div>
+
+         <div class="name-scores__trait">
+
+           <span class="name-scores__trait-label">Professionalism</span>
+
+           <span class="name-scores__trait-value ${levelClass(professionalism)}">${escapeHtml(professionalism)}</span>
+
+         </div>
+
+       </div>
+
+     </div>
+
+   `;
+
+ }
+
+
+
+ function buildTooltipHtml(item) {
+
+   const meaning = item.meaning || "A creative title crafted for your niche.";
+
+   const inspiration = item.inspiration || "Inspired by your keywords and podcast branding trends.";
+
+   return `
+
+     <div class="name-info__section">
+
+       <span class="name-info__label">Meaning</span>
+
+       <p>${escapeHtml(meaning)}</p>
+
+     </div>
+
+     <div class="name-info__section">
+
+       <span class="name-info__label">Inspiration</span>
+
+       <p>${escapeHtml(inspiration)}</p>
+
+     </div>
+
+   `;
+
+ }
+
+
+
+ function renderResults(items) {
+
+   resultsList.innerHTML = "";
+
+   items.forEach((item, index) => {
+
+     const li = document.createElement("li");
+
+     li.className = "name-card";
+
+     li.innerHTML = `
+
+       <span class="name-card__index" aria-hidden="true">${index + 1}</span>
+
+       <div class="name-card__body">
+
+         <div class="name-card__header">
+
+           <p class="name-card__title">${escapeHtml(item.name)}</p>
+
+           <div class="name-info">
+
+           <button
+
+             type="button"
+
+             class="name-info__trigger"
+
+             aria-label="Show meaning and inspiration for ${escapeAttr(item.name)}"
+
+             aria-expanded="false"
+
+           >
+
+             <svg class="name-info__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+
+               <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
+
+               <path d="M8 7.2V11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+
+               <circle cx="8" cy="5" r="0.9" fill="currentColor"/>
+
+             </svg>
+
+           </button>
+
+           <div class="name-info__tooltip" role="tooltip" hidden>
+
+             ${buildTooltipHtml(item)}
+
+           </div>
+
+         </div>
+
+         </div>
+
+         ${buildScoreHtml(item)}
+
+       </div>
+
+       <div class="name-card__actions">
+
+         <div class="btn-copy-wrap">
+
+           <button
+
+             type="button"
+
+             class="btn-copy"
+
+             data-name="${escapeAttr(item.name)}"
+
+             aria-label="Copy ${escapeAttr(item.name)}"
+
+           >Copy</button>
+
+           <span class="copy-toast" role="status" aria-live="polite">Copied!</span>
+
+         </div>
+
+         <a
+
+           class="btn-domain"
+
+           href="${escapeAttr(domainCheckUrl(item.name))}"
+
+           target="_blank"
+
+           rel="noopener noreferrer"
+
+         >Check Domain</a>
+
+       </div>
+
+     `;
+
+     resultsList.appendChild(li);
+
+   });
+
+   bindTooltipInteractions();
+
+   bindCopyButtons();
+
+   document.getElementById("results-count").textContent = String(items.length);
+
+   resultsSection.hidden = false;
+
+ }
+
+
+
+ function bindTooltipInteractions() {
+
+   resultsList.querySelectorAll(".name-info").forEach((wrapper) => {
+
+     const trigger = wrapper.querySelector(".name-info__trigger");
+
+     const tooltip = wrapper.querySelector(".name-info__tooltip");
+
+
+
+     if (supportsHover) {
+
+       wrapper.addEventListener("mouseenter", () => showTooltip(trigger, tooltip));
+
+       wrapper.addEventListener("mouseleave", () => hideTooltip(trigger, tooltip));
+
+       trigger.addEventListener("focus", () => showTooltip(trigger, tooltip));
+
+       wrapper.addEventListener("focusout", (e) => {
+
+         if (!wrapper.contains(e.relatedTarget)) {
+
+           hideTooltip(trigger, tooltip);
+
+         }
+
+       });
+
+     } else {
+
+       trigger.addEventListener("click", (e) => {
+
+         e.stopPropagation();
+
+         const isOpen = trigger.getAttribute("aria-expanded") === "true";
+
+         closeAllTooltips();
+
+         if (!isOpen) showTooltip(trigger, tooltip);
+
+       });
+
+     }
+
+   });
+
+
+
+   if (!supportsHover && !tooltipDocListenerBound) {
+
+     document.addEventListener("click", closeAllTooltips);
+
+     tooltipDocListenerBound = true;
+
+   }
+
+ }
+
+
+
+ async function copyTextToClipboard(text) {
+
+   if (navigator.clipboard && window.isSecureContext) {
+
+     try {
+
+       await navigator.clipboard.writeText(text);
+
+       return true;
+
+     } catch {
+
+       /* fall through */
+
+     }
+
+   }
+
+
+
+   const textarea = document.createElement("textarea");
+
+   textarea.value = text;
+
+   textarea.setAttribute("readonly", "");
+
+   textarea.style.position = "fixed";
+
+   textarea.style.top = "0";
+
+   textarea.style.left = "0";
+
+   textarea.style.width = "2em";
+
+   textarea.style.height = "2em";
+
+   textarea.style.padding = "0";
+
+   textarea.style.border = "none";
+
+   textarea.style.outline = "none";
+
+   textarea.style.boxShadow = "none";
+
+   textarea.style.background = "transparent";
+
+   document.body.appendChild(textarea);
+
+   textarea.focus();
+
+   textarea.select();
+
+   textarea.setSelectionRange(0, text.length);
+
+
+
+   let copied = false;
+
+   try {
+
+     copied = document.execCommand("copy");
+
+   } catch {
+
+     copied = false;
+
+   }
+
+
+
+   document.body.removeChild(textarea);
+
+   return copied;
+
+ }
+
+
+
+ function showCopyFeedback(button) {
+
+   const wrap = button.closest(".btn-copy-wrap");
+
+   if (!wrap) return;
+
+   const toast = wrap.querySelector(".copy-toast");
+
+   if (!toast) return;
+
+
+
+   toast.classList.add("is-visible");
+
+   window.clearTimeout(wrap._copyToastTimer);
+
+   wrap._copyToastTimer = window.setTimeout(() => {
+
+     toast.classList.remove("is-visible");
+
+   }, 2000);
+
+ }
+
+
+
+ function bindCopyButtons() {
+
+   resultsList.querySelectorAll(".btn-copy").forEach((button) => {
+
+     button.addEventListener("click", async () => {
+
+       const name = button.dataset.name;
+
+       if (!name) return;
+
+
+
+       const copied = await copyTextToClipboard(name);
+
+       if (copied) {
+
+         showCopyFeedback(button);
+
+         trackEvent("copy_name", { event_category: "engagement" });
+
+       }
+
+     });
+
+   });
+
+ }
+
+
+
+ function showTooltip(trigger, tooltip) {
+
+   closeAllTooltips();
+
+   tooltip.hidden = false;
+
+   trigger.setAttribute("aria-expanded", "true");
+
+   const wrapper = trigger.closest(".name-info");
+
+   if (wrapper) wrapper.classList.add("is-open");
+
+   const card = trigger.closest(".name-card");
+
+   if (card) card.classList.add("is-tooltip-active");
+
+ }
+
+
+
+ function hideTooltip(trigger, tooltip) {
+
+   tooltip.hidden = true;
+
+   trigger.setAttribute("aria-expanded", "false");
+
+   const wrapper = trigger.closest(".name-info");
+
+   if (wrapper) wrapper.classList.remove("is-open");
+
+   const card = trigger.closest(".name-card");
+
+   if (card) card.classList.remove("is-tooltip-active");
+
+ }
+
+
+
+ function closeAllTooltips() {
+
+   resultsList.querySelectorAll(".name-info").forEach((wrapper) => {
+
+     const trigger = wrapper.querySelector(".name-info__trigger");
+
+     const tooltip = wrapper.querySelector(".name-info__tooltip");
+
+     hideTooltip(trigger, tooltip);
+
+   });
+
+ }
+
+
+
+ async function fetchPodcastNames(keywords) {
+
+   const response = await fetch("/api/generate", {
+
+     method: "POST",
+
+     headers: { "Content-Type": "application/json" },
+
+     body: JSON.stringify({ keywords })
+
+   });
+
+
+
+   let data;
+
+   try {
+
+     data = await response.json();
+
+   } catch {
+
+     throw new Error("Unexpected response from the server. Please try again.");
+
+   }
+
+
+
+   if (!response.ok) {
+
+     throw new Error(data?.error || `Request failed (${response.status}).`);
+
+   }
+
+
+
+   const names = data.names;
+
+   if (!names || !Array.isArray(names) || names.length === 0) {
+
+     throw new Error("No names were returned. Please try again.");
+
+   }
+
+
+
+   return names.slice(0, 10);
+
+ }
+
+
+
+ async function saveGeneratedNames(keywords, names) {
+
+   try {
+
+     const response = await fetch("/api/save-name", {
+
+       method: "POST",
+
+       headers: { "Content-Type": "application/json" },
+
+       body: JSON.stringify({ keywords, names })
+
+     });
+
+
+
+     if (!response.ok) {
+
+       console.error("Failed to save names:", response.status, await response.text());
+
+     }
+
+   } catch (err) {
+
+     console.error("Failed to save names:", err);
+
+   }
+
+ }
+
+
+
+ async function handleGenerate() {
+
+   hideError();
+
+   const keywords = keywordsInput.value.trim();
+
+   const validationError = validateKeywords(keywords);
+
+   if (validationError) {
+
+     showError(validationError);
+
+     keywordsInput.focus();
+
+     return;
+
+   }
+
+
+
+   setLoading(true);
+
+   try {
+
+     const items = await fetchPodcastNames(keywords);
+
+     renderResults(items);
+
+     saveGeneratedNames(keywords, items);
+
+     trackEvent("generate_names", {
+
+       event_category: "engagement",
+
+       value: items.length
+
+     });
+
+     resultsSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+   } catch (err) {
+
+     const message =
+
+       err instanceof TypeError && err.message.includes("fetch")
+
+         ? "Network error. Check your connection and try again."
+
+         : err.message || "Something went wrong. Please try again.";
+
+     showError(message);
+
+     resultsSection.hidden = true;
+
+   } finally {
+
+     setLoading(false);
+
+   }
+
+ }
+
+
+
+ form.addEventListener("submit", (e) => {
+
+   e.preventDefault();
+
+   handleGenerate();
+
+ });
+
+
+
+ document.querySelectorAll(".example-chip").forEach((chip) => {
+
+   chip.addEventListener("click", () => {
+
+     keywordsInput.value = chip.dataset.keywords;
+
+     keywordsInput.focus();
+
+     trackEvent("example_click", { event_category: "engagement", keywords: chip.dataset.keywords });
+
+   });
+
+ });
+
+
+
+ const VOTES_STORAGE_KEY = "nameai_votes";
+
+ const VOTED_STORAGE_KEY = "nameai_voted_tools";
+
+ const NOTIFY_STORAGE_KEY = "nameai_notify_signups";
+
+
+
+ function readJsonStorage(key, fallback) {
+
+   try {
+
+     const raw = localStorage.getItem(key);
+
+     return raw ? JSON.parse(raw) : fallback;
+
+   } catch {
+
+     return fallback;
+
+   }
+
+ }
+
+
+
+ function writeJsonStorage(key, value) {
+
+   localStorage.setItem(key, JSON.stringify(value));
+
+ }
+
+
+
+ function updateVoteDisplay(toolId) {
+
+   const item = document.querySelector(`.coming-soon__item[data-tool-id="${toolId}"]`);
+
+   if (!item) return;
+
+   const votes = readJsonStorage(VOTES_STORAGE_KEY, {});
+
+   const countEl = item.querySelector(".coming-soon__vote-count");
+
+   if (countEl) countEl.textContent = String(votes[toolId] || 0);
+
+ }
+
+
+
+ function markVoted(toolId) {
+
+   const item = document.querySelector(`.coming-soon__item[data-tool-id="${toolId}"]`);
+
+   if (!item) return;
+
+   const btn = item.querySelector(".btn-vote");
+
+   if (!btn) return;
+
+   btn.textContent = "Voted";
+
+   btn.disabled = true;
+
+   btn.classList.add("is-voted");
+
+ }
+
+
+
+ function initComingSoon() {
+
+   const voted = readJsonStorage(VOTED_STORAGE_KEY, []);
+
+   const signups = readJsonStorage(NOTIFY_STORAGE_KEY, {});
+
+
+
+   document.querySelectorAll(".coming-soon__item").forEach((item) => {
+
+     const toolId = item.dataset.toolId;
+
+     updateVoteDisplay(toolId);
+
+     if (voted.includes(toolId)) markVoted(toolId);
+
+     if (signups[toolId]) {
+
+       const panel = item.querySelector(".coming-soon__notify-panel");
+
+       const success = item.querySelector(".coming-soon__notify-success");
+
+       const notifyBtn = item.querySelector(".btn-notify");
+
+       if (panel) panel.hidden = false;
+
+       if (success) success.hidden = false;
+
+       if (notifyBtn) {
+
+         notifyBtn.textContent = "Subscribed";
+
+         notifyBtn.disabled = true;
+
+       }
+
+     }
+
+   });
+
+
+
+   document.querySelectorAll(".btn-vote").forEach((btn) => {
+
+     btn.addEventListener("click", () => {
+
+       const toolId = btn.dataset.toolId;
+
+       if (!toolId || btn.disabled) return;
+
+
+
+       const votedList = readJsonStorage(VOTED_STORAGE_KEY, []);
+
+       if (votedList.includes(toolId)) return;
+
+
+
+       const votes = readJsonStorage(VOTES_STORAGE_KEY, {});
+
+       votes[toolId] = (votes[toolId] || 0) + 1;
+
+       writeJsonStorage(VOTES_STORAGE_KEY, votes);
+
+       writeJsonStorage(VOTED_STORAGE_KEY, votedList.concat(toolId));
+
+
+
+       updateVoteDisplay(toolId);
+
+       markVoted(toolId);
+
+       trackEvent("vote_tool", { event_category: "coming_soon", tool_id: toolId });
+
+     });
+
+   });
+
+
+
+   document.querySelectorAll(".btn-notify").forEach((btn) => {
+
+     btn.addEventListener("click", () => {
+
+       const toolId = btn.dataset.toolId;
+
+       const item = btn.closest(".coming-soon__item");
+
+       const panel = item?.querySelector(".coming-soon__notify-panel");
+
+       if (!panel || btn.disabled) return;
+
+
+
+       const isOpen = !panel.hidden;
+
+       document.querySelectorAll(".coming-soon__notify-panel").forEach((p) => {
+
+         p.hidden = true;
+
+       });
+
+       panel.hidden = isOpen;
+
+       if (!panel.hidden) {
+
+         const input = panel.querySelector(".coming-soon__notify-input");
+
+         if (input) input.focus();
+
+       }
+
+     });
+
+   });
+
+
+
+   document.querySelectorAll(".btn-notify-submit").forEach((btn) => {
+
+     btn.addEventListener("click", () => {
+
+       const toolId = btn.dataset.toolId;
+
+       const item = btn.closest(".coming-soon__item");
+
+       const input = item?.querySelector(".coming-soon__notify-input");
+
+       const success = item?.querySelector(".coming-soon__notify-success");
+
+       const notifyBtn = item?.querySelector(".btn-notify");
+
+       if (!input || !toolId) return;
+
+
+
+       const email = input.value.trim();
+
+       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+
+         input.focus();
+
+         input.setAttribute("aria-invalid", "true");
+
+         return;
+
+       }
+
+
+
+       input.removeAttribute("aria-invalid");
+
+       const signups = readJsonStorage(NOTIFY_STORAGE_KEY, {});
+
+       signups[toolId] = email;
+
+       writeJsonStorage(NOTIFY_STORAGE_KEY, signups);
+
+
+
+       if (success) success.hidden = false;
+
+       if (notifyBtn) {
+
+         notifyBtn.textContent = "Subscribed";
+
+         notifyBtn.disabled = true;
+
+       }
+
+
+
+       trackEvent("notify_signup", { event_category: "coming_soon", tool_id: toolId });
+
+     });
+
+   });
+
+ }
+
+
+
+ initComingSoon();
+
+
+
+ regenerateBtn.addEventListener("click", () => {
+
+   handleGenerate();
+
+ });
+
+  </script>
+
+</body>
+
+</html>
+

@@ -1,0 +1,24 @@
+Modify only functions/api/generate.js.
+
+Do not change any business logic.
+
+Replace this:
+
+try {
+  await saveGeneratedNames(env.DB, keywords, names);
+} catch {
+  /* ignore database failures */
+}
+
+with:
+
+try {
+  console.log("[generate] DB exists:", !!env.DB);
+  console.log("[generate] Saving", names.length, "names");
+  await saveGeneratedNames(env.DB, keywords, names);
+  console.log("[generate] Save completed");
+} catch (error) {
+  console.error("[generate] Database save failed:", error);
+}
+
+Do not modify anything else.
