@@ -90,3 +90,14 @@ Status:
 Production Ready
 
 This version establishes the technical foundation for all future development, including history, favorites, SEO optimization, user accounts, and premium features.
+
+⸻
+
+## [1.0.1] - 2026-06-27
+
+### Added
+
+- Added comprehensive SETUP.md developer guide.
+- Documented environment recovery procedure.
+- Added troubleshooting knowledge base.
+- Added development workflow and release checklist.
