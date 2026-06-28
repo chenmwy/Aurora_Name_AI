@@ -175,6 +175,10 @@
 
         </button>
 
+        <div id="thinking-journey" class="thinking-journey" hidden aria-live="polite" aria-hidden="true">
+          <p id="thinking-journey-text" class="thinking-journey__text"></p>
+        </div>
+
       </form>
 
 
@@ -452,9 +456,191 @@
 
  let keywordTipsDocListenerBound = false;
 
+ let thinkingTimer = null;
 
 
- function setLoading(loading) {
+
+ const GENERIC_THINKING_MESSAGES = [
+
+   "Understanding your idea...",
+
+   "Exploring different naming directions...",
+
+   "Balancing creativity and memorability...",
+
+   "Creating brand-worthy name ideas...",
+
+   "Preparing your recommendations..."
+
+ ];
+
+
+
+ function parseKeywordContext(keywords) {
+
+   const raw = String(keywords || "").trim();
+
+   if (!raw) return null;
+
+
+
+   const parts = raw.split(",").map((part) => part.trim()).filter(Boolean);
+
+   if (parts.length === 0 || parts.length > 2) return null;
+
+   if (parts.some((part) => part.length > 30 || /[<>{}[\]|\\^`]/.test(part))) return null;
+
+
+
+   const phrase = parts.join(" ").toLowerCase();
+
+   const primary = parts[0].toLowerCase();
+
+
+
+   return { phrase, primary };
+
+ }
+
+
+
+ function getThinkingMessages(decisionStage, keywords) {
+
+   void decisionStage;
+
+   const context = parseKeywordContext(keywords);
+
+   if (!context) return GENERIC_THINKING_MESSAGES.slice();
+
+
+
+   return [
+
+     `Understanding your ${context.phrase} idea...`,
+
+     `Exploring memorable ${context.primary} branding...`,
+
+     "Balancing creativity and memorability...",
+
+     `Creating brand-worthy ${context.primary} name ideas...`,
+
+     "Preparing your recommendations..."
+
+   ];
+
+ }
+
+
+
+ const thinkingJourneyEl = document.getElementById("thinking-journey");
+
+ const thinkingJourneyTextEl = document.getElementById("thinking-journey-text");
+
+ let thinkingMessages = [];
+
+ let thinkingMessageIndex = 0;
+
+
+
+ function showThinkingMessage(message) {
+
+   if (!thinkingJourneyTextEl) return;
+
+   thinkingJourneyTextEl.classList.add("is-fading");
+
+   window.setTimeout(() => {
+
+     thinkingJourneyTextEl.textContent = message;
+
+     thinkingJourneyTextEl.classList.remove("is-fading");
+
+   }, 220);
+
+ }
+
+
+
+ function scheduleThinkingRotation() {
+
+   const delay = 1300 + Math.random() * 500;
+
+   thinkingTimer = window.setTimeout(() => {
+
+     thinkingMessageIndex = (thinkingMessageIndex + 1) % thinkingMessages.length;
+
+     showThinkingMessage(thinkingMessages[thinkingMessageIndex]);
+
+     scheduleThinkingRotation();
+
+   }, delay);
+
+ }
+
+
+
+ function startThinkingJourney(keywords) {
+
+   if (!thinkingJourneyEl || !thinkingJourneyTextEl) return;
+
+
+
+   stopThinkingJourney();
+
+
+
+   thinkingMessages = getThinkingMessages(null, keywords);
+
+   thinkingMessageIndex = 0;
+
+
+
+   thinkingJourneyEl.hidden = false;
+
+   thinkingJourneyEl.setAttribute("aria-hidden", "false");
+
+   showThinkingMessage(thinkingMessages[0]);
+
+   scheduleThinkingRotation();
+
+ }
+
+
+
+ function stopThinkingJourney() {
+
+   if (thinkingTimer) {
+
+     window.clearTimeout(thinkingTimer);
+
+     thinkingTimer = null;
+
+   }
+
+
+
+   if (thinkingJourneyEl) {
+
+     thinkingJourneyEl.hidden = true;
+
+     thinkingJourneyEl.setAttribute("aria-hidden", "true");
+
+   }
+
+
+
+   if (thinkingJourneyTextEl) {
+
+     thinkingJourneyTextEl.textContent = "";
+
+     thinkingJourneyTextEl.classList.remove("is-fading");
+
+   }
+
+ }
+
+
+
+ function setLoading(loading, keywords = "") {
 
    generateBtn.disabled = loading;
 
@@ -462,7 +648,19 @@
 
    generateBtn.classList.toggle("is-loading", loading);
 
-   btnText.textContent = loading ? "Generating..." : "Generate 10 Names";
+   btnText.textContent = "Generate 10 Names";
+
+
+
+   if (loading) {
+
+     startThinkingJourney(keywords);
+
+   } else {
+
+     stopThinkingJourney();
+
+   }
 
  }
 
@@ -1280,7 +1478,7 @@
 
 
 
-   setLoading(true);
+   setLoading(true, keywords);
 
    try {
 

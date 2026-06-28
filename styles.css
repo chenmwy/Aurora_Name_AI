@@ -253,6 +253,25 @@ input:focus { border-color: #6c63ff; }
 }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.thinking-journey {
+  margin-top: 0.85rem;
+  min-height: 1.35rem;
+  text-align: center;
+}
+
+.thinking-journey__text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #94a3b8;
+  transition: opacity 0.25s ease;
+  opacity: 1;
+}
+
+.thinking-journey__text.is-fading {
+  opacity: 0;
+}
+
 .error-banner {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.5);
@@ -819,6 +838,8 @@ input:focus { border-color: #6c63ff; }
   }
   .field { margin-bottom: 0.85rem; }
   .btn-primary { padding: 0.95rem; font-size: 1.05rem; }
+  .thinking-journey { margin-top: 0.65rem; }
+  .thinking-journey__text { font-size: 0.8125rem; }
   .name-scores__traits {
     grid-template-columns: 1fr;
     gap: 0.4rem;
