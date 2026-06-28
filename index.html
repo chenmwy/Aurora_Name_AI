@@ -786,6 +786,8 @@
 
    bindCopyButtons();
 
+   bindDomainButtons();
+
    document.getElementById("results-count").textContent = String(items.length);
 
    resultsSection.hidden = false;
@@ -976,8 +978,34 @@
 
          showCopyFeedback(button);
 
-         trackEvent("copy_name", { event_category: "engagement" });
+         if (typeof gtag === "function" && window.GA_MEASUREMENT_ID) {
+           gtag("event", "copy_name", { name: name });
+         }
 
+       }
+
+     });
+
+   });
+
+ }
+
+
+
+ function bindDomainButtons() {
+
+   resultsList.querySelectorAll(".btn-domain").forEach((link) => {
+
+     link.addEventListener("click", () => {
+
+       const name = link.closest(".name-card__actions")?.querySelector(".btn-copy")?.dataset.name;
+
+       if (!name) return;
+
+
+
+       if (typeof gtag === "function" && window.GA_MEASUREMENT_ID) {
+         gtag("event", "check_domain", { domain: domainSlug(name) });
        }
 
      });
