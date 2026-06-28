@@ -101,3 +101,16 @@ This version establishes the technical foundation for all future development, in
 - Documented environment recovery procedure.
 - Added troubleshooting knowledge base.
 - Added development workflow and release checklist.
+
+⸻
+
+## [1.0.2] - 2026-06-28
+
+### Improved
+
+- Optimized homepage layout for better user experience.
+- Reduced hero section height.
+- Simplified examples from three to one.
+- Added Keyword Tips.
+- Moved the generator closer to the top of the page.
+- Improved first-screen usability.
