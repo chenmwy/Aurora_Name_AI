@@ -85,7 +85,7 @@
 
       <h1 class="title">AI Podcast Name Generator</h1>
 
-      <p class="subtitle">Generate memorable podcast names based on your niche, audience, and content style.</p>
+      <p class="subtitle">Generate memorable podcast names in seconds.</p>
 
     </header>
 
@@ -96,22 +96,33 @@
       <form id="generator-form" class="generator" novalidate>
 
         <div class="examples">
-          <p class="examples-label">Popular Examples</p>
+          <div class="examples-heading">
+            <p class="examples-label">Quick Example</p>
+            <div class="keyword-tips">
+              <button
+                type="button"
+                class="keyword-tips__trigger"
+                aria-expanded="false"
+                aria-controls="keyword-tips-panel"
+              >
+                Keyword Tips <span class="keyword-tips__icon" aria-hidden="true">ⓘ</span>
+              </button>
+              <div id="keyword-tips-panel" class="keyword-tips__tooltip" role="tooltip" hidden>
+                <p>Use 1–2 keywords separated by commas.</p>
+                <p class="keyword-tips__examples-label">Examples:</p>
+                <ul class="keyword-tips__examples">
+                  <li>ai, business</li>
+                  <li>history, storytelling</li>
+                  <li>coffee, travel</li>
+                </ul>
+              </div>
+            </div>
+          </div>
           <div class="examples-list">
-            <button type="button" class="example-chip" data-keywords="tech, news">
-              <span class="example-keywords">Tech + News</span>
-              <span class="example-arrow" aria-hidden="true">→</span>
-              <span class="example-result">TechPulse Daily</span>
-            </button>
             <button type="button" class="example-chip" data-keywords="ai, business">
               <span class="example-keywords">AI + Business</span>
               <span class="example-arrow" aria-hidden="true">→</span>
               <span class="example-result">The Automation Edge</span>
-            </button>
-            <button type="button" class="example-chip" data-keywords="history, storytelling">
-              <span class="example-keywords">History + Storytelling</span>
-              <span class="example-arrow" aria-hidden="true">→</span>
-              <span class="example-result">Echoes of Time</span>
             </button>
           </div>
         </div>
@@ -377,7 +388,7 @@
       <p>Built for creators. Names are AI suggestions — verify trademarks and domains before you launch.</p >
 
       <p class="version">
-        Aurora Name AI · Version 1.0.0 · First Production Release
+        Aurora Name AI · v1.0.2 · User Experience Improvements
       </p >
 
     </footer>
@@ -424,6 +435,8 @@
  const supportsHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
  let tooltipDocListenerBound = false;
+
+ let keywordTipsDocListenerBound = false;
 
 
 
@@ -1011,6 +1024,112 @@
 
    });
 
+   closeKeywordTips();
+
+ }
+
+
+
+ function closeKeywordTips() {
+
+   const wrapper = document.querySelector(".keyword-tips");
+
+   if (!wrapper) return;
+
+   const trigger = wrapper.querySelector(".keyword-tips__trigger");
+
+   const tooltip = wrapper.querySelector(".keyword-tips__tooltip");
+
+   if (!trigger || !tooltip) return;
+
+   tooltip.hidden = true;
+
+   trigger.setAttribute("aria-expanded", "false");
+
+   wrapper.classList.remove("is-open");
+
+ }
+
+
+
+ function bindKeywordTips() {
+
+   const wrapper = document.querySelector(".keyword-tips");
+
+   if (!wrapper) return;
+
+   const trigger = wrapper.querySelector(".keyword-tips__trigger");
+
+   const tooltip = wrapper.querySelector(".keyword-tips__tooltip");
+
+   if (!trigger || !tooltip) return;
+
+
+
+   function showKeywordTips() {
+
+     tooltip.hidden = false;
+
+     trigger.setAttribute("aria-expanded", "true");
+
+     wrapper.classList.add("is-open");
+
+   }
+
+
+
+   function hideKeywordTips() {
+
+     closeKeywordTips();
+
+   }
+
+
+
+   if (supportsHover) {
+
+     wrapper.addEventListener("mouseenter", showKeywordTips);
+
+     wrapper.addEventListener("mouseleave", hideKeywordTips);
+
+     trigger.addEventListener("focus", showKeywordTips);
+
+     wrapper.addEventListener("focusout", (e) => {
+
+       if (!wrapper.contains(e.relatedTarget)) {
+
+         hideKeywordTips();
+
+       }
+
+     });
+
+   } else {
+
+     trigger.addEventListener("click", (e) => {
+
+       e.stopPropagation();
+
+       const isOpen = trigger.getAttribute("aria-expanded") === "true";
+
+       closeAllTooltips();
+
+       if (!isOpen) showKeywordTips();
+
+     });
+
+
+
+     if (!keywordTipsDocListenerBound) {
+
+       document.addEventListener("click", closeKeywordTips);
+
+       keywordTipsDocListenerBound = true;
+
+     }
+
+   }
+
  }
 
 
@@ -1186,6 +1305,10 @@
    });
 
  });
+
+
+
+ bindKeywordTips();
 
 
 
