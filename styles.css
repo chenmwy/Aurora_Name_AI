@@ -342,12 +342,29 @@ input:focus { border-color: #6c63ff; }
   margin-bottom: 0.65rem;
 }
 
+.name-card__title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.name-card__badge {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a5b4fc;
+  background: rgba(108, 99, 255, 0.12);
+  border: 1px solid rgba(129, 140, 248, 0.22);
+  border-radius: 999px;
+}
+
 .name-card__title {
   font-size: 1.1rem;
   color: #f1f5f9;
   line-height: 1.3;
-  flex: 1;
-  min-width: 0;
 }
 
 .name-scores {
