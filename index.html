@@ -1262,13 +1262,12 @@
 
      // saveGeneratedNames(keywords, items);
 
-     trackEvent("generate_names", {
-
-       event_category: "engagement",
-
-       value: items.length
-
-     });
+     if (typeof gtag === "function" && window.GA_MEASUREMENT_ID) {
+       gtag("event", "generate_name", {
+         keyword: keywords,
+         result_count: items.length
+       });
+     }
 
      resultsSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
