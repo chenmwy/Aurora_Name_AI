@@ -11,6 +11,8 @@
     this.rootEl = rootEl;
     this.spritesEl = rootEl.querySelector(".nana-companion__sprites");
     this.presentationState = NANA_STATES.IDLE;
+    this.inputEl = null;
+    this.inputFocused = false;
     this.directionController = new global.NanaDirectionController(this.spritesEl);
     this.behaviorEngine = new global.NanaBehaviorEngine(this, this.directionController);
     this.resetTimer = null;
@@ -35,11 +37,30 @@
   NanaCompanion.prototype.bindInput = function (inputEl) {
     if (!inputEl) return this;
 
-    inputEl.addEventListener("focus", () => this.onInputNotice());
+    this.inputEl = inputEl;
+
+    inputEl.addEventListener("focus", () => {
+      this.inputFocused = true;
+      this.onInputFocus();
+    });
+
     inputEl.addEventListener("input", () => this.onInputNotice());
-    inputEl.addEventListener("blur", () => this.onInputBlur());
+
+    inputEl.addEventListener("blur", () => {
+      this.inputFocused = false;
+      this.onInputBlur();
+    });
 
     return this;
+  };
+
+  NanaCompanion.prototype.isInputFocused = function () {
+    if (!this.inputEl) return false;
+    return this.inputFocused || document.activeElement === this.inputEl;
+  };
+
+  NanaCompanion.prototype.onInputFocus = function () {
+    return this.behaviorEngine.onInputFocus();
   };
 
   NanaCompanion.prototype.onInputNotice = function () {
