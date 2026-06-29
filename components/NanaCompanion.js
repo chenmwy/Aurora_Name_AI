@@ -67,7 +67,7 @@
       '<div class="nana-companion__float">' +
       '<div class="nana-companion__breathe">' +
       '<div class="nana-companion__glow">' +
-      '<img class="nana-companion__sprite" src="" alt="" role="presentation" aria-hidden="true" width="72" height="72">' +
+      '<img class="nana-companion__sprite" src="" alt="" role="presentation" aria-hidden="true">' +
       "</div></div></div>";
 
     const mountTarget = options.mountTarget || document.body;

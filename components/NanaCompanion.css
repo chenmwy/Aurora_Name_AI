@@ -2,8 +2,8 @@
   position: fixed;
   right: 24px;
   bottom: 24px;
-  width: 72px;
-  height: 72px;
+  width: clamp(64px, 6vw, 112px);
+  height: clamp(64px, 6vw, 112px);
   z-index: 40;
   pointer-events: none;
   user-select: none;
@@ -41,7 +41,7 @@
   }
 
   50% {
-    transform: translateY(-3.5px);
+    transform: translateY(-5px);
   }
 }
 
@@ -52,7 +52,7 @@
   }
 
   50% {
-    transform: scale(1.02);
+    transform: scale(1.025);
   }
 }
 
@@ -88,7 +88,7 @@
 }
 
 .nana-companion[data-state="idle"] .nana-companion__float {
-  animation: nana-float 5.5s ease-in-out infinite;
+  animation: nana-float 5.2s ease-in-out infinite;
 }
 
 .nana-companion[data-state="idle"] .nana-companion__breathe {
@@ -104,8 +104,8 @@
 }
 
 .nana-companion[data-state="thinking"] .nana-companion__glow {
-  filter: drop-shadow(0 0 12px rgba(129, 140, 248, 0.42))
-    drop-shadow(0 0 22px rgba(108, 99, 255, 0.28));
+  filter: drop-shadow(0 0 16px rgba(129, 140, 248, 0.52))
+    drop-shadow(0 0 28px rgba(108, 99, 255, 0.36));
 }
 
 .nana-companion[data-state="success"] .nana-companion__float {
@@ -128,17 +128,10 @@
 
 @media (max-width: 480px) {
   .nana-companion {
-    right: 12px;
+    right: 10px;
     bottom: 88px;
-    width: 58px;
-    height: 58px;
-  }
-}
-
-@media (min-width: 1200px) {
-  .nana-companion {
-    width: 82px;
-    height: 82px;
+    width: clamp(48px, 14vw, 64px);
+    height: clamp(48px, 14vw, 64px);
   }
 }
 
@@ -158,6 +151,6 @@
   }
 
   .nana-companion[data-state="thinking"] .nana-companion__glow {
-    filter: drop-shadow(0 0 8px rgba(129, 140, 248, 0.3));
+    filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.4));
   }
 }
