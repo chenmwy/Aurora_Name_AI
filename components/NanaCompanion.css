@@ -2,8 +2,8 @@
   position: fixed;
   right: 24px;
   bottom: 24px;
-  width: clamp(64px, 6vw, 112px);
-  height: clamp(64px, 6vw, 112px);
+  width: clamp(88px, 8vw, 144px);
+  height: clamp(88px, 8vw, 144px);
   z-index: 40;
   pointer-events: none;
   user-select: none;
@@ -27,11 +27,17 @@
   height: 100%;
 }
 
+.nana-companion__glow {
+  position: relative;
+}
+
 .nana-companion__sprite {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes nana-float {
@@ -41,7 +47,7 @@
   }
 
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-8px);
   }
 }
 
@@ -52,7 +58,33 @@
   }
 
   50% {
-    transform: scale(1.025);
+    transform: scale(1.045);
+  }
+}
+
+@keyframes nana-thinking-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 20px rgba(129, 140, 248, 0.58))
+      drop-shadow(0 0 36px rgba(108, 99, 255, 0.42));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 28px rgba(139, 92, 246, 0.72))
+      drop-shadow(0 0 48px rgba(99, 102, 241, 0.52));
+  }
+}
+
+@keyframes nana-thinking-halo {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.94);
+  }
+
+  50% {
+    opacity: 0.82;
+    transform: scale(1.1);
   }
 }
 
@@ -88,11 +120,11 @@
 }
 
 .nana-companion[data-state="idle"] .nana-companion__float {
-  animation: nana-float 5.2s ease-in-out infinite;
+  animation: nana-float 4.8s ease-in-out infinite;
 }
 
 .nana-companion[data-state="idle"] .nana-companion__breathe {
-  animation: nana-breathe 4s ease-in-out infinite;
+  animation: nana-breathe 3.6s ease-in-out infinite;
 }
 
 .nana-companion[data-state="thinking"] .nana-companion__float {
@@ -104,8 +136,23 @@
 }
 
 .nana-companion[data-state="thinking"] .nana-companion__glow {
-  filter: drop-shadow(0 0 16px rgba(129, 140, 248, 0.52))
-    drop-shadow(0 0 28px rgba(108, 99, 255, 0.36));
+  animation: nana-thinking-glow 2.6s ease-in-out infinite;
+}
+
+.nana-companion[data-state="thinking"] .nana-companion__glow::before {
+  content: "";
+  position: absolute;
+  inset: -14%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(129, 140, 248, 0.32) 0%,
+    rgba(108, 99, 255, 0.14) 45%,
+    rgba(108, 99, 255, 0) 72%
+  );
+  animation: nana-thinking-halo 2.6s ease-in-out infinite;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .nana-companion[data-state="success"] .nana-companion__float {
@@ -128,10 +175,10 @@
 
 @media (max-width: 480px) {
   .nana-companion {
-    right: 10px;
-    bottom: 88px;
-    width: clamp(48px, 14vw, 64px);
-    height: clamp(48px, 14vw, 64px);
+    right: 8px;
+    bottom: 92px;
+    width: clamp(64px, 18vw, 82px);
+    height: clamp(64px, 18vw, 82px);
   }
 }
 
@@ -141,8 +188,15 @@
   }
 
   .nana-companion__float,
-  .nana-companion__breathe {
+  .nana-companion__breathe,
+  .nana-companion[data-state="thinking"] .nana-companion__glow {
     animation: none !important;
+  }
+
+  .nana-companion[data-state="thinking"] .nana-companion__glow::before {
+    animation: none !important;
+    opacity: 0.55;
+    transform: scale(1);
   }
 
   .nana-companion[data-state="success"] .nana-companion__breathe,
@@ -151,6 +205,6 @@
   }
 
   .nana-companion[data-state="thinking"] .nana-companion__glow {
-    filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.4));
+    filter: drop-shadow(0 0 14px rgba(129, 140, 248, 0.5));
   }
 }
