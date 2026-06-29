@@ -37,6 +37,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="components/NanaCompanion.css" />
 
   <script type="application/ld+json">
   {
@@ -414,7 +415,12 @@
 
 
 
+  <script src="components/NanaCompanionState.js"></script>
+  <script src="components/NanaCompanion.js"></script>
+
   <script>
+
+ const nanaCompanion = NanaCompanion.init();
 
  const DOMAIN_SEARCH_BASE =
 
@@ -655,6 +661,8 @@
    if (loading) {
 
      startThinkingJourney(keywords);
+
+     nanaCompanion.onThinkingStart();
 
    } else {
 
@@ -1591,6 +1599,8 @@
 
      resultsSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
+     nanaCompanion.onGenerateSuccess();
+
    } catch (err) {
 
      const message =
@@ -1604,6 +1614,8 @@
      showError(message);
 
      resultsSection.hidden = true;
+
+     nanaCompanion.onGenerateError();
 
    } finally {
 

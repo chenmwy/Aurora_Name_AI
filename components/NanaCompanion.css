@@ -1,0 +1,163 @@
+.nana-companion {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 72px;
+  height: 72px;
+  z-index: 40;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.3s ease;
+}
+
+.nana-companion[data-state="idle"] {
+  opacity: 0.92;
+}
+
+.nana-companion[data-state="thinking"],
+.nana-companion[data-state="success"],
+.nana-companion[data-state="error"] {
+  opacity: 1;
+}
+
+.nana-companion__float,
+.nana-companion__breathe,
+.nana-companion__glow {
+  width: 100%;
+  height: 100%;
+}
+
+.nana-companion__sprite {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@keyframes nana-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3.5px);
+  }
+}
+
+@keyframes nana-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes nana-success-bob {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+
+  45% {
+    transform: translateY(-5px) scale(1.01);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes nana-error-soft {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  45% {
+    opacity: 0.84;
+    transform: translateY(2px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nana-companion[data-state="idle"] .nana-companion__float {
+  animation: nana-float 5.5s ease-in-out infinite;
+}
+
+.nana-companion[data-state="idle"] .nana-companion__breathe {
+  animation: nana-breathe 4s ease-in-out infinite;
+}
+
+.nana-companion[data-state="thinking"] .nana-companion__float {
+  animation: nana-float 4.5s ease-in-out infinite;
+}
+
+.nana-companion[data-state="thinking"] .nana-companion__breathe {
+  animation: nana-breathe 3.2s ease-in-out infinite;
+}
+
+.nana-companion[data-state="thinking"] .nana-companion__glow {
+  filter: drop-shadow(0 0 12px rgba(129, 140, 248, 0.42))
+    drop-shadow(0 0 22px rgba(108, 99, 255, 0.28));
+}
+
+.nana-companion[data-state="success"] .nana-companion__float {
+  animation: none;
+  transform: translateY(0);
+}
+
+.nana-companion[data-state="success"] .nana-companion__breathe {
+  animation: nana-success-bob 0.65s ease-in-out forwards;
+}
+
+.nana-companion[data-state="error"] .nana-companion__float {
+  animation: nana-error-soft 1s ease-in-out forwards;
+}
+
+.nana-companion[data-state="error"] .nana-companion__breathe {
+  animation: none;
+  transform: scale(1);
+}
+
+@media (max-width: 480px) {
+  .nana-companion {
+    right: 12px;
+    bottom: 88px;
+    width: 58px;
+    height: 58px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .nana-companion {
+    width: 82px;
+    height: 82px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nana-companion {
+    transition: opacity 0.01ms linear;
+  }
+
+  .nana-companion__float,
+  .nana-companion__breathe {
+    animation: none !important;
+  }
+
+  .nana-companion[data-state="success"] .nana-companion__breathe,
+  .nana-companion[data-state="error"] .nana-companion__float {
+    animation: none !important;
+  }
+
+  .nana-companion[data-state="thinking"] .nana-companion__glow {
+    filter: drop-shadow(0 0 8px rgba(129, 140, 248, 0.3));
+  }
+}
