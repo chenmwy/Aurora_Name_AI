@@ -33,8 +33,8 @@
     back45Left: "assets/companion/base/nana_back45_left_v1.png",
     back: "assets/companion/base/nana_back_v1.png",
     back45Right: "assets/companion/base/nana_back45_right_v1.png",
-    right: "assets/companion/base/nana_right_v1.png",
-    front45Right: "assets/companion/base/nana_front45_right_v1.png"
+    right: "assets/companion/base/nana_left_v1.png",
+    front45Right: "assets/companion/base/nana_front45_left_v1.png"
   };
 
   const NANA_DEFAULT_DIRECTION = NANA_DIRECTIONS.front;
