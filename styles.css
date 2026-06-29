@@ -361,6 +361,31 @@ input:focus { border-color: #6c63ff; }
   border-radius: 999px;
 }
 
+.name-card__badge--ai-recommended {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 0.75rem;
+  padding: 0.22rem 0.65rem;
+  color: #ddd6fe;
+  background: rgba(108, 99, 255, 0.2);
+  border-color: rgba(129, 140, 248, 0.45);
+  box-shadow: 0 0 14px rgba(108, 99, 255, 0.14);
+}
+
+.name-card--recommended {
+  background: rgba(108, 99, 255, 0.07);
+  border-color: rgba(129, 140, 248, 0.32);
+  box-shadow:
+    0 0 0 1px rgba(108, 99, 255, 0.08),
+    0 6px 22px rgba(15, 23, 42, 0.22),
+    0 0 24px rgba(108, 99, 255, 0.07);
+}
+
+.name-card--recommended .name-card__index {
+  background: rgba(108, 99, 255, 0.28);
+  color: #c7d2fe;
+}
+
 .name-card__title {
   font-size: 1.1rem;
   color: #f1f5f9;

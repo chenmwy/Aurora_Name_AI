@@ -798,7 +798,7 @@
 
  const RECOMMENDATION_LABELS = {
 
-   aiRecommended: "AI Recommended"
+   aiRecommended: "🏆 AI Recommended"
 
  };
 
@@ -972,7 +972,11 @@
 
      const li = document.createElement("li");
 
-     li.className = "name-card";
+     li.className = recommendationLabels.length
+
+       ? "name-card name-card--recommended"
+
+       : "name-card";
 
      li.innerHTML = `
 
