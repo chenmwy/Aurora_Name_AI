@@ -31,13 +31,30 @@
   position: relative;
 }
 
+.nana-companion__sprites {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 .nana-companion__sprite {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
-  position: relative;
+}
+
+.nana-companion__sprite--layer-a,
+.nana-companion__sprite--layer-b {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 180ms ease;
   z-index: 1;
+}
+
+.nana-companion__sprite.is-active {
+  opacity: 1;
 }
 
 @keyframes nana-float {

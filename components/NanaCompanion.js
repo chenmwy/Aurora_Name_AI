@@ -1,12 +1,18 @@
 (function (global) {
-  const { NANA_STATES, NANA_DEFAULT_POSE, NANA_TIMING, isValidState, getPoseAsset } =
-    global.NanaCompanionState;
+  const {
+    NANA_STATES,
+    NANA_DEFAULT_DIRECTION,
+    NANA_DIRECTIONS,
+    isValidState,
+    getPoseAsset
+  } = global.NanaCompanionState;
 
   function NanaCompanion(rootEl) {
     this.rootEl = rootEl;
-    this.spriteEl = rootEl.querySelector(".nana-companion__sprite");
-    this.currentState = NANA_STATES.IDLE;
-    this.currentPose = NANA_DEFAULT_POSE;
+    this.spritesEl = rootEl.querySelector(".nana-companion__sprites");
+    this.presentationState = NANA_STATES.IDLE;
+    this.directionController = new global.NanaDirectionController(this.spritesEl);
+    this.behaviorEngine = new global.NanaBehaviorEngine(this, this.directionController);
     this.resetTimer = null;
   }
 
@@ -17,42 +23,47 @@
     }
   };
 
-  NanaCompanion.prototype.setPose = function (poseKey) {
-    if (!this.spriteEl) return this;
-    this.currentPose = poseKey || NANA_DEFAULT_POSE;
-    this.spriteEl.src = getPoseAsset(this.currentPose);
-    return this;
-  };
-
-  NanaCompanion.prototype.setState = function (nextState) {
+  NanaCompanion.prototype.setPresentationState = function (nextState) {
     if (!isValidState(nextState)) return this;
 
     this.clearResetTimer();
-    this.currentState = nextState;
+    this.presentationState = nextState;
     this.rootEl.dataset.state = nextState;
     return this;
   };
 
-  NanaCompanion.prototype.returnToIdle = function (delayMs) {
-    this.clearResetTimer();
-    this.resetTimer = window.setTimeout(() => {
-      this.setState(NANA_STATES.IDLE);
-    }, delayMs);
+  NanaCompanion.prototype.bindInput = function (inputEl) {
+    if (!inputEl) return this;
+
+    inputEl.addEventListener("focus", () => this.onInputNotice());
+    inputEl.addEventListener("input", () => this.onInputNotice());
+    inputEl.addEventListener("blur", () => this.onInputBlur());
+
     return this;
   };
 
+  NanaCompanion.prototype.onInputNotice = function () {
+    return this.behaviorEngine.onInputNotice();
+  };
+
+  NanaCompanion.prototype.onInputBlur = function () {
+    return this.behaviorEngine.onInputBlur();
+  };
+
+  NanaCompanion.prototype.onParticipateStart = function () {
+    return this.behaviorEngine.onParticipateStart();
+  };
+
   NanaCompanion.prototype.onThinkingStart = function () {
-    return this.setState(NANA_STATES.THINKING);
+    return this.behaviorEngine.onParticipateStart();
   };
 
   NanaCompanion.prototype.onGenerateSuccess = function () {
-    this.setState(NANA_STATES.SUCCESS);
-    return this.returnToIdle(NANA_TIMING.successMs);
+    return this.behaviorEngine.onGenerateSuccess();
   };
 
   NanaCompanion.prototype.onGenerateError = function () {
-    this.setState(NANA_STATES.ERROR);
-    return this.returnToIdle(NANA_TIMING.errorMs);
+    return this.behaviorEngine.onGenerateError();
   };
 
   NanaCompanion.create = function (options) {
@@ -61,20 +72,30 @@
     const rootEl = document.createElement("div");
     rootEl.className = "nana-companion";
     rootEl.dataset.state = NANA_STATES.IDLE;
+    rootEl.dataset.behavior = "observe";
     rootEl.setAttribute("aria-hidden", "true");
 
     rootEl.innerHTML =
       '<div class="nana-companion__float">' +
       '<div class="nana-companion__breathe">' +
       '<div class="nana-companion__glow">' +
-      '<img class="nana-companion__sprite" src="" alt="" role="presentation" aria-hidden="true">' +
-      "</div></div></div>";
+      '<div class="nana-companion__sprites">' +
+      '<img class="nana-companion__sprite nana-companion__sprite--layer-a is-active" src="" alt="" role="presentation" aria-hidden="true">' +
+      '<img class="nana-companion__sprite nana-companion__sprite--layer-b" alt="" role="presentation" aria-hidden="true">' +
+      "</div></div></div></div>";
 
     const mountTarget = options.mountTarget || document.body;
     mountTarget.appendChild(rootEl);
 
     const companion = new NanaCompanion(rootEl);
-    companion.setPose(options.pose || NANA_DEFAULT_POSE);
+    companion.directionController.setDirectionImmediate(NANA_DEFAULT_DIRECTION);
+    companion.directionController.preloadDirection(NANA_DIRECTIONS.front45Right);
+    companion.directionController.preloadDirection(NANA_DIRECTIONS.right);
+
+    if (options.inputEl) {
+      companion.bindInput(options.inputEl);
+    }
+
     return companion;
   };
 

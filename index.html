@@ -416,6 +416,8 @@
 
 
   <script src="components/NanaCompanionState.js"></script>
+  <script src="components/NanaDirectionController.js"></script>
+  <script src="components/NanaBehaviorEngine.js"></script>
   <script src="components/NanaCompanion.js"></script>
 
   <script>
@@ -443,6 +445,8 @@
  const form = document.getElementById("generator-form");
 
  const keywordsInput = document.getElementById("keywords");
+
+ nanaCompanion.bindInput(keywordsInput);
 
  const generateBtn = document.getElementById("generate-btn");
 
@@ -662,7 +666,7 @@
 
      startThinkingJourney(keywords);
 
-     nanaCompanion.onThinkingStart();
+     nanaCompanion.onParticipateStart();
 
    } else {
 
