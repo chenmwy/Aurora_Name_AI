@@ -1,0 +1,30 @@
+# 2026-07-01 (Beijing Time)
+
+## Decision
+
+Introduce the Naming Engine as the foundational specification of nameAI.
+
+## Reason
+
+The project requires a stable set of first principles that can guide every future implementation instead of relying on prompts or individual feature decisions.
+
+## Impact
+
+The Naming Engine becomes the highest-level specification of the project.
+
+Future development of:
+
+- NANA
+- Discovery
+- Prompt Design
+- Signal Network
+- Workflow
+- User Experience
+
+must remain consistent with:
+
+docs/00_core/NAMING_ENGINE.md
+
+Theory should guide implementation.
+
+Implementation should validate theory.

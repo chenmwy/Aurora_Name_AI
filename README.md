@@ -1,383 +1,162 @@
-nameAI
+# nameAI
 
-Building brands, not just generating names.
+**A Thinking Companion for Building Brands.**
 
-AI-powered Brand Intelligence Platform
+*Start with an idea. Leave with clarity.*
 
-Create memorable, brandable, and professional names with intelligent AI guidance.
+---
 
-Designed to help founders, creators, and businesses build stronger brands through AI collaboration.
+## What is nameAI?
 
-nameAI is evolving from a simple AI name generator into a trustworthy Brand Intelligence Platform, helping users build better brands through intelligent collaboration instead of one-time AI generation.
+nameAI is an AI-powered Brand Discovery platform.
 
-⸻
+Instead of starting with names, nameAI starts with understanding.
 
-🌐 Live Demo
+Rather than asking users to choose generators, configure parameters, or write prompts, nameAI begins with one simple question:
 
-https://thenameai.com
+> **Tell me your idea.**
 
-⸻
+From there, AI helps users clarify their ideas, understand their brands, and confidently explore names together.
 
-📌 Project Status
+---
 
-Item	Status
-Version	v1.0.4
-Stage	Production Ready
-Current Focus	Business Name Generator
-License	Private
+## Why?
 
-⸻
+Most naming tools focus on generating names.
 
-✨ Why nameAI?
+We believe the real challenge comes much earlier.
 
-Most AI naming tools generate names.
+People rarely struggle because they cannot generate names.
 
-nameAI is designed to help users make better branding decisions.
+They struggle because they cannot clearly express what they are trying to build.
 
-Instead of simply generating names, nameAI gradually guides users through intelligent thinking, recommendation, and future adaptive learning.
+A great name is the result of a clear understanding.
 
-Our goal is not to replace creativity.
+Understanding comes first.
 
-Our goal is to amplify it.
+Naming comes second.
 
-⸻
+---
 
-✨ Current Features
+## Current Status
 
-🎙 Podcast Name Generator
+| Item | Status |
+|------|--------|
+| Version | v1.0.4 |
+| Stage | Production Ready |
+| Current Focus | Discovery Experience |
+| License | Private |
 
-Generate ten AI-powered podcast names with:
+Current development priorities include:
 
-* Meaning
-* Inspiration
-* Overall Score
-* Memorability
-* Brandability
-* Professionalism
+- Welcome Experience
+- Discovery Engine
+- Business Name Discovery
+- NANA Interaction
 
-⸻
+---
 
-🧠 AI Thinking Experience
+## Current Features
 
-Instead of a traditional loading animation, nameAI presents an AI Thinking Journey.
+- Podcast Name Generator
+- AI Thinking Experience
+- AI Recommendation
+- Domain Availability Check
+- One-click Copy
+- Google Analytics Integration
 
-Features include:
+These features provide the foundation for the future Discovery Engine.
 
-* Dynamic thinking messages
-* Keyword-aware thinking
-* Smooth transitions
-* Adaptive-ready architecture
+---
 
-The objective is to replace waiting with collaboration.
+## Product Philosophy
 
-⸻
+Everything in nameAI follows a few simple principles.
 
-🏆 AI Recommendation
+- AI explains. Humans decide.
+- Understanding comes before naming.
+- Conversation before configuration.
+- Discovery before generation.
+- Confidence before efficiency.
 
-Generated names are automatically prioritized.
+Our goal is simple:
 
-Current capabilities:
+> **Help people understand their brand before helping them name it.**
 
-* Score-based ranking
-* 🏆 AI Recommended highlight
-* Recommendation-first presentation
+---
 
-Future versions will evolve into a complete Recommendation Framework.
+## Documentation
 
-⸻
+Project documentation is gradually being organized into a structured knowledge base.
 
-🌐 Domain Availability
+Important documents include:
 
-Quickly check whether a recommended domain is available.
+- `PROJECT_CONTEXT.md`
+- `docs/philosophy/`
+- `docs/product/`
+- `docs/development/`
 
-⸻
+Before contributing, please read **PROJECT_CONTEXT.md** first.
 
-📋 One-click Copy
+---
 
-Copy any generated name instantly.
-
-⸻
-
-📊 Analytics
-
-Google Analytics 4 tracks key interactions including:
-
-* Name generation
-* Copy actions
-* Domain lookup
-
-This data will support future Adaptive Collaboration.
-
-⸻
-
-🚀 Current Roadmap
-
-✅ Completed
-
-* Podcast Name Generator
-* AI Thinking Experience
-* AI Recommendation
-* Domain Availability Check
-* Google Analytics Integration
-
-⸻
-
-🚧 In Progress
-
-* Business Name Generator
-
-⸻
-
-📅 Planned
-
-* Brand DNA System
-* Startup Name Generator
-* Chinese Name Generator
-* YouTube Name Generator
-* Logo Generator
-* Brand Story Generator
-* Adaptive Collaboration
-* Brand Evaluation Framework
-* Recommendation Confidence
-* Sensor Architecture
-
-⸻
-
-💡 What Makes nameAI Different?
-
-Traditional AI naming tools:
-
-Generate names.
-
-↓
-
-User chooses manually.
-
-⸻
-
-nameAI:
-
-User
-
-↓
-
-AI Thinking Experience
-
-↓
-
-AI Generation
-
-↓
-
-AI Recommendation
-
-↓
-
-Future Adaptive Learning
-
-↓
-
-Better Branding Decisions
-
-Our goal is not to generate more names.
-
-Our goal is to help users choose better names.
-
-⸻
-
-💡 Product Philosophy
-
-nameAI is not designed to simply generate names.
-
-It is designed to help users build stronger brands.
-
-Core Principles:
-
-* Guide, don’t decide.
-* Evidence before recommendation.
-* Trust before automation.
-* Perception before intelligence.
-* Simple for users.
-* Complex inside the system.
-* Architecture before features.
-
-AI should collaborate with users instead of replacing them.
-
-⸻
-
-🧠 Product Architecture
-
-Current workflow:
-
-User Input
-
-↓
-
-AI Thinking Experience
-
-↓
-
-AI Name Generation
-
-↓
-
-AI Recommendation
-
-↓
-
-Domain Availability Check
-
-↓
-
-Copy / Continue
-
-Future architecture:
-
-Sensor
-
-↓
-
-Signal
-
-↓
-
-Adaptive Collaboration
-
-↓
-
-Brand Evaluation Framework
-
-↓
-
-Personalized Recommendation
-
-⸻
-
-🛠 Technology Stack
+## Technology Stack
 
 Frontend
 
-* HTML5
-* CSS3
-* Vanilla JavaScript
-
-⸻
+- HTML5
+- CSS3
+- Vanilla JavaScript
 
 Backend
 
-* Cloudflare Functions
-
-⸻
+- Cloudflare Functions
 
 Database
 
-* Cloudflare D1
-
-⸻
+- Cloudflare D1
 
 AI
 
-* DeepSeek
-
-⸻
-
-Analytics
-
-* Google Analytics 4
-
-⸻
+- DeepSeek
 
 Deployment
 
-* Cloudflare Pages
+- Cloudflare Pages
 
-⸻
+Analytics
 
-📚 Documentation
+- Google Analytics 4
 
-Core Documents
+---
 
-* README.md
-* CHANGELOG.md
-* PROJECT_STATUS.md
-* PROJECT_STRUCTURE.md
-* SETUP.md
+## Roadmap
 
-Architecture Documents
+Current priorities:
 
-* Product Manifesto
-* Product Vision
-* Intelligence Engine
-* Adaptive Collaboration
-* Sensor Architecture
+- Business Name Discovery
+- Welcome Experience
+- Discovery Engine
 
-Project Planning
+Future capabilities:
 
-* Project Gap Analysis
-* Future Architecture Notes
+- Startup Name Discovery
+- Chinese Name Discovery
+- YouTube Name Discovery
+- Brand Story
+- Mission Statement
+- Brand Voice
+- Logo Generator
 
-⸻
+---
 
-🎯 Long-term Vision
+## Website
 
-DeepSeek generates possibilities.
+https://thenameai.com
 
-nameAI evaluates possibilities.
+---
 
-The long-term goal is not to build another AI naming tool.
-
-The goal is to build a trustworthy AI Brand Intelligence Platform.
-
-Every future feature should strengthen:
-
-* User Trust
-* Product Intelligence
-* Architectural Stability
-* Long-term Brand Value
-
-⸻
-
-🧩 Development Principles
-
-Every feature should answer four questions before implementation.
-
-1. Why does this feature exist?
-2. Which user problem does it solve?
-3. Which future capability does it enable?
-4. Can it evolve without breaking the architecture?
-
-Architecture comes before features.
-
-Long-term thinking comes before short-term optimization.
-
-⸻
-
-❤️ Project Mission
-
-Building a brand is one of the most important decisions for creators, founders, and businesses.
-
-nameAI exists to make that decision easier through trustworthy AI collaboration.
-
-The future of AI is not replacing human creativity.
-
-The future of AI is helping humans make better decisions.
-
-⸻
-
-🔮 Future Direction
-
-The future of nameAI is built around four pillars:
-
-* Intelligent Generation
-* Adaptive Collaboration
-* Brand Evaluation
-* Continuous Learning
-
-Every version of the product should move closer to this vision.
-
-⸻
-
-📄 License
+## License
 
 This project is currently under active development.
 
