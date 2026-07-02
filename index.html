@@ -86,21 +86,27 @@
 
     <header class="header">
 
+      <div class="lang-switcher" role="group" data-i18n-aria-label="langSwitcher.aria">
+        <button type="button" class="lang-switcher__btn" data-lang="en" aria-pressed="false">English</button>
+        <button type="button" class="lang-switcher__btn" data-lang="zh" aria-pressed="false">中文</button>
+      </div>
+
       <div class="logo">
         <img
           class="logo-img"
           src="assets/logo.png"
+          data-i18n-alt="header.logoAlt"
           alt="nameAI — Podcast Name Generator"
           width="120"
           height="120"
         />
       </div>
 
-      <p class="eyebrow">AI Podcast Naming</p>
+      <p class="eyebrow" data-i18n="header.eyebrow">AI Podcast Naming</p>
 
-      <h1 class="title">AI Podcast Name Generator</h1>
+      <h1 class="title" data-i18n="header.title">AI Podcast Name Generator</h1>
 
-      <p class="subtitle">Generate memorable podcast names in seconds.</p>
+      <p class="subtitle" data-i18n="header.subtitle">Generate memorable podcast names in seconds.</p>
 
     </header>
 
@@ -112,7 +118,7 @@
 
         <div class="examples">
           <div class="examples-heading">
-            <p class="examples-label">Quick Example</p>
+            <p class="examples-label" data-i18n="generator.quickExample">Quick Example</p>
             <div class="keyword-tips">
               <button
                 type="button"
@@ -120,11 +126,11 @@
                 aria-expanded="false"
                 aria-controls="keyword-tips-panel"
               >
-                Keyword Tips <span class="keyword-tips__icon" aria-hidden="true">ⓘ</span>
+                <span data-i18n="generator.keywordTips">Keyword Tips</span> <span class="keyword-tips__icon" aria-hidden="true">ⓘ</span>
               </button>
               <div id="keyword-tips-panel" class="keyword-tips__tooltip" role="tooltip" hidden>
-                <p>Use 1–2 keywords separated by commas.</p>
-                <p class="keyword-tips__examples-label">Examples:</p>
+                <p data-i18n="generator.keywordTipsBody">Use 1–2 keywords separated by commas.</p>
+                <p class="keyword-tips__examples-label" data-i18n="generator.keywordTipsExamples">Examples:</p>
                 <ul class="keyword-tips__examples">
                   <li>ai, business</li>
                   <li>history, storytelling</li>
@@ -135,18 +141,18 @@
           </div>
           <div class="examples-list">
             <button type="button" class="example-chip" data-keywords="ai, business">
-              <span class="example-keywords">AI + Business</span>
+              <span class="example-keywords" data-i18n="generator.exampleKeywords">AI + Business</span>
               <span class="example-arrow" aria-hidden="true">→</span>
-              <span class="example-result">The Automation Edge</span>
+              <span class="example-result" data-i18n="generator.exampleResult">The Automation Edge</span>
             </button>
           </div>
         </div>
 
         <label class="field" for="keywords">
 
-          <span class="field-label">Podcast keywords</span>
+          <span class="field-label" data-i18n="generator.fieldLabel">Podcast keywords</span>
 
-          <span class="field-hint">e.g. tech, comedy, true crime</span>
+          <span class="field-hint" data-i18n="generator.fieldHint">e.g. tech, comedy, true crime</span>
 
           <input
 
@@ -157,6 +163,8 @@
             type="text"
 
             autocomplete="off"
+
+            data-i18n-placeholder="generator.placeholder"
 
             placeholder="tech, news"
 
@@ -170,7 +178,7 @@
 
         <button type="submit" id="generate-btn" class="btn-primary">
 
-          <span class="btn-text">Generate 10 Names</span>
+          <span class="btn-text" data-i18n="generator.btnGenerate">Generate 10 Names</span>
 
           <span class="btn-spinner" aria-hidden="true"></span>
 
@@ -192,15 +200,15 @@
 
         <div class="results-header">
 
-          <h2 class="results-title">Your podcast names</h2>
+          <h2 class="results-title" data-i18n="results.title">Your podcast names</h2>
 
-          <p class="results-meta"><span id="results-count">10</span> ideas · hover <span class="info-icon-inline" aria-hidden="true">i</span> for details</p>
+          <p class="results-meta" id="results-meta"><span id="results-count">10</span> ideas · hover <span class="info-icon-inline" aria-hidden="true">i</span> for details</p>
 
         </div>
 
         <ul id="results-list" class="results-list"></ul>
 
-        <button type="button" id="regenerate-btn" class="btn-secondary">Generate again</button>
+        <button type="button" id="regenerate-btn" class="btn-secondary" data-i18n="results.regenerate">Generate again</button>
 
       </section>
 
@@ -210,9 +218,9 @@
 
         <div class="coming-soon__header">
 
-          <h2 id="coming-soon-title" class="coming-soon__title">Coming Soon</h2>
+          <h2 id="coming-soon-title" class="coming-soon__title" data-i18n="comingSoon.title">Coming Soon</h2>
 
-          <p class="coming-soon__subtitle">Help us decide what to build next</p>
+          <p class="coming-soon__subtitle" data-i18n="comingSoon.subtitle">Help us decide what to build next</p>
 
         </div>
 
@@ -226,19 +234,19 @@
 
               <div class="coming-soon__item-info">
 
-                <span class="coming-soon__badge">Soon</span>
+                <span class="coming-soon__badge" data-i18n="comingSoon.badge">Soon</span>
 
-                <h3 class="coming-soon__item-title">Business Name Generator</h3>
+                <h3 class="coming-soon__item-title" data-i18n="comingSoon.tools.business">Business Name Generator</h3>
 
-                <p class="coming-soon__votes"><span class="coming-soon__vote-count">0</span> votes</p>
+                <p class="coming-soon__votes" data-votes-for="business"><span class="coming-soon__vote-count">0</span> votes</p>
 
               </div>
 
               <div class="coming-soon__actions">
 
-                <button type="button" class="btn-vote" data-tool-id="business">Vote</button>
+                <button type="button" class="btn-vote" data-tool-id="business" data-i18n="comingSoon.vote">Vote</button>
 
-                <button type="button" class="btn-notify" data-tool-id="business">Notify Me</button>
+                <button type="button" class="btn-notify" data-tool-id="business" data-i18n="comingSoon.notify">Notify Me</button>
 
               </div>
 
@@ -246,17 +254,17 @@
 
             <div class="coming-soon__notify-panel" hidden>
 
-              <label class="coming-soon__notify-label" for="notify-business">Email for launch updates</label>
+              <label class="coming-soon__notify-label" for="notify-business" data-i18n="comingSoon.notifyLabel">Email for launch updates</label>
 
               <div class="coming-soon__notify-row">
 
-                <input id="notify-business" class="coming-soon__notify-input" type="email" placeholder="you@email.com" autocomplete="email" />
+                <input id="notify-business" class="coming-soon__notify-input" type="email" data-i18n-placeholder="comingSoon.emailPlaceholder" placeholder="you@email.com" autocomplete="email" />
 
-                <button type="button" class="btn-notify-submit" data-tool-id="business">Subscribe</button>
+                <button type="button" class="btn-notify-submit" data-tool-id="business" data-i18n="comingSoon.subscribe">Subscribe</button>
 
               </div>
 
-              <p class="coming-soon__notify-success" role="status" hidden>You're on the list!</p>
+              <p class="coming-soon__notify-success" role="status" hidden data-i18n="comingSoon.notifySuccess">You're on the list!</p>
 
             </div>
 
@@ -270,19 +278,19 @@
 
               <div class="coming-soon__item-info">
 
-                <span class="coming-soon__badge">Soon</span>
+                <span class="coming-soon__badge" data-i18n="comingSoon.badge">Soon</span>
 
-                <h3 class="coming-soon__item-title">Startup Name Generator</h3>
+                <h3 class="coming-soon__item-title" data-i18n="comingSoon.tools.startup">Startup Name Generator</h3>
 
-                <p class="coming-soon__votes"><span class="coming-soon__vote-count">0</span> votes</p>
+                <p class="coming-soon__votes" data-votes-for="startup"><span class="coming-soon__vote-count">0</span> votes</p>
 
               </div>
 
               <div class="coming-soon__actions">
 
-                <button type="button" class="btn-vote" data-tool-id="startup">Vote</button>
+                <button type="button" class="btn-vote" data-tool-id="startup" data-i18n="comingSoon.vote">Vote</button>
 
-                <button type="button" class="btn-notify" data-tool-id="startup">Notify Me</button>
+                <button type="button" class="btn-notify" data-tool-id="startup" data-i18n="comingSoon.notify">Notify Me</button>
 
               </div>
 
@@ -290,17 +298,17 @@
 
             <div class="coming-soon__notify-panel" hidden>
 
-              <label class="coming-soon__notify-label" for="notify-startup">Email for launch updates</label>
+              <label class="coming-soon__notify-label" for="notify-startup" data-i18n="comingSoon.notifyLabel">Email for launch updates</label>
 
               <div class="coming-soon__notify-row">
 
-                <input id="notify-startup" class="coming-soon__notify-input" type="email" placeholder="you@email.com" autocomplete="email" />
+                <input id="notify-startup" class="coming-soon__notify-input" type="email" data-i18n-placeholder="comingSoon.emailPlaceholder" placeholder="you@email.com" autocomplete="email" />
 
-                <button type="button" class="btn-notify-submit" data-tool-id="startup">Subscribe</button>
+                <button type="button" class="btn-notify-submit" data-tool-id="startup" data-i18n="comingSoon.subscribe">Subscribe</button>
 
               </div>
 
-              <p class="coming-soon__notify-success" role="status" hidden>You're on the list!</p>
+              <p class="coming-soon__notify-success" role="status" hidden data-i18n="comingSoon.notifySuccess">You're on the list!</p>
 
             </div>
 
@@ -314,19 +322,19 @@
 
               <div class="coming-soon__item-info">
 
-                <span class="coming-soon__badge">Soon</span>
+                <span class="coming-soon__badge" data-i18n="comingSoon.badge">Soon</span>
 
-                <h3 class="coming-soon__item-title">Chinese Name Generator</h3>
+                <h3 class="coming-soon__item-title" data-i18n="comingSoon.tools.chinese">Chinese Name Generator</h3>
 
-                <p class="coming-soon__votes"><span class="coming-soon__vote-count">0</span> votes</p>
+                <p class="coming-soon__votes" data-votes-for="chinese"><span class="coming-soon__vote-count">0</span> votes</p>
 
               </div>
 
               <div class="coming-soon__actions">
 
-                <button type="button" class="btn-vote" data-tool-id="chinese">Vote</button>
+                <button type="button" class="btn-vote" data-tool-id="chinese" data-i18n="comingSoon.vote">Vote</button>
 
-                <button type="button" class="btn-notify" data-tool-id="chinese">Notify Me</button>
+                <button type="button" class="btn-notify" data-tool-id="chinese" data-i18n="comingSoon.notify">Notify Me</button>
 
               </div>
 
@@ -334,17 +342,17 @@
 
             <div class="coming-soon__notify-panel" hidden>
 
-              <label class="coming-soon__notify-label" for="notify-chinese">Email for launch updates</label>
+              <label class="coming-soon__notify-label" for="notify-chinese" data-i18n="comingSoon.notifyLabel">Email for launch updates</label>
 
               <div class="coming-soon__notify-row">
 
-                <input id="notify-chinese" class="coming-soon__notify-input" type="email" placeholder="you@email.com" autocomplete="email" />
+                <input id="notify-chinese" class="coming-soon__notify-input" type="email" data-i18n-placeholder="comingSoon.emailPlaceholder" placeholder="you@email.com" autocomplete="email" />
 
-                <button type="button" class="btn-notify-submit" data-tool-id="chinese">Subscribe</button>
+                <button type="button" class="btn-notify-submit" data-tool-id="chinese" data-i18n="comingSoon.subscribe">Subscribe</button>
 
               </div>
 
-              <p class="coming-soon__notify-success" role="status" hidden>You're on the list!</p>
+              <p class="coming-soon__notify-success" role="status" hidden data-i18n="comingSoon.notifySuccess">You're on the list!</p>
 
             </div>
 
@@ -358,19 +366,19 @@
 
               <div class="coming-soon__item-info">
 
-                <span class="coming-soon__badge">Soon</span>
+                <span class="coming-soon__badge" data-i18n="comingSoon.badge">Soon</span>
 
-                <h3 class="coming-soon__item-title">YouTube Name Generator</h3>
+                <h3 class="coming-soon__item-title" data-i18n="comingSoon.tools.youtube">YouTube Name Generator</h3>
 
-                <p class="coming-soon__votes"><span class="coming-soon__vote-count">0</span> votes</p>
+                <p class="coming-soon__votes" data-votes-for="youtube"><span class="coming-soon__vote-count">0</span> votes</p>
 
               </div>
 
               <div class="coming-soon__actions">
 
-                <button type="button" class="btn-vote" data-tool-id="youtube">Vote</button>
+                <button type="button" class="btn-vote" data-tool-id="youtube" data-i18n="comingSoon.vote">Vote</button>
 
-                <button type="button" class="btn-notify" data-tool-id="youtube">Notify Me</button>
+                <button type="button" class="btn-notify" data-tool-id="youtube" data-i18n="comingSoon.notify">Notify Me</button>
 
               </div>
 
@@ -378,17 +386,17 @@
 
             <div class="coming-soon__notify-panel" hidden>
 
-              <label class="coming-soon__notify-label" for="notify-youtube">Email for launch updates</label>
+              <label class="coming-soon__notify-label" for="notify-youtube" data-i18n="comingSoon.notifyLabel">Email for launch updates</label>
 
               <div class="coming-soon__notify-row">
 
-                <input id="notify-youtube" class="coming-soon__notify-input" type="email" placeholder="you@email.com" autocomplete="email" />
+                <input id="notify-youtube" class="coming-soon__notify-input" type="email" data-i18n-placeholder="comingSoon.emailPlaceholder" placeholder="you@email.com" autocomplete="email" />
 
-                <button type="button" class="btn-notify-submit" data-tool-id="youtube">Subscribe</button>
+                <button type="button" class="btn-notify-submit" data-tool-id="youtube" data-i18n="comingSoon.subscribe">Subscribe</button>
 
               </div>
 
-              <p class="coming-soon__notify-success" role="status" hidden>You're on the list!</p>
+              <p class="coming-soon__notify-success" role="status" hidden data-i18n="comingSoon.notifySuccess">You're on the list!</p>
 
             </div>
 
@@ -404,9 +412,9 @@
 
     <footer class="footer">
 
-      <p>Built for creators. Names are AI suggestions — verify trademarks and domains before you launch.</p >
+      <p data-i18n="footer.text">Built for creators. Names are AI suggestions — verify trademarks and domains before you launch.</p >
 
-      <p class="version">
+      <p class="version" data-i18n="footer.version">
         Aurora Name AI · v1.0.2 · User Experience Improvements
       </p >
 
@@ -415,12 +423,23 @@
 
 
 
+  <script src="components/i18n.js"></script>
   <script src="components/NanaCompanionState.js"></script>
   <script src="components/NanaDirectionController.js"></script>
   <script src="components/NanaBehaviorEngine.js"></script>
   <script src="components/NanaCompanion.js"></script>
 
   <script>
+
+ NameAiI18n.init();
+
+ function t(key, params) {
+
+   return NameAiI18n.t(key, params);
+
+ }
+
+ let lastResultItems = null;
 
  const nanaCompanion = NanaCompanion.init();
 
@@ -460,6 +479,8 @@
 
  const regenerateBtn = document.getElementById("regenerate-btn");
 
+ const resultsMetaEl = document.getElementById("results-meta");
+
  const supportsHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
  let tooltipDocListenerBound = false;
@@ -470,19 +491,15 @@
 
 
 
- const GENERIC_THINKING_MESSAGES = [
+ function updateResultsMeta(count) {
 
-   "Understanding your idea...",
+   if (resultsMetaEl) {
 
-   "Exploring different naming directions...",
+     resultsMetaEl.innerHTML = t("results.meta", { count });
 
-   "Balancing creativity and memorability...",
+   }
 
-   "Creating brand-worthy name ideas...",
-
-   "Preparing your recommendations..."
-
- ];
+ }
 
 
 
@@ -520,21 +537,37 @@
 
    const context = parseKeywordContext(keywords);
 
-   if (!context) return GENERIC_THINKING_MESSAGES.slice();
+   if (!context) {
+
+     return [
+
+       t("thinking.generic1"),
+
+       t("thinking.generic2"),
+
+       t("thinking.generic3"),
+
+       t("thinking.generic4"),
+
+       t("thinking.generic5")
+
+     ];
+
+   }
 
 
 
    return [
 
-     `Understanding your ${context.phrase} idea...`,
+     t("thinking.keyword1", { phrase: context.phrase }),
 
-     `Exploring memorable ${context.primary} branding...`,
+     t("thinking.keyword2", { primary: context.primary }),
 
-     "Balancing creativity and memorability...",
+     t("thinking.generic3"),
 
-     `Creating brand-worthy ${context.primary} name ideas...`,
+     t("thinking.keyword4", { primary: context.primary }),
 
-     "Preparing your recommendations..."
+     t("thinking.generic5")
 
    ];
 
@@ -658,7 +691,7 @@
 
    generateBtn.classList.toggle("is-loading", loading);
 
-   btnText.textContent = "Generate 10 Names";
+   btnText.textContent = t("generator.btnGenerate");
 
 
 
@@ -750,7 +783,7 @@
 
    if (!trimmed) {
 
-     return "Please enter at least one keyword.";
+     return t("errors.keywordEmpty");
 
    }
 
@@ -758,7 +791,7 @@
 
    if (parts.length > 2) {
 
-     return "Please use only 1–2 keywords (comma-separated).";
+     return t("errors.keywordTooMany");
 
    }
 
@@ -808,9 +841,19 @@
 
 
 
+ function displayLevel(value) {
+
+   const level = normalizeLevel(value);
+
+   return t("traits." + level.toLowerCase());
+
+ }
+
+
+
  const RECOMMENDATION_LABELS = {
 
-   aiRecommended: "🏆 AI Recommended"
+   get aiRecommended() { return t("results.aiRecommended"); }
 
  };
 
@@ -894,7 +937,7 @@
 
        <div class="name-scores__overall">
 
-         <span class="name-scores__label">Name Score</span>
+         <span class="name-scores__label">${escapeHtml(t("results.nameScore"))}</span>
 
          <span class="name-scores__value">${escapeHtml(score)}<span class="name-scores__max">/10</span></span>
 
@@ -904,25 +947,25 @@
 
          <div class="name-scores__trait">
 
-           <span class="name-scores__trait-label">Memorability</span>
+           <span class="name-scores__trait-label">${escapeHtml(t("results.memorability"))}</span>
 
-           <span class="name-scores__trait-value ${levelClass(memorability)}">${escapeHtml(memorability)}</span>
-
-         </div>
-
-         <div class="name-scores__trait">
-
-           <span class="name-scores__trait-label">Brandability</span>
-
-           <span class="name-scores__trait-value ${levelClass(brandability)}">${escapeHtml(brandability)}</span>
+           <span class="name-scores__trait-value ${levelClass(memorability)}">${escapeHtml(displayLevel(item.memorability))}</span>
 
          </div>
 
          <div class="name-scores__trait">
 
-           <span class="name-scores__trait-label">Professionalism</span>
+           <span class="name-scores__trait-label">${escapeHtml(t("results.brandability"))}</span>
 
-           <span class="name-scores__trait-value ${levelClass(professionalism)}">${escapeHtml(professionalism)}</span>
+           <span class="name-scores__trait-value ${levelClass(brandability)}">${escapeHtml(displayLevel(item.brandability))}</span>
+
+         </div>
+
+         <div class="name-scores__trait">
+
+           <span class="name-scores__trait-label">${escapeHtml(t("results.professionalism"))}</span>
+
+           <span class="name-scores__trait-value ${levelClass(professionalism)}">${escapeHtml(displayLevel(item.professionalism))}</span>
 
          </div>
 
@@ -938,15 +981,15 @@
 
  function buildTooltipHtml(item) {
 
-   const meaning = item.meaning || "A creative title crafted for your niche.";
+   const meaning = item.meaning || t("results.meaningFallback");
 
-   const inspiration = item.inspiration || "Inspired by your keywords and podcast branding trends.";
+   const inspiration = item.inspiration || t("results.inspirationFallback");
 
    return `
 
      <div class="name-info__section">
 
-       <span class="name-info__label">Meaning</span>
+       <span class="name-info__label">${escapeHtml(t("results.meaning"))}</span>
 
        <p>${escapeHtml(meaning)}</p>
 
@@ -954,7 +997,7 @@
 
      <div class="name-info__section">
 
-       <span class="name-info__label">Inspiration</span>
+       <span class="name-info__label">${escapeHtml(t("results.inspiration"))}</span>
 
        <p>${escapeHtml(inspiration)}</p>
 
@@ -969,6 +1012,8 @@
  function renderResults(items) {
 
    resultsList.innerHTML = "";
+
+   lastResultItems = items;
 
    const sortedItems = sortResultsByScore(items);
 
@@ -1014,7 +1059,7 @@
 
              class="name-info__trigger"
 
-             aria-label="Show meaning and inspiration for ${escapeAttr(item.name)}"
+             aria-label="${escapeAttr(t("results.infoAria", { name: item.name }))}"
 
              aria-expanded="false"
 
@@ -1058,11 +1103,11 @@
 
              data-name="${escapeAttr(item.name)}"
 
-             aria-label="Copy ${escapeAttr(item.name)}"
+             aria-label="${escapeAttr(t("results.copyAria", { name: item.name }))}"
 
-           >Copy</button>
+           >${escapeHtml(t("results.copy"))}</button>
 
-           <span class="copy-toast" role="status" aria-live="polite">Copied!</span>
+           <span class="copy-toast" role="status" aria-live="polite">${escapeHtml(t("results.copied"))}</span>
 
          </div>
 
@@ -1076,7 +1121,7 @@
 
            rel="noopener noreferrer"
 
-         >Check Domain</a>
+         >${escapeHtml(t("results.checkDomain"))}</a>
 
        </div>
 
@@ -1092,7 +1137,7 @@
 
    bindDomainButtons();
 
-   document.getElementById("results-count").textContent = String(items.length);
+   updateResultsMeta(items.length);
 
    resultsSection.hidden = false;
 
@@ -1502,7 +1547,7 @@
 
    } catch {
 
-     throw new Error("Unexpected response from the server. Please try again.");
+     throw new Error(t("errors.unexpectedResponse"));
 
    }
 
@@ -1510,7 +1555,7 @@
 
    if (!response.ok) {
 
-     throw new Error(data?.error || `Request failed (${response.status}).`);
+     throw new Error(data?.error || t("errors.requestFailed", { status: response.status }));
 
    }
 
@@ -1520,7 +1565,7 @@
 
    if (!names || !Array.isArray(names) || names.length === 0) {
 
-     throw new Error("No names were returned. Please try again.");
+     throw new Error(t("errors.noNames"));
 
    }
 
@@ -1611,9 +1656,9 @@
 
        err instanceof TypeError && err.message.includes("fetch")
 
-         ? "Network error. Check your connection and try again."
+         ? t("errors.network")
 
-         : err.message || "Something went wrong. Please try again.";
+         : err.message || t("errors.generic");
 
      showError(message);
 
@@ -1703,9 +1748,11 @@
 
    const votes = readJsonStorage(VOTES_STORAGE_KEY, {});
 
-   const countEl = item.querySelector(".coming-soon__vote-count");
+   const count = votes[toolId] || 0;
 
-   if (countEl) countEl.textContent = String(votes[toolId] || 0);
+   const votesEl = item.querySelector(".coming-soon__votes");
+
+   if (votesEl) votesEl.textContent = t("comingSoon.votes", { count });
 
  }
 
@@ -1721,7 +1768,7 @@
 
    if (!btn) return;
 
-   btn.textContent = "Voted";
+   btn.textContent = t("comingSoon.voted");
 
    btn.disabled = true;
 
@@ -1761,7 +1808,7 @@
 
        if (notifyBtn) {
 
-         notifyBtn.textContent = "Subscribed";
+         notifyBtn.textContent = t("comingSoon.subscribed");
 
          notifyBtn.disabled = true;
 
@@ -1895,7 +1942,7 @@
 
        if (notifyBtn) {
 
-         notifyBtn.textContent = "Subscribed";
+         notifyBtn.textContent = t("comingSoon.subscribed");
 
          notifyBtn.disabled = true;
 
@@ -1914,6 +1961,46 @@
 
 
  initComingSoon();
+
+
+
+ function refreshDynamicUi() {
+
+   document.querySelectorAll(".coming-soon__item").forEach((item) => {
+
+     updateVoteDisplay(item.dataset.toolId);
+
+     const voteBtn = item.querySelector(".btn-vote");
+
+     if (voteBtn && voteBtn.disabled) voteBtn.textContent = t("comingSoon.voted");
+
+     const notifyBtn = item.querySelector(".btn-notify");
+
+     if (notifyBtn && notifyBtn.disabled) notifyBtn.textContent = t("comingSoon.subscribed");
+
+   });
+
+   if (lastResultItems && !resultsSection.hidden) {
+
+     renderResults(lastResultItems);
+
+   }
+
+   if (!generateBtn.disabled) {
+
+     btnText.textContent = t("generator.btnGenerate");
+
+   } else if (thinkingJourneyEl && !thinkingJourneyEl.hidden) {
+
+     startThinkingJourney(keywordsInput.value.trim());
+
+   }
+
+ }
+
+
+
+ NameAiI18n.onLanguageChange(refreshDynamicUi);
 
 
 
