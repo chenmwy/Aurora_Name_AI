@@ -38,6 +38,7 @@
 
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="components/NanaCompanion.css" />
+  <link rel="stylesheet" href="components/NanaConversation.css" />
 
   <script type="application/ld+json">
   {
@@ -428,6 +429,7 @@
   <script src="components/NanaDirectionController.js"></script>
   <script src="components/NanaBehaviorEngine.js"></script>
   <script src="components/NanaCompanion.js"></script>
+  <script src="components/NanaConversation.js"></script>
 
   <script>
 
@@ -459,13 +461,25 @@
 
  }
 
+ const nanaConversation = new NanaConversation({
+   mountEl: document.querySelector(".main"),
+   nanaCompanion: nanaCompanion,
+   t: t,
+   getLang: function () {
+     return NameAiI18n.getLanguage();
+   },
+   onTrack: trackEvent
+ }).init();
+
+ NameAiI18n.onLanguageChange(function () {
+   nanaConversation.onLanguageChange();
+ });
+
 
 
  const form = document.getElementById("generator-form");
 
  const keywordsInput = document.getElementById("keywords");
-
- nanaCompanion.bindInput(keywordsInput);
 
  const generateBtn = document.getElementById("generate-btn");
 

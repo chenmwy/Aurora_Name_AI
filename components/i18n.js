@@ -97,6 +97,24 @@
         unexpectedResponse: "Unexpected response from the server. Please try again.",
         requestFailed: "Request failed ({status}).",
         noNames: "No names were returned. Please try again."
+      },
+      conversation: {
+        aria: "Chat with NANA",
+        title: "NANA",
+        subtitle: "Your naming companion",
+        greeting: "Hi — I'm NANA. What would you like to name today?",
+        placeholder: "Share your idea…",
+        inputAria: "Message to NANA",
+        send: "Send",
+        sendAria: "Send message",
+        divider: "Or generate with keywords",
+        directionFeedback: "The {label} direction feels closer to what I want.",
+        errors: {
+          network: "Network error. Check your connection and try again.",
+          generic: "Something went wrong. Please try again.",
+          unexpected: "Unexpected response from the server. Please try again.",
+          empty: "NANA didn't respond. Please try again."
+        }
       }
     },
     zh: {
@@ -194,6 +212,24 @@
         unexpectedResponse: "服务器响应异常，请稍后再试。",
         requestFailed: "请求失败（{status}）。",
         noNames: "未返回名称，请重试。"
+      },
+      conversation: {
+        aria: "与 NANA 对话",
+        title: "NANA",
+        subtitle: "你的命名伙伴",
+        greeting: "你好，我是 NANA。今天想为什么取名字？",
+        placeholder: "说说你的想法…",
+        inputAria: "发给 NANA 的消息",
+        send: "发送",
+        sendAria: "发送消息",
+        divider: "或使用关键词快速生成",
+        directionFeedback: "「{label}」这个方向更接近我想要的。",
+        errors: {
+          network: "网络异常，请检查连接后重试。",
+          generic: "出了点问题，请稍后再试。",
+          unexpected: "服务器响应异常，请稍后再试。",
+          empty: "NANA 没有回复，请重试。"
+        }
       }
     }
   };

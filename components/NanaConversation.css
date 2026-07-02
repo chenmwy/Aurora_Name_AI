@@ -1,0 +1,285 @@
+.nana-conversation {
+  margin-bottom: 2rem;
+}
+
+.nana-conversation__panel {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.nana-conversation__header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(108, 99, 255, 0.08);
+}
+
+.nana-conversation__avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6c63ff, #3b82f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.nana-conversation__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.nana-conversation__subtitle {
+  margin: 0.1rem 0 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.nana-conversation__messages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  max-height: min(420px, 50vh);
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.nana-conversation__message {
+  display: flex;
+  flex-direction: column;
+  max-width: 92%;
+  animation: nanaMsgIn 0.28s ease;
+}
+
+@keyframes nanaMsgIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nana-conversation__message--nana {
+  align-self: flex-start;
+}
+
+.nana-conversation__message--user {
+  align-self: flex-end;
+}
+
+.nana-conversation__bubble {
+  padding: 0.75rem 0.95rem;
+  border-radius: 14px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.nana-conversation__message--nana .nana-conversation__bubble {
+  background: rgba(108, 99, 255, 0.14);
+  border: 1px solid rgba(108, 99, 255, 0.22);
+  color: #e2e8f0;
+  border-bottom-left-radius: 4px;
+}
+
+.nana-conversation__message--user .nana-conversation__bubble {
+  background: rgba(59, 130, 246, 0.18);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  color: #f1f5f9;
+  border-bottom-right-radius: 4px;
+}
+
+.nana-conversation__typing {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.65rem 0.95rem;
+  align-self: flex-start;
+}
+
+.nana-conversation__typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #94a3b8;
+  animation: nanaTyping 1.2s ease-in-out infinite;
+}
+
+.nana-conversation__typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.nana-conversation__typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes nanaTyping {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+.nana-conversation__directions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+  width: 100%;
+  max-width: 100%;
+}
+
+.nana-conversation__direction {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  font-family: inherit;
+}
+
+.nana-conversation__direction:hover:not(:disabled) {
+  border-color: rgba(108, 99, 255, 0.45);
+  background: rgba(108, 99, 255, 0.1);
+}
+
+.nana-conversation__direction:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.nana-conversation__direction-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #c4b5fd;
+  margin-bottom: 0.25rem;
+}
+
+.nana-conversation__direction-desc {
+  display: block;
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  line-height: 1.45;
+  margin-bottom: 0.4rem;
+}
+
+.nana-conversation__direction-examples {
+  display: block;
+  font-size: 0.8125rem;
+  color: #cbd5e1;
+  font-style: italic;
+}
+
+.nana-conversation__form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nana-conversation__input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.9375rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.nana-conversation__input:focus {
+  border-color: #6c63ff;
+}
+
+.nana-conversation__input:disabled {
+  opacity: 0.6;
+}
+
+.nana-conversation__send {
+  flex-shrink: 0;
+  padding: 0.75rem 1.1rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6c63ff, #3b82f6);
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.nana-conversation__send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nana-conversation__error {
+  margin: 0 1rem 0.85rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fecaca;
+  font-size: 0.8125rem;
+}
+
+.nana-conversation__divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0 0 1.5rem;
+  color: #64748b;
+  font-size: 0.8125rem;
+}
+
+.nana-conversation__divider::before,
+.nana-conversation__divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 640px) {
+  .nana-conversation__messages {
+    max-height: min(360px, 45vh);
+    padding: 0.85rem;
+  }
+
+  .nana-conversation__form {
+    flex-direction: column;
+  }
+
+  .nana-conversation__send {
+    width: 100%;
+  }
+}

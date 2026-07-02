@@ -87,6 +87,14 @@
     return this.behaviorEngine.onGenerateError();
   };
 
+  NanaCompanion.prototype.onConversationThinking = function () {
+    return this.behaviorEngine.onConversationThinking();
+  };
+
+  NanaCompanion.prototype.onConversationComplete = function () {
+    return this.behaviorEngine.onConversationComplete();
+  };
+
   NanaCompanion.create = function (options) {
     options = options || {};
 

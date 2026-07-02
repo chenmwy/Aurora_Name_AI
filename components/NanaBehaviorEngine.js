@@ -208,6 +208,20 @@
     run();
   };
 
+  NanaBehaviorEngine.prototype.onConversationThinking = function () {
+    this.onParticipateStart();
+  };
+
+  NanaBehaviorEngine.prototype.onConversationComplete = function () {
+    if (
+      this.behaviorState === NBE_BEHAVIOR.THINKING ||
+      this.behaviorState === NBE_BEHAVIOR.PARTICIPATE
+    ) {
+      this.companion.setPresentationState(NANA_STATES.IDLE);
+      this.returnToContext();
+    }
+  };
+
   NanaBehaviorEngine.prototype.onGenerateError = function () {
     this.clearTimers();
     this.setBehavior(NBE_BEHAVIOR.ERROR);
