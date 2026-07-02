@@ -10,7 +10,15 @@
     };
     this.onTrack = options.onTrack || function () {};
 
-    this.phase = "understand";
+    this.phase = "understanding";
+    this.focusState = {
+      target: null,
+      theme: null,
+      coreDirection: null,
+      audience: null,
+      tone: null,
+      status: "understanding"
+    };
     this.apiMessages = [];
     this.isLoading = false;
     this.rootEl = null;
@@ -298,7 +306,8 @@
         body: JSON.stringify({
           messages: payloadMessages,
           phase: this.phase,
-          language: this.getLang()
+          language: this.getLang(),
+          focusState: this.focusState
         })
       });
 
@@ -330,12 +339,26 @@
         this.phase = data.phase;
       }
 
-      this.apiMessages.push({ role: "assistant", content: reply });
-      this.appendNanaMessage(reply, data.directions || null);
+      if (data.focusState && typeof data.focusState === "object") {
+        this.focusState = {
+          target: data.focusState.target || null,
+          theme: data.focusState.theme || null,
+          coreDirection: data.focusState.coreDirection || null,
+          audience: data.focusState.audience || null,
+          tone: data.focusState.tone || null,
+          status: data.focusState.status || "understanding"
+        };
+      }
 
-      if (data.directions && data.directions.length > 0) {
+      this.apiMessages.push({ role: "assistant", content: reply });
+      const directions =
+        data.directions && data.directions.length > 0 ? data.directions : null;
+      this.appendNanaMessage(reply, directions);
+
+      if (directions && directions.length > 0) {
         this.onTrack("nana_exploration", {
-          direction_count: data.directions.length
+          direction_count: directions.length,
+          focus_status: this.focusState.status
         });
       }
 

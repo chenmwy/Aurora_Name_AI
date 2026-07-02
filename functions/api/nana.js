@@ -1,20 +1,33 @@
+import {
+  createFocusState,
+  sanitizeFocusState,
+  applyUserMessage,
+  mergeFocusUpdates,
+  buildCurrentUnderstanding,
+  buildFocusGuidance,
+  getLatestUserMessage,
+  computeStatus,
+  statusToPhase
+} from "./nanaFocus.js";
+
 const SYSTEM_PROMPT = `You are NANA, a warm, calm naming companion for nameAI.
 
 Rules:
 - Be concise: 2–4 sentences. Ask at most ONE meaningful question per reply.
-- Do not generate name lists early. First understand what the user wants to name.
-- After enough context (usually 3+ user messages), offer 3–4 distinct naming directions (not similar names). Each direction: label, one-sentence description, 1–2 example name ideas.
-- Never mention internal systems or algorithms.
+- Do not generate name lists early unless status is ready_for_exploration.
+- Use the Current Understanding block. Never re-ask about confirmed fields.
+- When ready_for_exploration, offer 3–4 distinct naming directions (not similar names).
+- Never mention Focus State, Signal Network, status, or internal systems.
 
 Reply in valid JSON only:
-{"reply":"your message","phase":"understand|focus|exploration","directions":null}
-Set directions to an array of 3–4 objects only when offering directions:
-{"label":"...","description":"...","examples":["..."]}`;
+{"reply":"...","focusUpdates":{},"directions":[]}
+focusUpdates: optional object with any of target, theme, coreDirection, audience, tone (English values, only if newly learned).
+directions: array of 3–4 objects when exploring, each with label, description, examples (1–2 names). Otherwise [].`;
 
 const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
 const DEEPSEEK_TIMEOUT_MS = 13000;
 const MAX_HISTORY_MESSAGES = 4;
-const MAX_TOKENS = 350;
+const MAX_TOKENS = 400;
 const MAX_CONTENT_LENGTH = 1200;
 
 const FALLBACK_REPLY = {
@@ -50,13 +63,15 @@ function errorResponse(errorCode, message, status = 400) {
   return jsonResponse({ success: false, error: errorCode, message }, status);
 }
 
-function fallbackResponse(language, phase) {
+function fallbackResponse(language, focusState) {
+  const state = sanitizeFocusState(focusState);
   const reply = language === "zh" ? FALLBACK_REPLY.zh : FALLBACK_REPLY.en;
   return jsonResponse({
     success: true,
     reply,
-    phase: normalizePhase(phase),
-    directions: null,
+    phase: statusToPhase(state.status),
+    focusState: state,
+    directions: [],
     fallback: true
   });
 }
@@ -92,20 +107,14 @@ function extractJsonObject(text) {
   return null;
 }
 
-function normalizePhase(value) {
-  const v = String(value || "").trim().toLowerCase();
-  if (v === "focus" || v === "exploration") return v;
-  return "understand";
-}
-
 function normalizeLanguage(body) {
   const raw = body?.language ?? body?.lang ?? "en";
   return String(raw).toLowerCase() === "zh" ? "zh" : "en";
 }
 
 function normalizeDirections(raw) {
-  if (!Array.isArray(raw)) return null;
-  const directions = raw
+  if (!Array.isArray(raw)) return [];
+  return raw
     .map((item) => {
       if (!item || typeof item !== "object") return null;
       const label = String(item.label || "").trim();
@@ -118,8 +127,6 @@ function normalizeDirections(raw) {
     })
     .filter(Boolean)
     .slice(0, 4);
-
-  return directions.length >= 2 ? directions : null;
 }
 
 function normalizeMessages(raw) {
@@ -170,16 +177,21 @@ function sanitizeForDeepSeek(messages) {
   return cleaned;
 }
 
-function buildSystemPrompt(language, userMessageCount) {
+function buildSystemPrompt(language, focusState) {
   const langLine =
     language === "zh"
       ? "Reply in Simplified Chinese. JSON keys in English."
       : "Reply in English. JSON keys in English.";
 
-  return `${SYSTEM_PROMPT}\n${langLine}\nUser messages so far: ${userMessageCount}.`;
+  return [
+    SYSTEM_PROMPT,
+    langLine,
+    buildCurrentUnderstanding(focusState),
+    buildFocusGuidance(focusState)
+  ].join("\n\n");
 }
 
-async function callDeepSeek(apiKey, messages) {
+async function callDeepSeek(apiKey, messages, maxTokens) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), DEEPSEEK_TIMEOUT_MS);
 
@@ -196,7 +208,7 @@ async function callDeepSeek(apiKey, messages) {
       body: JSON.stringify({
         model: "deepseek-chat",
         messages,
-        max_tokens: MAX_TOKENS,
+        max_tokens: maxTokens,
         temperature: 0.7
       }),
       signal: controller.signal
@@ -227,30 +239,32 @@ async function callDeepSeek(apiKey, messages) {
   return { response, data, rawText, timedOut: false };
 }
 
-function enforcePhaseRules(parsed, userMessageCount, currentPhase) {
-  let phase = normalizePhase(parsed.phase);
+function resolveResponse(parsed, focusState) {
+  let state = sanitizeFocusState(focusState);
+
+  if (parsed.focusUpdates) {
+    state = mergeFocusUpdates(state, parsed.focusUpdates);
+  }
+
+  state.status = computeStatus(state);
+  const phase = statusToPhase(state.status);
   const reply = String(parsed.reply || "").trim();
+  let directions = normalizeDirections(parsed.directions);
 
-  if (userMessageCount < 2) {
-    phase = "understand";
-  } else if (userMessageCount < 3 && phase === "exploration") {
-    phase = currentPhase === "focus" ? "focus" : "understand";
+  if (state.status === "ready_for_exploration" && directions.length < 2) {
+    directions = [];
   }
 
-  let directions = null;
-  if (phase === "exploration") {
-    directions = normalizeDirections(parsed.directions);
-    if (!directions) {
-      phase = "focus";
-    }
+  if (state.status !== "ready_for_exploration") {
+    directions = [];
   }
 
-  return { reply, phase, directions };
+  return { reply, phase, focusState: state, directions };
 }
 
 export async function onRequestPost(context) {
   let language = "en";
-  let currentPhase = "understand";
+  let focusState = createFocusState();
 
   try {
     const { request, env } = context;
@@ -268,8 +282,8 @@ export async function onRequestPost(context) {
       return errorResponse("INVALID_REQUEST", "Invalid request body.", 400);
     }
 
-    currentPhase = normalizePhase(body.phase);
     language = normalizeLanguage(body);
+    focusState = sanitizeFocusState(body.focusState);
 
     logDebug("body", {
       keys: Object.keys(body),
@@ -277,7 +291,8 @@ export async function onRequestPost(context) {
       roles: Array.isArray(body.messages)
         ? body.messages.map((m) => (m && m.role ? m.role : "invalid"))
         : [],
-      language
+      language,
+      focusStatus: focusState.status
     });
 
     const normalizedMessages = normalizeMessages(body.messages);
@@ -296,33 +311,39 @@ export async function onRequestPost(context) {
       return errorResponse("INVALID_REQUEST", "Invalid message history.", 400);
     }
 
+    const latestUser = getLatestUserMessage(deepSeekMessages);
+    focusState = applyUserMessage(focusState, latestUser);
+
     const apiKey = env.DEEPSEEK_API_KEY;
     if (!apiKey || !String(apiKey).trim()) {
       logDebug("missing_api_key", {});
-      return fallbackResponse(language, currentPhase);
+      return fallbackResponse(language, focusState);
     }
 
-    const userMessageCount = deepSeekMessages.filter((m) => m.role === "user").length;
+    const maxTokens =
+      focusState.status === "ready_for_exploration" ? MAX_TOKENS : Math.min(MAX_TOKENS, 320);
+
     const chatMessages = [
-      { role: "system", content: buildSystemPrompt(language, userMessageCount) },
+      { role: "system", content: buildSystemPrompt(language, focusState) },
       ...deepSeekMessages
     ];
 
-    const { response, data, rawText, timedOut } = await callDeepSeek(apiKey, chatMessages);
+    const { response, data, rawText, timedOut } = await callDeepSeek(apiKey, chatMessages, maxTokens);
 
     logDebug("deepseek", {
       status: response ? response.status : null,
       timedOut: !!timedOut,
       hasData: !!data,
+      focusStatus: focusState.status,
       rawPreview: rawText ? rawText.slice(0, 300) : ""
     });
 
     if (timedOut) {
-      return fallbackResponse(language, currentPhase);
+      return fallbackResponse(language, focusState);
     }
 
     if (!response || !data || !response.ok) {
-      return fallbackResponse(language, currentPhase);
+      return fallbackResponse(language, focusState);
     }
 
     const rawContent = data?.choices?.[0]?.message?.content;
@@ -330,7 +351,7 @@ export async function onRequestPost(context) {
       logDebug("deepseek_empty_content", {
         finishReason: data?.choices?.[0]?.finish_reason || null
       });
-      return fallbackResponse(language, currentPhase);
+      return fallbackResponse(language, focusState);
     }
 
     const parsed = extractJsonObject(rawContent);
@@ -338,23 +359,24 @@ export async function onRequestPost(context) {
       logDebug("deepseek_parse_failed", {
         rawContentPreview: String(rawContent).slice(0, 300)
       });
-      return fallbackResponse(language, currentPhase);
+      return fallbackResponse(language, focusState);
     }
 
-    const result = enforcePhaseRules(parsed, userMessageCount, currentPhase);
+    const result = resolveResponse(parsed, focusState);
 
     if (!result.reply) {
-      return fallbackResponse(language, currentPhase);
+      return fallbackResponse(language, focusState);
     }
 
     return jsonResponse({
       success: true,
       reply: result.reply,
       phase: result.phase,
+      focusState: result.focusState,
       directions: result.directions
     });
   } catch (err) {
     logDebug("unhandled", { message: err?.message || "unknown" });
-    return fallbackResponse(language, currentPhase);
+    return fallbackResponse(language, focusState);
   }
 }
