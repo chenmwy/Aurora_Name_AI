@@ -113,7 +113,8 @@
           network: "Network error. Check your connection and try again.",
           generic: "Something went wrong. Please try again.",
           unexpected: "Unexpected response from the server. Please try again.",
-          empty: "NANA didn't respond. Please try again."
+          empty: "NANA didn't respond. Please try again.",
+          unavailable: "NANA is temporarily unavailable. Please try again in a moment."
         }
       }
     },
@@ -217,7 +218,7 @@
         aria: "与 NANA 对话",
         title: "NANA",
         subtitle: "你的命名伙伴",
-        greeting: "你好，我是 NANA。今天想为什么取名字？",
+        greeting: "你好，我是 NANA。今天你想给什么起名字？",
         placeholder: "说说你的想法…",
         inputAria: "发给 NANA 的消息",
         send: "发送",
@@ -228,7 +229,8 @@
           network: "网络异常，请检查连接后重试。",
           generic: "出了点问题，请稍后再试。",
           unexpected: "服务器响应异常，请稍后再试。",
-          empty: "NANA 没有回复，请重试。"
+          empty: "NANA 没有回复，请重试。",
+          unavailable: "NANA 暂时不可用，请稍后再试。"
         }
       }
     }

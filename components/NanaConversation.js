@@ -11,7 +11,7 @@
     this.onTrack = options.onTrack || function () {};
 
     this.phase = "understand";
-    this.messages = [];
+    this.apiMessages = [];
     this.isLoading = false;
     this.rootEl = null;
     this.messagesEl = null;
@@ -19,6 +19,7 @@
     this.sendBtn = null;
     this.errorEl = null;
     this.typingEl = null;
+    this.greetingBubbleEl = null;
   }
 
   NanaConversation.prototype.render = function () {
@@ -99,14 +100,32 @@
       .replace(/"/g, "&quot;");
   };
 
+  NanaConversation.prototype.hasUserMessages = function () {
+    return this.apiMessages.some(function (m) {
+      return m.role === "user";
+    });
+  };
+
   NanaConversation.prototype.showGreeting = function () {
     const greeting = this.t("conversation.greeting");
-    this.appendNanaMessage(greeting, null);
-    this.messages.push({ role: "assistant", content: greeting });
+    this.greetingBubbleEl = this.appendNanaMessage(greeting, null);
   };
 
   NanaConversation.prototype.onLanguageChange = function () {
     this.applyStaticLabels();
+    if (!this.hasUserMessages() && this.greetingBubbleEl) {
+      this.greetingBubbleEl.textContent = this.t("conversation.greeting");
+    }
+  };
+
+  NanaConversation.prototype.resolveApiError = function (data) {
+    if (data && data.error === "NANA_API_ERROR") {
+      return this.t("conversation.errors.unavailable");
+    }
+    if (data && data.error === "INVALID_REQUEST") {
+      return this.t("conversation.errors.generic");
+    }
+    return this.t("conversation.errors.generic");
   };
 
   NanaConversation.prototype.setLoading = function (loading) {
@@ -170,7 +189,7 @@
   };
 
   NanaConversation.prototype.appendNanaMessage = function (text, directions) {
-    if (!this.messagesEl) return;
+    if (!this.messagesEl) return null;
 
     const el = document.createElement("div");
     el.className = "nana-conversation__message nana-conversation__message--nana";
@@ -216,6 +235,7 @@
 
     this.messagesEl.appendChild(el);
     this.scrollToBottom();
+    return el.querySelector(".nana-conversation__bubble");
   };
 
   NanaConversation.prototype.disableDirectionButtons = function () {
@@ -253,11 +273,13 @@
 
     this.showError("");
     this.appendUserMessage(text);
-    this.messages.push({ role: "user", content: text });
+    this.apiMessages.push({ role: "user", content: text });
 
     this.onTrack("nana_message", {
       phase: this.phase,
-      message_count: this.messages.filter((m) => m.role === "user").length
+      message_count: this.apiMessages.filter(function (m) {
+        return m.role === "user";
+      }).length
     });
 
     this.setLoading(true);
@@ -267,21 +289,28 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: this.messages,
+          messages: this.apiMessages,
           phase: this.phase,
-          lang: this.getLang()
+          language: this.getLang()
         })
       });
 
-      let data;
-      try {
-        data = await response.json();
-      } catch {
+      const rawText = await response.text();
+      let data = null;
+      if (rawText) {
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          data = null;
+        }
+      }
+
+      if (!data) {
         throw new Error(this.t("conversation.errors.unexpected"));
       }
 
-      if (!response.ok) {
-        throw new Error(data?.error || this.t("conversation.errors.generic"));
+      if (!response.ok || data.success === false) {
+        throw new Error(this.resolveApiError(data));
       }
 
       const reply = String(data.reply || "").trim();
@@ -293,7 +322,7 @@
         this.phase = data.phase;
       }
 
-      this.messages.push({ role: "assistant", content: reply });
+      this.apiMessages.push({ role: "assistant", content: reply });
       this.appendNanaMessage(reply, data.directions || null);
 
       if (data.directions && data.directions.length > 0) {
@@ -312,7 +341,7 @@
           : err.message || this.t("conversation.errors.generic");
 
       this.showError(message);
-      this.messages.pop();
+      this.apiMessages.pop();
 
       const userMsgs = this.messagesEl.querySelectorAll(".nana-conversation__message--user");
       const lastUser = userMsgs[userMsgs.length - 1];

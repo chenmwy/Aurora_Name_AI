@@ -24,7 +24,7 @@ PHASE TRANSITION:
 
 When phase is exploration, your reply should briefly acknowledge what you understood, then introduce the directions naturally. Do not ask a question in exploration unless reacting to user feedback on directions.
 
-OUTPUT FORMAT — return ONLY valid JSON, no markdown:
+You must respond with valid JSON only, no markdown fences, no extra text. Use this json schema:
 {
   "reply": "NANA's message to the user",
   "phase": "understand" | "focus" | "exploration",
@@ -38,6 +38,16 @@ OUTPUT FORMAT — return ONLY valid JSON, no markdown:
 }
 
 Set directions to a non-null array only when phase is "exploration". Provide 3 or 4 directions with genuinely different interpretations.`;
+
+const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
+
+function jsonResponse(body, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
+}
+
+function errorResponse(errorCode, message, status = 502) {
+  return jsonResponse({ success: false, error: errorCode, message }, status);
+}
 
 function extractJsonObject(text) {
   const trimmed = String(text).trim();
@@ -76,6 +86,11 @@ function normalizePhase(value) {
   return "understand";
 }
 
+function normalizeLanguage(body) {
+  const raw = body?.language ?? body?.lang ?? "en";
+  return String(raw).toLowerCase() === "zh" ? "zh" : "en";
+}
+
 function normalizeDirections(raw) {
   if (!Array.isArray(raw)) return null;
   const directions = raw
@@ -95,6 +110,30 @@ function normalizeDirections(raw) {
   return directions.length >= 2 ? directions : null;
 }
 
+function normalizeMessages(raw) {
+  if (!Array.isArray(raw)) return [];
+
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const role = item.role === "assistant" ? "assistant" : item.role === "user" ? "user" : null;
+      const content = String(item.content || "").trim();
+      if (!role || !content) return null;
+      return { role, content: content.slice(0, 4000) };
+    })
+    .filter(Boolean);
+}
+
+async function parseResponseJson(response) {
+  const text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 async function callDeepSeek(apiKey, messages) {
   const response = await fetch("https://api.deepseek.com/chat/completions", {
     method: "POST",
@@ -106,20 +145,19 @@ async function callDeepSeek(apiKey, messages) {
       model: "deepseek-chat",
       messages,
       max_tokens: 2048,
-      temperature: 0.75,
-      response_format: { type: "json_object" }
+      temperature: 0.75
     })
   });
 
-  const data = await response.json();
+  const data = await parseResponseJson(response);
   return { response, data };
 }
 
 function buildLanguageInstruction(lang) {
   if (lang === "zh") {
-    return "Respond in Simplified Chinese (简体中文). JSON keys stay in English; reply and direction text in Chinese.";
+    return "Respond in Simplified Chinese (简体中文). JSON keys must stay in English; put reply and direction text in Chinese.";
   }
-  return "Respond in English. JSON keys stay in English.";
+  return "Respond in English. JSON keys must stay in English.";
 }
 
 function enforcePhaseRules(parsed, userMessageCount, currentPhase) {
@@ -150,29 +188,28 @@ export async function onRequestPost(context) {
   try {
     body = await request.json();
   } catch {
-    return new Response(JSON.stringify({ error: "Invalid request" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" }
-    });
+    return errorResponse("INVALID_REQUEST", "Invalid request body.", 400);
   }
 
-  const messages = body.messages;
-  const currentPhase = normalizePhase(body.phase);
-  const lang = body.lang === "zh" ? "zh" : "en";
+  if (!body || typeof body !== "object") {
+    return errorResponse("INVALID_REQUEST", "Invalid request body.", 400);
+  }
 
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return new Response(JSON.stringify({ error: "Messages required" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" }
-    });
+  const messages = normalizeMessages(body.messages);
+  const currentPhase = normalizePhase(body.phase);
+  const language = normalizeLanguage(body);
+
+  if (messages.length === 0) {
+    return errorResponse("INVALID_REQUEST", "Messages required.", 400);
+  }
+
+  if (!messages.some((m) => m.role === "user")) {
+    return errorResponse("INVALID_REQUEST", "At least one user message is required.", 400);
   }
 
   const apiKey = env.DEEPSEEK_API_KEY;
   if (!apiKey || !String(apiKey).trim()) {
-    return new Response(JSON.stringify({ error: "Server configuration error: API key not set" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 500);
   }
 
   const userMessageCount = messages.filter((m) => m.role === "user").length;
@@ -181,62 +218,49 @@ export async function onRequestPost(context) {
     { role: "system", content: SYSTEM_PROMPT },
     {
       role: "system",
-      content: `${buildLanguageInstruction(lang)} Current phase hint from client: ${currentPhase}. User messages so far: ${userMessageCount}.`
+      content: `${buildLanguageInstruction(language)} Current phase hint from client: ${currentPhase}. User messages so far: ${userMessageCount}.`
     },
-    ...messages.map((m) => ({
-      role: m.role === "assistant" ? "assistant" : "user",
-      content: String(m.content || "").trim()
-    }))
+    ...messages
   ];
 
   try {
     const { response, data } = await callDeepSeek(apiKey, chatMessages);
 
+    if (!data) {
+      return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 502);
+    }
+
     if (!response.ok) {
-      const errMsg = data?.error?.message || `API error (${response.status})`;
-      return new Response(JSON.stringify({ error: errMsg }), {
-        status: 502,
-        headers: { "Content-Type": "application/json" }
-      });
+      return errorResponse(
+        "NANA_API_ERROR",
+        "NANA is temporarily unavailable.",
+        response.status >= 500 ? 502 : 502
+      );
     }
 
     const rawContent = data?.choices?.[0]?.message?.content;
     if (!rawContent) {
-      return new Response(JSON.stringify({ error: "Empty response from AI" }), {
-        status: 502,
-        headers: { "Content-Type": "application/json" }
-      });
+      return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 502);
     }
 
     const parsed = extractJsonObject(rawContent);
     if (!parsed || !parsed.reply) {
-      return new Response(JSON.stringify({ error: "Could not parse NANA response" }), {
-        status: 502,
-        headers: { "Content-Type": "application/json" }
-      });
+      return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 502);
     }
 
     const result = enforcePhaseRules(parsed, userMessageCount, currentPhase);
 
     if (!result.reply) {
-      return new Response(JSON.stringify({ error: "Empty reply from NANA" }), {
-        status: 502,
-        headers: { "Content-Type": "application/json" }
-      });
+      return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 502);
     }
 
-    return new Response(
-      JSON.stringify({
-        reply: result.reply,
-        phase: result.phase,
-        directions: result.directions
-      }),
-      { headers: { "Content-Type": "application/json" } }
-    );
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message || "Request failed" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
+    return jsonResponse({
+      success: true,
+      reply: result.reply,
+      phase: result.phase,
+      directions: result.directions
     });
+  } catch {
+    return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 500);
   }
 }
