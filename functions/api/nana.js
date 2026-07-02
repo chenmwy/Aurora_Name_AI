@@ -40,9 +40,32 @@ You must respond with valid JSON only, no markdown fences, no extra text. Use th
 Set directions to a non-null array only when phase is "exploration". Provide 3 or 4 directions with genuinely different interpretations.`;
 
 const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
+const DEEPSEEK_TIMEOUT_MS = 22000;
+const MAX_HISTORY_MESSAGES = 10;
+const MAX_TOKENS = 768;
+
+function logDebug(stage, info) {
+  try {
+    console.log(`[nana] ${stage}`, JSON.stringify(info));
+  } catch {
+    console.log(`[nana] ${stage}`, String(info));
+  }
+}
 
 function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
+  try {
+    return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
+  } catch (err) {
+    logDebug("json_stringify_failed", { message: err?.message || "unknown" });
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "NANA_API_ERROR",
+        message: "NANA is temporarily unavailable."
+      }),
+      { status: 502, headers: JSON_HEADERS }
+    );
+  }
 }
 
 function errorResponse(errorCode, message, status = 502) {
@@ -124,40 +147,95 @@ function normalizeMessages(raw) {
     .filter(Boolean);
 }
 
-async function parseResponseJson(response) {
-  const text = await response.text();
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
+function trimHistory(messages) {
+  if (messages.length <= MAX_HISTORY_MESSAGES) return messages;
+  const trimmed = messages.slice(-MAX_HISTORY_MESSAGES);
+  if (trimmed.length > 0 && trimmed[0].role !== "user") {
+    return trimmed.slice(1);
+  }
+  return trimmed;
+}
+
+function sanitizeForDeepSeek(messages) {
+  const cleaned = [];
+
+  for (const msg of messages) {
+    if (cleaned.length === 0) {
+      if (msg.role !== "user") continue;
+      cleaned.push({ role: msg.role, content: msg.content });
+      continue;
+    }
+
+    const last = cleaned[cleaned.length - 1];
+    if (last.role === msg.role) {
+      last.content = `${last.content}\n${msg.content}`.slice(0, 4000);
+    } else {
+      cleaned.push({ role: msg.role, content: msg.content });
+    }
+  }
+
+  if (cleaned.length === 0 || cleaned[cleaned.length - 1].role !== "user") {
     return null;
   }
+
+  return cleaned;
+}
+
+function buildSystemPrompt(language, currentPhase, userMessageCount) {
+  const languageInstruction =
+    language === "zh"
+      ? "Respond in Simplified Chinese (简体中文). JSON keys must stay in English; put reply and direction text in Chinese."
+      : "Respond in English. JSON keys must stay in English.";
+
+  return `${SYSTEM_PROMPT}\n\n${languageInstruction}\nCurrent phase hint from client: ${currentPhase}. User messages so far: ${userMessageCount}.`;
 }
 
 async function callDeepSeek(apiKey, messages) {
-  const response = await fetch("https://api.deepseek.com/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: "deepseek-chat",
-      messages,
-      max_tokens: 2048,
-      temperature: 0.75
-    })
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEEPSEEK_TIMEOUT_MS);
 
-  const data = await parseResponseJson(response);
-  return { response, data };
-}
+  let response;
+  let rawText = "";
 
-function buildLanguageInstruction(lang) {
-  if (lang === "zh") {
-    return "Respond in Simplified Chinese (简体中文). JSON keys must stay in English; put reply and direction text in Chinese.";
+  try {
+    response = await fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages,
+        max_tokens: MAX_TOKENS,
+        temperature: 0.75
+      }),
+      signal: controller.signal
+    });
+
+    rawText = await response.text();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    return {
+      response: null,
+      data: null,
+      rawText: "",
+      timedOut: err?.name === "AbortError"
+    };
   }
-  return "Respond in English. JSON keys must stay in English.";
+
+  clearTimeout(timeoutId);
+
+  let data = null;
+  if (rawText) {
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = null;
+    }
+  }
+
+  return { response, data, rawText, timedOut: false };
 }
 
 function enforcePhaseRules(parsed, userMessageCount, currentPhase) {
@@ -182,69 +260,102 @@ function enforcePhaseRules(parsed, userMessageCount, currentPhase) {
 }
 
 export async function onRequestPost(context) {
-  const { request, env } = context;
-
-  let body;
   try {
-    body = await request.json();
-  } catch {
-    return errorResponse("INVALID_REQUEST", "Invalid request body.", 400);
-  }
+    const { request, env } = context;
 
-  if (!body || typeof body !== "object") {
-    return errorResponse("INVALID_REQUEST", "Invalid request body.", 400);
-  }
+    logDebug("request", {
+      method: request.method,
+      url: request.url
+    });
 
-  const messages = normalizeMessages(body.messages);
-  const currentPhase = normalizePhase(body.phase);
-  const language = normalizeLanguage(body);
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return errorResponse("INVALID_REQUEST", "Invalid request body.", 400);
+    }
 
-  if (messages.length === 0) {
-    return errorResponse("INVALID_REQUEST", "Messages required.", 400);
-  }
+    if (!body || typeof body !== "object") {
+      return errorResponse("INVALID_REQUEST", "Invalid request body.", 400);
+    }
 
-  if (!messages.some((m) => m.role === "user")) {
-    return errorResponse("INVALID_REQUEST", "At least one user message is required.", 400);
-  }
+    logDebug("body", {
+      keys: Object.keys(body),
+      messagesLength: Array.isArray(body.messages) ? body.messages.length : null,
+      roles: Array.isArray(body.messages)
+        ? body.messages.map((m) => (m && m.role ? m.role : "invalid"))
+        : [],
+      language: normalizeLanguage(body),
+      phase: body.phase || null
+    });
 
-  const apiKey = env.DEEPSEEK_API_KEY;
-  if (!apiKey || !String(apiKey).trim()) {
-    return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 500);
-  }
+    const normalizedMessages = normalizeMessages(body.messages);
+    const messages = trimHistory(normalizedMessages);
+    const currentPhase = normalizePhase(body.phase);
+    const language = normalizeLanguage(body);
 
-  const userMessageCount = messages.filter((m) => m.role === "user").length;
+    if (messages.length === 0) {
+      return errorResponse("INVALID_REQUEST", "Messages required.", 400);
+    }
 
-  const chatMessages = [
-    { role: "system", content: SYSTEM_PROMPT },
-    {
-      role: "system",
-      content: `${buildLanguageInstruction(language)} Current phase hint from client: ${currentPhase}. User messages so far: ${userMessageCount}.`
-    },
-    ...messages
-  ];
+    if (!messages.some((m) => m.role === "user")) {
+      return errorResponse("INVALID_REQUEST", "At least one user message is required.", 400);
+    }
 
-  try {
-    const { response, data } = await callDeepSeek(apiKey, chatMessages);
+    const deepSeekMessages = sanitizeForDeepSeek(messages);
+    if (!deepSeekMessages) {
+      return errorResponse("INVALID_REQUEST", "Invalid message history.", 400);
+    }
 
-    if (!data) {
+    const apiKey = env.DEEPSEEK_API_KEY;
+    if (!apiKey || !String(apiKey).trim()) {
+      return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 500);
+    }
+
+    const userMessageCount = deepSeekMessages.filter((m) => m.role === "user").length;
+    const chatMessages = [
+      {
+        role: "system",
+        content: buildSystemPrompt(language, currentPhase, userMessageCount)
+      },
+      ...deepSeekMessages
+    ];
+
+    const { response, data, rawText, timedOut } = await callDeepSeek(apiKey, chatMessages);
+
+    logDebug("deepseek", {
+      status: response ? response.status : null,
+      timedOut: !!timedOut,
+      hasData: !!data,
+      rawPreview: rawText ? rawText.slice(0, 500) : ""
+    });
+
+    if (timedOut) {
+      return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 504);
+    }
+
+    if (!response || !data) {
       return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 502);
     }
 
     if (!response.ok) {
-      return errorResponse(
-        "NANA_API_ERROR",
-        "NANA is temporarily unavailable.",
-        response.status >= 500 ? 502 : 502
-      );
+      return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 502);
     }
 
     const rawContent = data?.choices?.[0]?.message?.content;
     if (!rawContent) {
+      logDebug("deepseek_empty_content", {
+        finishReason: data?.choices?.[0]?.finish_reason || null,
+        rawPreview: rawText.slice(0, 500)
+      });
       return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 502);
     }
 
     const parsed = extractJsonObject(rawContent);
     if (!parsed || !parsed.reply) {
+      logDebug("deepseek_parse_failed", {
+        rawContentPreview: String(rawContent).slice(0, 500)
+      });
       return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 502);
     }
 
@@ -260,7 +371,8 @@ export async function onRequestPost(context) {
       phase: result.phase,
       directions: result.directions
     });
-  } catch {
+  } catch (err) {
+    logDebug("unhandled", { message: err?.message || "unknown" });
     return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 500);
   }
 }

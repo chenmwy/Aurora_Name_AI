@@ -118,14 +118,20 @@
     }
   };
 
-  NanaConversation.prototype.resolveApiError = function (data) {
-    if (data && data.error === "NANA_API_ERROR") {
-      return this.t("conversation.errors.unavailable");
-    }
-    if (data && data.error === "INVALID_REQUEST") {
-      return this.t("conversation.errors.generic");
-    }
-    return this.t("conversation.errors.generic");
+  NanaConversation.prototype.buildApiPayload = function () {
+    return this.apiMessages
+      .filter(function (m) {
+        return m && (m.role === "user" || m.role === "assistant");
+      })
+      .map(function (m) {
+        return {
+          role: m.role,
+          content: String(m.content || "").trim()
+        };
+      })
+      .filter(function (m) {
+        return m.content;
+      });
   };
 
   NanaConversation.prototype.setLoading = function (loading) {
@@ -285,11 +291,12 @@
     this.setLoading(true);
 
     try {
+      const payloadMessages = this.buildApiPayload();
       const response = await fetch("/api/nana", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: this.apiMessages,
+          messages: payloadMessages,
           phase: this.phase,
           language: this.getLang()
         })
@@ -297,6 +304,7 @@
 
       const rawText = await response.text();
       let data = null;
+
       if (rawText) {
         try {
           data = JSON.parse(rawText);
@@ -310,7 +318,7 @@
       }
 
       if (!response.ok || data.success === false) {
-        throw new Error(this.resolveApiError(data));
+        throw new Error(this.t("conversation.errors.unavailable"));
       }
 
       const reply = String(data.reply || "").trim();
