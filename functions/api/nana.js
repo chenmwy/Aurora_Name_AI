@@ -1,48 +1,26 @@
-const SYSTEM_PROMPT = `You are NANA, the conversational guide for nameAI — a warm, calm, thoughtful creative partner who helps people discover the right name.
+const SYSTEM_PROMPT = `You are NANA, a warm, calm naming companion for nameAI.
 
-You are NOT a marketing assistant. You sound like a creative collaborator sitting beside the user.
+Rules:
+- Be concise: 2–4 sentences. Ask at most ONE meaningful question per reply.
+- Do not generate name lists early. First understand what the user wants to name.
+- After enough context (usually 3+ user messages), offer 3–4 distinct naming directions (not similar names). Each direction: label, one-sentence description, 1–2 example name ideas.
+- Never mention internal systems or algorithms.
 
-CORE RULES (never break these):
-1. Never generate a list of finished names during understand or focus phases. Only ask and listen.
-2. Ask at most ONE meaningful question per reply. Never questionnaires. Never multiple questions.
-3. Every question must improve naming quality. If it does not, do not ask it.
-4. Be curious, never interrogative. Warm, never sales-like. Concise: normally 2–5 sentences.
-5. Never mention internal systems (Focus, Signal Network, confidence scores, phases, algorithms).
-6. Never explain how nameAI works internally.
-7. Conversation should naturally become more focused, never broader.
-
-PHASES (advance when enough understanding exists — do not rush):
-- understand: Listen. One open question at a time. Learn what they want to name and why it matters.
-- focus: Stop broad questions. Ask specific questions about feeling, audience, tone, or identity.
-- exploration: Stop asking questions. Present 3–4 distinct naming DIRECTIONS (not many similar names). Each direction is a different interpretation of their intention. Include a short label, one-sentence description, and 1–2 example name ideas that illustrate the direction (examples are hypotheses, not final recommendations).
-
-PHASE TRANSITION:
-- Stay in understand until you know WHAT they are naming and have basic context.
-- Move to focus once you can ask a specific, purposeful question (not "tell me more").
-- Move to exploration only when you could describe their intent in your own words and further questions would not clearly improve naming quality.
-- Minimum: at least 2 user messages before leaving understand; at least 3 user messages before exploration.
-
-When phase is exploration, your reply should briefly acknowledge what you understood, then introduce the directions naturally. Do not ask a question in exploration unless reacting to user feedback on directions.
-
-You must respond with valid JSON only, no markdown fences, no extra text. Use this json schema:
-{
-  "reply": "NANA's message to the user",
-  "phase": "understand" | "focus" | "exploration",
-  "directions": null or [
-    {
-      "label": "Direction name e.g. Emotional",
-      "description": "One sentence on what this direction emphasizes",
-      "examples": ["Example Name One", "Example Name Two"]
-    }
-  ]
-}
-
-Set directions to a non-null array only when phase is "exploration". Provide 3 or 4 directions with genuinely different interpretations.`;
+Reply in valid JSON only:
+{"reply":"your message","phase":"understand|focus|exploration","directions":null}
+Set directions to an array of 3–4 objects only when offering directions:
+{"label":"...","description":"...","examples":["..."]}`;
 
 const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
-const DEEPSEEK_TIMEOUT_MS = 22000;
-const MAX_HISTORY_MESSAGES = 10;
-const MAX_TOKENS = 768;
+const DEEPSEEK_TIMEOUT_MS = 13000;
+const MAX_HISTORY_MESSAGES = 4;
+const MAX_TOKENS = 350;
+const MAX_CONTENT_LENGTH = 1200;
+
+const FALLBACK_REPLY = {
+  en: "I'm having trouble thinking clearly right now. Could you try again in a moment?",
+  zh: "我现在有点反应不过来，可以稍后再试一次吗？"
+};
 
 function logDebug(stage, info) {
   try {
@@ -63,13 +41,24 @@ function jsonResponse(body, status = 200) {
         error: "NANA_API_ERROR",
         message: "NANA is temporarily unavailable."
       }),
-      { status: 502, headers: JSON_HEADERS }
+      { status: 200, headers: JSON_HEADERS }
     );
   }
 }
 
-function errorResponse(errorCode, message, status = 502) {
+function errorResponse(errorCode, message, status = 400) {
   return jsonResponse({ success: false, error: errorCode, message }, status);
+}
+
+function fallbackResponse(language, phase) {
+  const reply = language === "zh" ? FALLBACK_REPLY.zh : FALLBACK_REPLY.en;
+  return jsonResponse({
+    success: true,
+    reply,
+    phase: normalizePhase(phase),
+    directions: null,
+    fallback: true
+  });
 }
 
 function extractJsonObject(text) {
@@ -122,7 +111,7 @@ function normalizeDirections(raw) {
       const label = String(item.label || "").trim();
       const description = String(item.description || "").trim();
       const examples = Array.isArray(item.examples)
-        ? item.examples.map((e) => String(e || "").trim()).filter(Boolean).slice(0, 3)
+        ? item.examples.map((e) => String(e || "").trim()).filter(Boolean).slice(0, 2)
         : [];
       if (!label || !description) return null;
       return { label, description, examples };
@@ -142,7 +131,7 @@ function normalizeMessages(raw) {
       const role = item.role === "assistant" ? "assistant" : item.role === "user" ? "user" : null;
       const content = String(item.content || "").trim();
       if (!role || !content) return null;
-      return { role, content: content.slice(0, 4000) };
+      return { role, content: content.slice(0, MAX_CONTENT_LENGTH) };
     })
     .filter(Boolean);
 }
@@ -168,7 +157,7 @@ function sanitizeForDeepSeek(messages) {
 
     const last = cleaned[cleaned.length - 1];
     if (last.role === msg.role) {
-      last.content = `${last.content}\n${msg.content}`.slice(0, 4000);
+      last.content = `${last.content}\n${msg.content}`.slice(0, MAX_CONTENT_LENGTH);
     } else {
       cleaned.push({ role: msg.role, content: msg.content });
     }
@@ -181,13 +170,13 @@ function sanitizeForDeepSeek(messages) {
   return cleaned;
 }
 
-function buildSystemPrompt(language, currentPhase, userMessageCount) {
-  const languageInstruction =
+function buildSystemPrompt(language, userMessageCount) {
+  const langLine =
     language === "zh"
-      ? "Respond in Simplified Chinese (简体中文). JSON keys must stay in English; put reply and direction text in Chinese."
-      : "Respond in English. JSON keys must stay in English.";
+      ? "Reply in Simplified Chinese. JSON keys in English."
+      : "Reply in English. JSON keys in English.";
 
-  return `${SYSTEM_PROMPT}\n\n${languageInstruction}\nCurrent phase hint from client: ${currentPhase}. User messages so far: ${userMessageCount}.`;
+  return `${SYSTEM_PROMPT}\n${langLine}\nUser messages so far: ${userMessageCount}.`;
 }
 
 async function callDeepSeek(apiKey, messages) {
@@ -208,7 +197,7 @@ async function callDeepSeek(apiKey, messages) {
         model: "deepseek-chat",
         messages,
         max_tokens: MAX_TOKENS,
-        temperature: 0.75
+        temperature: 0.7
       }),
       signal: controller.signal
     });
@@ -260,13 +249,13 @@ function enforcePhaseRules(parsed, userMessageCount, currentPhase) {
 }
 
 export async function onRequestPost(context) {
+  let language = "en";
+  let currentPhase = "understand";
+
   try {
     const { request, env } = context;
 
-    logDebug("request", {
-      method: request.method,
-      url: request.url
-    });
+    logDebug("request", { method: request.method });
 
     let body;
     try {
@@ -279,20 +268,20 @@ export async function onRequestPost(context) {
       return errorResponse("INVALID_REQUEST", "Invalid request body.", 400);
     }
 
+    currentPhase = normalizePhase(body.phase);
+    language = normalizeLanguage(body);
+
     logDebug("body", {
       keys: Object.keys(body),
       messagesLength: Array.isArray(body.messages) ? body.messages.length : null,
       roles: Array.isArray(body.messages)
         ? body.messages.map((m) => (m && m.role ? m.role : "invalid"))
         : [],
-      language: normalizeLanguage(body),
-      phase: body.phase || null
+      language
     });
 
     const normalizedMessages = normalizeMessages(body.messages);
     const messages = trimHistory(normalizedMessages);
-    const currentPhase = normalizePhase(body.phase);
-    const language = normalizeLanguage(body);
 
     if (messages.length === 0) {
       return errorResponse("INVALID_REQUEST", "Messages required.", 400);
@@ -309,15 +298,13 @@ export async function onRequestPost(context) {
 
     const apiKey = env.DEEPSEEK_API_KEY;
     if (!apiKey || !String(apiKey).trim()) {
-      return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 500);
+      logDebug("missing_api_key", {});
+      return fallbackResponse(language, currentPhase);
     }
 
     const userMessageCount = deepSeekMessages.filter((m) => m.role === "user").length;
     const chatMessages = [
-      {
-        role: "system",
-        content: buildSystemPrompt(language, currentPhase, userMessageCount)
-      },
+      { role: "system", content: buildSystemPrompt(language, userMessageCount) },
       ...deepSeekMessages
     ];
 
@@ -327,42 +314,37 @@ export async function onRequestPost(context) {
       status: response ? response.status : null,
       timedOut: !!timedOut,
       hasData: !!data,
-      rawPreview: rawText ? rawText.slice(0, 500) : ""
+      rawPreview: rawText ? rawText.slice(0, 300) : ""
     });
 
     if (timedOut) {
-      return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 504);
+      return fallbackResponse(language, currentPhase);
     }
 
-    if (!response || !data) {
-      return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 502);
-    }
-
-    if (!response.ok) {
-      return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 502);
+    if (!response || !data || !response.ok) {
+      return fallbackResponse(language, currentPhase);
     }
 
     const rawContent = data?.choices?.[0]?.message?.content;
     if (!rawContent) {
       logDebug("deepseek_empty_content", {
-        finishReason: data?.choices?.[0]?.finish_reason || null,
-        rawPreview: rawText.slice(0, 500)
+        finishReason: data?.choices?.[0]?.finish_reason || null
       });
-      return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 502);
+      return fallbackResponse(language, currentPhase);
     }
 
     const parsed = extractJsonObject(rawContent);
     if (!parsed || !parsed.reply) {
       logDebug("deepseek_parse_failed", {
-        rawContentPreview: String(rawContent).slice(0, 500)
+        rawContentPreview: String(rawContent).slice(0, 300)
       });
-      return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 502);
+      return fallbackResponse(language, currentPhase);
     }
 
     const result = enforcePhaseRules(parsed, userMessageCount, currentPhase);
 
     if (!result.reply) {
-      return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 502);
+      return fallbackResponse(language, currentPhase);
     }
 
     return jsonResponse({
@@ -373,6 +355,6 @@ export async function onRequestPost(context) {
     });
   } catch (err) {
     logDebug("unhandled", { message: err?.message || "unknown" });
-    return errorResponse("NANA_API_ERROR", "NANA is temporarily unavailable.", 500);
+    return fallbackResponse(language, currentPhase);
   }
 }
