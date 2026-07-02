@@ -4,25 +4,29 @@ import {
   applyUserMessage,
   mergeFocusUpdates,
   buildCurrentUnderstanding,
-  buildFocusGuidance,
   getLatestUserMessage,
-  computeStatus,
   statusToPhase
 } from "./nanaFocus.js";
+import {
+  countUserMessages,
+  applyQuestionEngineStatus,
+  buildQuestionGuidance,
+  shouldExplore
+} from "./nanaQuestion.js";
 
 const SYSTEM_PROMPT = `You are NANA, a warm, calm naming companion for nameAI.
 
 Rules:
-- Be concise: 2–4 sentences. Ask at most ONE meaningful question per reply.
-- Do not generate name lists early unless status is ready_for_exploration.
-- Use the Current Understanding block. Never re-ask about confirmed fields.
-- When ready_for_exploration, offer 3–4 distinct naming directions (not similar names).
-- Never mention Focus State, Signal Network, status, or internal systems.
+- Be concise: 2–4 sentences. Exactly ONE question OR exploration directions — never both patterns at once.
+- Follow Question Engine guidance. Maximize information gain; never interview.
+- Never re-ask confirmed Focus fields. Never low-value questions (color, frequency, vague audience).
+- At exploration: 3–4 distinct directions (hypotheses), not similar names.
+- Never mention Focus State, Question Engine, Signal Network, or internal systems.
 
 Reply in valid JSON only:
 {"reply":"...","focusUpdates":{},"directions":[]}
-focusUpdates: optional object with any of target, theme, coreDirection, audience, tone (English values, only if newly learned).
-directions: array of 3–4 objects when exploring, each with label, description, examples (1–2 names). Otherwise [].`;
+focusUpdates: optional, English values, only newly learned fields.
+directions: 3–4 objects when exploring (label, description, examples). Otherwise [].`;
 
 const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
 const DEEPSEEK_TIMEOUT_MS = 13000;
@@ -177,7 +181,7 @@ function sanitizeForDeepSeek(messages) {
   return cleaned;
 }
 
-function buildSystemPrompt(language, focusState) {
+function buildSystemPrompt(language, focusState, userMessageCount) {
   const langLine =
     language === "zh"
       ? "Reply in Simplified Chinese. JSON keys in English."
@@ -187,7 +191,7 @@ function buildSystemPrompt(language, focusState) {
     SYSTEM_PROMPT,
     langLine,
     buildCurrentUnderstanding(focusState),
-    buildFocusGuidance(focusState)
+    buildQuestionGuidance(focusState, language, userMessageCount)
   ].join("\n\n");
 }
 
@@ -239,23 +243,25 @@ async function callDeepSeek(apiKey, messages, maxTokens) {
   return { response, data, rawText, timedOut: false };
 }
 
-function resolveResponse(parsed, focusState) {
+function resolveResponse(parsed, focusState, userMessageCount) {
   let state = sanitizeFocusState(focusState);
 
   if (parsed.focusUpdates) {
     state = mergeFocusUpdates(state, parsed.focusUpdates);
   }
 
-  state.status = computeStatus(state);
+  state = applyQuestionEngineStatus(state, userMessageCount);
   const phase = statusToPhase(state.status);
   const reply = String(parsed.reply || "").trim();
   let directions = normalizeDirections(parsed.directions);
 
-  if (state.status === "ready_for_exploration" && directions.length < 2) {
+  const explore = shouldExplore(state, userMessageCount);
+
+  if (explore && directions.length < 2) {
     directions = [];
   }
 
-  if (state.status !== "ready_for_exploration") {
+  if (!explore) {
     directions = [];
   }
 
@@ -314,17 +320,23 @@ export async function onRequestPost(context) {
     const latestUser = getLatestUserMessage(deepSeekMessages);
     focusState = applyUserMessage(focusState, latestUser);
 
+    const userMessageCount = countUserMessages(deepSeekMessages);
+    focusState = applyQuestionEngineStatus(focusState, userMessageCount);
+
     const apiKey = env.DEEPSEEK_API_KEY;
     if (!apiKey || !String(apiKey).trim()) {
       logDebug("missing_api_key", {});
       return fallbackResponse(language, focusState);
     }
 
-    const maxTokens =
-      focusState.status === "ready_for_exploration" ? MAX_TOKENS : Math.min(MAX_TOKENS, 320);
+    const exploring = shouldExplore(focusState, userMessageCount);
+    const maxTokens = exploring ? MAX_TOKENS : Math.min(MAX_TOKENS, 320);
 
     const chatMessages = [
-      { role: "system", content: buildSystemPrompt(language, focusState) },
+      {
+        role: "system",
+        content: buildSystemPrompt(language, focusState, userMessageCount)
+      },
       ...deepSeekMessages
     ];
 
@@ -335,6 +347,7 @@ export async function onRequestPost(context) {
       timedOut: !!timedOut,
       hasData: !!data,
       focusStatus: focusState.status,
+      userMessageCount,
       rawPreview: rawText ? rawText.slice(0, 300) : ""
     });
 
@@ -362,7 +375,7 @@ export async function onRequestPost(context) {
       return fallbackResponse(language, focusState);
     }
 
-    const result = resolveResponse(parsed, focusState);
+    const result = resolveResponse(parsed, focusState, userMessageCount);
 
     if (!result.reply) {
       return fallbackResponse(language, focusState);
