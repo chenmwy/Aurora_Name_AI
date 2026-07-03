@@ -28,13 +28,22 @@
     this.errorEl = null;
     this.typingEl = null;
     this.greetingBubbleEl = null;
+    this.bubbleStageEl = null;
+    this.nanaStageEl = null;
   }
+
+  NanaConversation.prototype.mountNanaCompanion = function () {
+    if (!this.nanaCompanion || !this.nanaCompanion.rootEl || !this.nanaStageEl) return;
+
+    this.nanaCompanion.rootEl.classList.add("nana-companion--staged");
+    this.nanaStageEl.appendChild(this.nanaCompanion.rootEl);
+  };
 
   NanaConversation.prototype.render = function () {
     if (!this.mountEl) return;
 
     this.rootEl = document.createElement("section");
-    this.rootEl.className = "nana-conversation";
+    this.rootEl.className = "nana-conversation nana-conversation-stage";
     this.rootEl.setAttribute("aria-label", this.t("conversation.aria"));
 
     this.rootEl.innerHTML =
@@ -50,6 +59,8 @@
       "</p>" +
       "</div></div>" +
       '<div class="nana-conversation__messages" role="log" aria-live="polite" aria-relevant="additions"></div>' +
+      '<div class="nana-conversation__bubble-stage" aria-hidden="true"></div>' +
+      '<div class="nana-conversation__nana-stage"></div>' +
       '<div class="nana-conversation__error" hidden role="alert"></div>' +
       '<form class="nana-conversation__form" novalidate>' +
       '<input type="text" class="nana-conversation__input" autocomplete="off" maxlength="500" />' +
@@ -60,10 +71,14 @@
     this.mountEl.insertBefore(this.rootEl, this.mountEl.firstChild);
 
     this.messagesEl = this.rootEl.querySelector(".nana-conversation__messages");
+    this.bubbleStageEl = this.rootEl.querySelector(".nana-conversation__bubble-stage");
+    this.nanaStageEl = this.rootEl.querySelector(".nana-conversation__nana-stage");
     this.inputEl = this.rootEl.querySelector(".nana-conversation__input");
     this.sendBtn = this.rootEl.querySelector(".nana-conversation__send");
     this.errorEl = this.rootEl.querySelector(".nana-conversation__error");
     this.dividerLabel = this.rootEl.querySelector(".nana-conversation__divider span");
+
+    this.mountNanaCompanion();
 
     const form = this.rootEl.querySelector(".nana-conversation__form");
     form.addEventListener("submit", (e) => {

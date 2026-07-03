@@ -10,6 +10,16 @@
   transition: opacity 0.3s ease;
 }
 
+/* Permanent home inside the Conversation Stage */
+.nana-companion--staged {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  z-index: 1;
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+
 .nana-companion[data-state="idle"] {
   opacity: 0.92;
 }
@@ -202,11 +212,16 @@
 }
 
 @media (max-width: 480px) {
-  .nana-companion {
+  .nana-companion:not(.nana-companion--staged) {
     right: 10px;
     bottom: 92px;
     width: clamp(72px, 20vw, 96px);
     height: clamp(72px, 20vw, 96px);
+  }
+
+  .nana-companion--staged {
+    width: clamp(96px, 24vw, 140px);
+    height: clamp(96px, 24vw, 140px);
   }
 }
 

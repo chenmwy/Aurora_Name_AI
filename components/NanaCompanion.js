@@ -114,7 +114,9 @@
       "</div></div></div></div>";
 
     const mountTarget = options.mountTarget || document.body;
-    mountTarget.appendChild(rootEl);
+    if (!options.deferMount) {
+      mountTarget.appendChild(rootEl);
+    }
 
     const companion = new NanaCompanion(rootEl);
     companion.directionController.setDirectionImmediate(NANA_DEFAULT_DIRECTION);
