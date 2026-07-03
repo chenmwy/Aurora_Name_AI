@@ -206,6 +206,23 @@
     });
   };
 
+  NanaConversation.prototype.bindDirectionScroll = function (directionsEl) {
+    if (!directionsEl || directionsEl.dataset.wheelBound === "1") return;
+
+    directionsEl.dataset.wheelBound = "1";
+    directionsEl.addEventListener(
+      "wheel",
+      function (event) {
+        if (directionsEl.scrollWidth <= directionsEl.clientWidth) return;
+        if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+
+        directionsEl.scrollLeft += event.deltaY;
+        event.preventDefault();
+      },
+      { passive: false }
+    );
+  };
+
   NanaConversation.prototype.appendUserMessage = function (text) {
     if (!this.messagesEl) return;
 
@@ -253,6 +270,8 @@
     el.innerHTML = html;
 
     if (directions && directions.length > 0) {
+      const directionsEl = el.querySelector(".nana-conversation__directions");
+      this.bindDirectionScroll(directionsEl);
       el.querySelectorAll(".nana-conversation__direction").forEach((btn) => {
         btn.addEventListener("click", () => {
           const idx = parseInt(btn.getAttribute("data-direction-index"), 10);

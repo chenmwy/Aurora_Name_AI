@@ -8,12 +8,21 @@
 }
 
 .nana-conversation__panel {
-  display: flex;
-  flex-direction: column;
+  --stage-height: min(720px, calc(100dvh - 240px));
+  display: grid;
+  grid-template-rows:
+    auto
+    minmax(0, 5.8fr)
+    minmax(0, 1.5fr)
+    minmax(0, 1.5fr)
+    auto
+    auto;
+  height: var(--stage-height);
+  max-height: var(--stage-height);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .nana-conversation__header {
@@ -23,6 +32,7 @@
   padding: 0.85rem 1.1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(108, 99, 255, 0.08);
+  flex-shrink: 0;
 }
 
 .nana-conversation__avatar {
@@ -58,30 +68,34 @@
   flex-direction: column;
   gap: 0.85rem;
   padding: 1rem 1.1rem;
-  max-height: min(420px, 50vh);
+  min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   scroll-behavior: smooth;
-  flex-shrink: 0;
+  overscroll-behavior: contain;
 }
 
-/* Reserved present-moment slot — empty until a future bubble milestone */
+/* Reserved present-moment slot — fixed share of stage height */
 .nana-conversation__bubble-stage {
-  flex-shrink: 0;
-  min-height: 140px;
-  max-height: 260px;
+  min-height: 0;
+  height: 100%;
   margin: 0;
   padding: 0 1.1rem;
   box-sizing: border-box;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .nana-conversation__nana-stage {
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-shrink: 0;
-  min-height: clamp(120px, 18vw, 180px);
-  padding: 0.25rem 1.1rem 0.5rem;
+  min-height: 0;
+  height: 100%;
+  padding: 0.25rem 1.1rem;
   box-sizing: border-box;
+  overflow: visible;
+  flex-shrink: 0;
 }
 
 .nana-conversation__message {
@@ -104,6 +118,11 @@
 
 .nana-conversation__message--nana {
   align-self: flex-start;
+}
+
+.nana-conversation__message--nana:has(.nana-conversation__directions) {
+  align-self: stretch;
+  max-width: 100%;
 }
 
 .nana-conversation__message--user {
@@ -172,14 +191,38 @@
 
 .nana-conversation__directions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: nowrap;
   gap: 0.65rem;
   margin-top: 0.35rem;
   width: 100%;
   max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.35rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+}
+
+.nana-conversation__directions::-webkit-scrollbar {
+  height: 6px;
+}
+
+.nana-conversation__directions::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
 }
 
 .nana-conversation__direction {
+  flex: 0 0 min(280px, calc(100% - 1.5rem));
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+  min-width: min(240px, 78vw);
+  max-width: min(300px, 88vw);
   text-align: left;
   padding: 0.85rem 1rem;
   border-radius: 12px;
@@ -272,13 +315,14 @@
 }
 
 .nana-conversation__error {
-  margin: 0 1rem 0.85rem;
+  margin: 0 1rem 0.5rem;
   padding: 0.65rem 0.85rem;
   border-radius: 8px;
   background: rgba(239, 68, 68, 0.12);
   border: 1px solid rgba(239, 68, 68, 0.35);
   color: #fecaca;
   font-size: 0.8125rem;
+  flex-shrink: 0;
 }
 
 .nana-conversation__divider {
@@ -299,20 +343,25 @@
 }
 
 @media (max-width: 640px) {
+  .nana-conversation__panel {
+    --stage-height: min(620px, calc(100dvh - 200px));
+  }
+
   .nana-conversation__messages {
-    max-height: min(360px, 45vh);
     padding: 0.85rem;
   }
 
   .nana-conversation__bubble-stage {
-    min-height: 120px;
-    max-height: 260px;
     padding: 0 0.85rem;
   }
 
   .nana-conversation__nana-stage {
-    min-height: clamp(96px, 24vw, 140px);
-    padding: 0.25rem 0.85rem 0.5rem;
+    padding: 0.25rem 0.85rem;
+  }
+
+  .nana-conversation__direction {
+    flex-basis: min(260px, calc(100vw - 3.5rem));
+    min-width: min(220px, calc(100vw - 4rem));
   }
 
   .nana-conversation__form {
