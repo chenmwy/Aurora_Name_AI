@@ -23,6 +23,11 @@
   max-height: none;
 }
 
+.nana-companion--speech {
+  width: clamp(96px, 22vw, 132px);
+  height: clamp(96px, 22vw, 132px);
+}
+
 .nana-companion[data-state="idle"] {
   opacity: 0.92;
 }
@@ -218,6 +223,11 @@
   .nana-companion--staged {
     width: clamp(88px, 24vw, 120px);
     height: clamp(88px, 24vw, 120px);
+  }
+
+  .nana-companion--speech {
+    width: clamp(84px, 20vw, 108px);
+    height: clamp(84px, 20vw, 108px);
   }
 }
 

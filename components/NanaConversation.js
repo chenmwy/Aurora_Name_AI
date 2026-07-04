@@ -30,6 +30,7 @@
     this.greetingBubbleEl = null;
     this.bubbleStageEl = null;
     this.nanaStageEl = null;
+    this.choicesEl = null;
     this.memoryBarEl = null;
     this.memoryBarLabelEl = null;
     this.nanaBubble = null;
@@ -38,7 +39,7 @@
   NanaConversation.prototype.mountNanaCompanion = function () {
     if (!this.nanaCompanion || !this.nanaCompanion.rootEl || !this.nanaStageEl) return;
 
-    this.nanaCompanion.rootEl.classList.add("nana-companion--staged");
+    this.nanaCompanion.rootEl.classList.add("nana-companion--staged", "nana-companion--speech");
     this.nanaStageEl.appendChild(this.nanaCompanion.rootEl);
   };
 
@@ -53,10 +54,11 @@
       '<div class="nana-conversation__memory-bar" aria-label="">' +
       '<span class="nana-conversation__memory-bar-label"></span>' +
       "</div>" +
-      '<div class="nana-conversation__presence">' +
+      '<div class="nana-conversation__speech-area">' +
       '<div class="nana-conversation__bubble-stage" aria-hidden="true"></div>' +
       '<div class="nana-conversation__nana-stage"></div>' +
       "</div>" +
+      '<div class="nana-conversation__choices nana-conversation__directions" hidden></div>' +
       '<div class="nana-conversation__error" hidden role="alert"></div>' +
       '<form class="nana-conversation__form" novalidate>' +
       '<input type="text" class="nana-conversation__input" autocomplete="off" maxlength="500" />' +
@@ -72,6 +74,7 @@
     this.memoryBarLabelEl = this.rootEl.querySelector(".nana-conversation__memory-bar-label");
     this.bubbleStageEl = this.rootEl.querySelector(".nana-conversation__bubble-stage");
     this.nanaStageEl = this.rootEl.querySelector(".nana-conversation__nana-stage");
+    this.choicesEl = this.rootEl.querySelector(".nana-conversation__choices");
     this.inputEl = this.rootEl.querySelector(".nana-conversation__input");
     this.sendBtn = this.rootEl.querySelector(".nana-conversation__send");
     this.errorEl = this.rootEl.querySelector(".nana-conversation__error");
@@ -81,6 +84,7 @@
 
     this.nanaBubble = new global.NanaBubble({
       stageEl: this.bubbleStageEl,
+      choicesEl: this.choicesEl,
       escapeHtml: this.escapeHtml.bind(this),
       bindDirectionScroll: this.bindDirectionScroll.bind(this),
       onDirectionSelect: this.handleDirectionSelect.bind(this)
@@ -342,9 +346,13 @@
       this.nanaBubble.disableDirections();
     }
     if (!this.rootEl) return;
-    this.rootEl.querySelectorAll(".nana-conversation__direction").forEach((btn) => {
-      btn.disabled = true;
-    });
+    this.rootEl
+      .querySelectorAll(
+        ".nana-conversation__choices .nana-conversation__direction, .nana-conversation__messages .nana-conversation__direction"
+      )
+      .forEach((btn) => {
+        btn.disabled = true;
+      });
   };
 
   NanaConversation.prototype.handleDirectionSelect = function (direction) {

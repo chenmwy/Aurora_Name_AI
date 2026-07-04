@@ -10,6 +10,7 @@
 
   function NanaBubble(options) {
     this.stageEl = options.stageEl;
+    this.choicesEl = options.choicesEl || null;
     this.escapeHtml = options.escapeHtml || function (text) {
       return String(text);
     };
@@ -19,7 +20,6 @@
     this.state = STATES.IDLE;
     this.rootEl = null;
     this.bodyEl = null;
-    this.directionsEl = null;
     this.typeTimer = null;
     this.appearTimer = null;
     this.currentDirections = null;
@@ -64,12 +64,33 @@
     this.rootEl.setAttribute("role", "status");
     this.rootEl.setAttribute("aria-live", "polite");
     this.rootEl.innerHTML =
+      '<div class="nana-bubble__shell">' +
       '<div class="nana-bubble__body"></div>' +
-      '<div class="nana-bubble__directions nana-conversation__directions" hidden></div>';
+      '<span class="nana-bubble__tail" aria-hidden="true"></span>' +
+      "</div>";
 
     this.bodyEl = this.rootEl.querySelector(".nana-bubble__body");
-    this.directionsEl = this.rootEl.querySelector(".nana-bubble__directions");
     this.stageEl.appendChild(this.rootEl);
+  };
+
+  NanaBubble.prototype.hideChoices = function () {
+    if (!this.choicesEl) return;
+
+    this.choicesEl.hidden = true;
+    this.choicesEl.classList.remove("nana-conversation__choices--visible");
+    this.choicesEl.innerHTML = "";
+  };
+
+  NanaBubble.prototype.prepareChoices = function (directions) {
+    if (!this.choicesEl) return;
+
+    this.choicesEl.classList.remove("nana-conversation__choices--visible");
+    if (directions && directions.length > 0) {
+      this.choicesEl.innerHTML = this.buildDirectionsHtml(directions);
+      this.choicesEl.hidden = true;
+    } else {
+      this.hideChoices();
+    }
   };
 
   NanaBubble.prototype.tokenizeForTyping = function (text) {
@@ -173,10 +194,10 @@
   };
 
   NanaBubble.prototype.bindDirectionButtons = function () {
-    if (!this.directionsEl || !this.currentDirections) return;
+    if (!this.choicesEl || !this.currentDirections) return;
 
-    this.bindDirectionScroll(this.directionsEl);
-    this.directionsEl.querySelectorAll(".nana-conversation__direction").forEach((btn) => {
+    this.bindDirectionScroll(this.choicesEl);
+    this.choicesEl.querySelectorAll(".nana-conversation__direction").forEach((btn) => {
       btn.addEventListener("click", () => {
         const idx = parseInt(btn.getAttribute("data-direction-index"), 10);
         const direction = this.currentDirections[idx];
@@ -186,12 +207,12 @@
   };
 
   NanaBubble.prototype.revealDirections = function () {
-    if (!this.directionsEl || !this.currentDirections || this.currentDirections.length === 0) {
+    if (!this.choicesEl || !this.currentDirections || this.currentDirections.length === 0) {
       return;
     }
 
-    this.directionsEl.hidden = false;
-    this.directionsEl.classList.add("nana-bubble__directions--visible");
+    this.choicesEl.hidden = false;
+    this.choicesEl.classList.add("nana-conversation__choices--visible");
     this.bindDirectionButtons();
   };
 
@@ -272,16 +293,7 @@
     this.currentDirections =
       directions && directions.length > 0 ? directions.slice() : null;
     this.tokens = this.tokenizeForTyping(text);
-
-    if (this.directionsEl) {
-      this.directionsEl.hidden = true;
-      this.directionsEl.classList.remove("nana-bubble__directions--visible");
-      if (this.currentDirections) {
-        this.directionsEl.innerHTML = this.buildDirectionsHtml(this.currentDirections);
-      } else {
-        this.directionsEl.innerHTML = "";
-      }
-    }
+    this.prepareChoices(this.currentDirections);
 
     if (this.bodyEl) {
       this.bodyEl.classList.remove("nana-bubble__body--typing");
@@ -300,17 +312,7 @@
     this.currentDirections =
       directions && directions.length > 0 ? directions.slice() : null;
     this.tokens = this.tokenizeForTyping(text);
-
-    if (this.directionsEl) {
-      this.directionsEl.classList.remove("nana-bubble__directions--visible");
-      if (this.currentDirections) {
-        this.directionsEl.innerHTML = this.buildDirectionsHtml(this.currentDirections);
-        this.directionsEl.hidden = false;
-      } else {
-        this.directionsEl.innerHTML = "";
-        this.directionsEl.hidden = true;
-      }
-    }
+    this.prepareChoices(this.currentDirections);
 
     if (this.bodyEl) {
       this.bodyEl.classList.remove("nana-bubble__body--typing");
@@ -326,8 +328,8 @@
   };
 
   NanaBubble.prototype.disableDirections = function () {
-    if (!this.directionsEl) return;
-    this.directionsEl.querySelectorAll(".nana-conversation__direction").forEach((btn) => {
+    if (!this.choicesEl) return;
+    this.choicesEl.querySelectorAll(".nana-conversation__direction").forEach((btn) => {
       btn.disabled = true;
     });
   };
