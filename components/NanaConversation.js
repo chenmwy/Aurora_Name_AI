@@ -32,6 +32,7 @@
     this.nanaStageEl = null;
     this.memoryBarEl = null;
     this.memoryBarLabelEl = null;
+    this.nanaBubble = null;
   }
 
   NanaConversation.prototype.mountNanaCompanion = function () {
@@ -87,6 +88,16 @@
     this.dividerLabel = this.rootEl.querySelector(".nana-conversation__divider span");
 
     this.mountNanaCompanion();
+
+    this.nanaBubble = new global.NanaBubble({
+      stageEl: this.bubbleStageEl,
+      escapeHtml: this.escapeHtml.bind(this),
+      bindDirectionScroll: this.bindDirectionScroll.bind(this),
+      onDirectionSelect: this.handleDirectionSelect.bind(this)
+    });
+    if (this.bubbleStageEl) {
+      this.bubbleStageEl.dataset.bubbleState = "idle";
+    }
 
     const form = this.rootEl.querySelector(".nana-conversation__form");
     form.addEventListener("submit", (e) => {
@@ -169,13 +180,22 @@
   NanaConversation.prototype.showGreeting = function () {
     const greeting = this.t("conversation.greeting");
     this.greetingBubbleEl = this.appendNanaMessage(greeting, null);
+    if (this.nanaBubble) {
+      this.nanaBubble.present(greeting, null);
+    }
   };
 
   NanaConversation.prototype.onLanguageChange = function () {
     this.applyStaticLabels();
     this.updateMemoryBar();
-    if (!this.hasUserMessages() && this.greetingBubbleEl) {
-      this.greetingBubbleEl.textContent = this.t("conversation.greeting");
+    if (!this.hasUserMessages() && this.nanaBubble) {
+      const greeting = this.t("conversation.greeting");
+      if (this.greetingBubbleEl) {
+        this.greetingBubbleEl.textContent = greeting;
+      }
+      if (this.nanaBubble.isReading()) {
+        this.nanaBubble.setTextImmediate(greeting);
+      }
     }
   };
 
@@ -326,7 +346,15 @@
     return el.querySelector(".nana-conversation__bubble");
   };
 
+  NanaConversation.prototype.presentNanaBubble = function (text, directions) {
+    if (!this.nanaBubble) return;
+    this.nanaBubble.present(text, directions);
+  };
+
   NanaConversation.prototype.disableDirectionButtons = function () {
+    if (this.nanaBubble) {
+      this.nanaBubble.disableDirections();
+    }
     if (!this.rootEl) return;
     this.rootEl.querySelectorAll(".nana-conversation__direction").forEach((btn) => {
       btn.disabled = true;
@@ -428,6 +456,7 @@
       const directions =
         data.directions && data.directions.length > 0 ? data.directions : null;
       this.appendNanaMessage(reply, directions);
+      this.presentNanaBubble(reply, directions);
 
       if (directions && directions.length > 0) {
         this.onTrack("nana_exploration", {

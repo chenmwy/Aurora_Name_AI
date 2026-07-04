@@ -1,0 +1,126 @@
+.nana-conversation__bubble-stage[data-bubble-state="idle"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nana-conversation__bubble-stage[data-bubble-state]:not([data-bubble-state="idle"]) {
+  background: transparent;
+  border-color: transparent;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 0.35rem 0.55rem 0.25rem;
+}
+
+.nana-bubble {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.36s ease-out,
+    transform 0.36s ease-out;
+  width: 100%;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+
+.nana-bubble--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.nana-bubble--reading {
+  transform: translateY(0);
+}
+
+.nana-bubble__body {
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: rgba(108, 99, 255, 0.14);
+  border: 1px solid rgba(108, 99, 255, 0.22);
+  color: #e2e8f0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  word-break: break-word;
+  border-bottom-left-radius: 4px;
+}
+
+.nana-bubble__body strong {
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
+.nana-bubble__body--typing::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: rgba(196, 181, 253, 0.85);
+  animation: nanaBubbleCaret 1s ease-in-out infinite;
+}
+
+@keyframes nanaBubbleCaret {
+  0%,
+  45% {
+    opacity: 1;
+  }
+
+  46%,
+  100% {
+    opacity: 0.2;
+  }
+}
+
+.nana-bubble__directions {
+  margin-top: 0.55rem;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    opacity 0.28s ease-out,
+    max-height 0.32s ease-out;
+}
+
+.nana-bubble__directions--visible {
+  max-height: 220px;
+  opacity: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+@media (max-width: 640px) {
+  .nana-conversation__bubble-stage[data-bubble-state]:not([data-bubble-state="idle"]) {
+    padding: 0.25rem 0.35rem 0.2rem;
+  }
+
+  .nana-bubble__body {
+    padding: 0.75rem 0.9rem;
+    font-size: 0.9rem;
+  }
+
+  .nana-bubble__directions--visible {
+    max-height: 200px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nana-bubble {
+    transition: opacity 0.01ms linear;
+    transform: none;
+  }
+
+  .nana-bubble__body--typing::after {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  .nana-bubble__directions {
+    transition: none;
+  }
+}
