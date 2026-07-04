@@ -1,20 +1,14 @@
 .nana-conversation__bubble-stage[data-bubble-state="idle"] {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-height: 0;
 }
 
 .nana-conversation__bubble-stage[data-bubble-state]:not([data-bubble-state="idle"]) {
-  background: transparent;
-  border-color: transparent;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
-  padding: 0.35rem 0.55rem 0.25rem;
+  overflow: visible;
+  padding: 0;
 }
 
 .nana-bubble {
@@ -47,6 +41,9 @@
   line-height: 1.55;
   word-break: break-word;
   border-bottom-left-radius: 4px;
+  max-height: min(72vh, 560px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .nana-bubble__body strong {
@@ -88,24 +85,17 @@
 }
 
 .nana-bubble__directions--visible {
-  max-height: 220px;
+  max-height: none;
   opacity: 1;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
 }
 
 @media (max-width: 640px) {
-  .nana-conversation__bubble-stage[data-bubble-state]:not([data-bubble-state="idle"]) {
-    padding: 0.25rem 0.35rem 0.2rem;
-  }
-
   .nana-bubble__body {
     padding: 0.75rem 0.9rem;
     font-size: 0.9rem;
-  }
-
-  .nana-bubble__directions--visible {
-    max-height: 200px;
+    max-height: min(68vh, 480px);
   }
 }
 

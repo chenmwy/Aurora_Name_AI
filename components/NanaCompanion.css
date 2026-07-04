@@ -20,7 +20,7 @@
   margin: 0 auto;
   width: clamp(110px, 28vw, 150px);
   height: clamp(110px, 28vw, 150px);
-  max-height: 100%;
+  max-height: none;
 }
 
 .nana-companion[data-state="idle"] {

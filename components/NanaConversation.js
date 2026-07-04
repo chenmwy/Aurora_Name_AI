@@ -50,17 +50,6 @@
     this.rootEl.setAttribute("aria-label", this.t("conversation.aria"));
 
     this.rootEl.innerHTML =
-      '<div class="nana-conversation__panel">' +
-      '<div class="nana-conversation__header">' +
-      '<div class="nana-conversation__avatar" aria-hidden="true">N</div>' +
-      "<div>" +
-      '<p class="nana-conversation__title">' +
-      this.escapeHtml(this.t("conversation.title")) +
-      "</p>" +
-      '<p class="nana-conversation__subtitle">' +
-      this.escapeHtml(this.t("conversation.subtitle")) +
-      "</p>" +
-      "</div></div>" +
       '<div class="nana-conversation__memory-bar" aria-label="">' +
       '<span class="nana-conversation__memory-bar-label"></span>' +
       "</div>" +
@@ -72,7 +61,6 @@
       '<button type="submit" class="nana-conversation__send"></button>' +
       "</form>" +
       '<div class="nana-conversation__messages nana-conversation__messages--stored" role="log" aria-live="polite" aria-relevant="additions"></div>' +
-      "</div>" +
       '<div class="nana-conversation__divider"><span></span></div>';
 
     this.mountEl.insertBefore(this.rootEl, this.mountEl.firstChild);
@@ -117,10 +105,6 @@
     if (!this.rootEl) return;
 
     this.rootEl.setAttribute("aria-label", this.t("conversation.aria"));
-    const title = this.rootEl.querySelector(".nana-conversation__title");
-    const subtitle = this.rootEl.querySelector(".nana-conversation__subtitle");
-    if (title) title.textContent = this.t("conversation.title");
-    if (subtitle) subtitle.textContent = this.t("conversation.subtitle");
     if (this.inputEl) {
       this.inputEl.placeholder = this.t("conversation.placeholder");
       this.inputEl.setAttribute("aria-label", this.t("conversation.inputAria"));
