@@ -8,9 +8,9 @@
   align-items: stretch;
   position: relative;
   gap: 0;
-  --stage-bubble-width: min(27rem, calc(100% - 5rem));
+  --stage-bubble-width: min(29rem, calc(100% - 4.75rem));
   --stage-memory-width: min(32rem, 94%);
-  --stage-speech-width: min(38rem, 100%);
+  --stage-speech-width: min(40rem, 100%);
 }
 
 .nana-conversation__memory-bar {
@@ -61,7 +61,7 @@
   border: none;
   border-radius: 0;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: flex-end;
 }
 
@@ -74,7 +74,7 @@
   width: auto;
   height: auto;
   min-height: 0;
-  margin: 0 0 0.1rem -0.75rem;
+  margin: 0 0 0.15rem -0.85rem;
   padding: 0;
   box-sizing: border-box;
   overflow: visible;
@@ -453,7 +453,7 @@
 
 @media (max-width: 640px) {
   .nana-conversation-stage {
-    --stage-bubble-width: min(24rem, calc(100% - 4.75rem));
+    --stage-bubble-width: min(26rem, calc(100% - 4.5rem));
     --stage-memory-width: min(100%, 94%);
     --stage-speech-width: min(100%, 94%);
   }
@@ -474,7 +474,7 @@
   }
 
   .nana-conversation__nana-stage {
-    margin-left: -0.55rem;
+    margin-left: -0.65rem;
     margin-bottom: 0.05rem;
   }
 

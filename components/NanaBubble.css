@@ -13,10 +13,11 @@
   transition:
     opacity 0.36s ease-out,
     transform 0.36s ease-out;
-  width: 100%;
-  max-width: var(--stage-bubble-width, min(27rem, calc(100% - 5rem)));
+  width: fit-content;
+  max-width: var(--stage-bubble-width, min(29rem, calc(100% - 4.75rem)));
+  min-width: min(8.5rem, 100%);
   margin: 0;
-  flex-shrink: 0;
+  flex-shrink: 1;
 }
 
 .nana-bubble--visible {
@@ -30,33 +31,36 @@
 
 .nana-bubble__shell {
   position: relative;
-  width: 100%;
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .nana-bubble__body {
   position: relative;
-  padding: 0.9rem 1.05rem;
-  padding-right: 1.35rem;
-  padding-bottom: 0.95rem;
-  border-radius: 16px;
-  background: rgba(108, 99, 255, 0.14);
-  border: 1px solid rgba(108, 99, 255, 0.22);
-  color: #e2e8f0;
+  display: block;
+  padding: 1rem 1.3rem;
+  padding-right: 1.45rem;
+  padding-bottom: 1.05rem;
+  border-radius: 2em;
+  background: rgba(108, 99, 255, 0.11);
+  border: 1px solid rgba(129, 140, 248, 0.2);
+  color: #e8edf7;
   font-size: 0.9375rem;
-  line-height: 1.62;
+  line-height: 1.65;
   word-break: break-word;
-  border-bottom-right-radius: 6px;
   max-height: min(72vh, 560px);
   overflow-y: auto;
   overscroll-behavior: contain;
+  box-shadow: 0 2px 18px rgba(108, 99, 255, 0.06);
 }
 
 .nana-bubble__tail {
   position: absolute;
-  right: -5px;
-  bottom: 10px;
-  width: 22px;
-  height: 18px;
+  right: -2px;
+  bottom: 11px;
+  width: 14px;
+  height: 12px;
   pointer-events: none;
   overflow: visible;
 }
@@ -64,29 +68,16 @@
 .nana-bubble__tail::before {
   content: "";
   position: absolute;
-  right: 2px;
+  right: 0;
   bottom: 0;
-  width: 15px;
-  height: 15px;
-  background: rgba(108, 99, 255, 0.14);
-  border: 1px solid rgba(108, 99, 255, 0.22);
-  border-radius: 0 0 14px 14px;
-  transform: rotate(38deg);
-  transform-origin: center;
-}
-
-.nana-bubble__tail::after {
-  content: "";
-  position: absolute;
-  right: -1px;
-  bottom: -3px;
-  width: 11px;
-  height: 11px;
-  background: rgba(108, 99, 255, 0.14);
-  border: 1px solid rgba(108, 99, 255, 0.22);
-  border-radius: 50%;
-  border-top-color: transparent;
-  border-left-color: transparent;
+  width: 12px;
+  height: 12px;
+  background: rgba(108, 99, 255, 0.11);
+  border: 1px solid rgba(129, 140, 248, 0.2);
+  border-radius: 0 0 65% 65%;
+  transform: rotate(32deg) scale(0.72, 0.62);
+  transform-origin: top left;
+  opacity: 0.92;
 }
 
 .nana-bubble__body strong {
@@ -119,31 +110,28 @@
 
 @media (max-width: 640px) {
   .nana-bubble {
-    max-width: var(--stage-bubble-width, min(24rem, calc(100% - 4.75rem)));
+    max-width: var(--stage-bubble-width, min(26rem, calc(100% - 4.5rem)));
+    min-width: min(7.5rem, 100%);
   }
 
   .nana-bubble__body {
-    padding: 0.8rem 0.95rem;
-    padding-right: 1.15rem;
+    padding: 0.9rem 1.15rem;
+    padding-right: 1.25rem;
     font-size: 0.9rem;
     max-height: min(68vh, 480px);
   }
 
   .nana-bubble__tail {
-    right: -4px;
-    bottom: 8px;
-    width: 18px;
-    height: 16px;
+    right: -1px;
+    bottom: 9px;
+    width: 12px;
+    height: 10px;
   }
 
   .nana-bubble__tail::before {
-    width: 13px;
-    height: 13px;
-  }
-
-  .nana-bubble__tail::after {
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
+    transform: rotate(32deg) scale(0.68, 0.58);
   }
 }
 
