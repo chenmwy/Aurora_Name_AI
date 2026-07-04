@@ -30,6 +30,8 @@
     this.greetingBubbleEl = null;
     this.bubbleStageEl = null;
     this.nanaStageEl = null;
+    this.memoryBarEl = null;
+    this.memoryBarLabelEl = null;
   }
 
   NanaConversation.prototype.mountNanaCompanion = function () {
@@ -58,19 +60,25 @@
       this.escapeHtml(this.t("conversation.subtitle")) +
       "</p>" +
       "</div></div>" +
-      '<div class="nana-conversation__messages" role="log" aria-live="polite" aria-relevant="additions"></div>' +
+      '<div class="nana-conversation__memory-bar" aria-label="">' +
+      '<span class="nana-conversation__memory-bar-label"></span>' +
+      "</div>" +
       '<div class="nana-conversation__bubble-stage" aria-hidden="true"></div>' +
       '<div class="nana-conversation__nana-stage"></div>' +
       '<div class="nana-conversation__error" hidden role="alert"></div>' +
       '<form class="nana-conversation__form" novalidate>' +
       '<input type="text" class="nana-conversation__input" autocomplete="off" maxlength="500" />' +
       '<button type="submit" class="nana-conversation__send"></button>' +
-      "</form></div>" +
+      "</form>" +
+      '<div class="nana-conversation__messages nana-conversation__messages--stored" role="log" aria-live="polite" aria-relevant="additions"></div>' +
+      "</div>" +
       '<div class="nana-conversation__divider"><span></span></div>';
 
     this.mountEl.insertBefore(this.rootEl, this.mountEl.firstChild);
 
     this.messagesEl = this.rootEl.querySelector(".nana-conversation__messages");
+    this.memoryBarEl = this.rootEl.querySelector(".nana-conversation__memory-bar");
+    this.memoryBarLabelEl = this.rootEl.querySelector(".nana-conversation__memory-bar-label");
     this.bubbleStageEl = this.rootEl.querySelector(".nana-conversation__bubble-stage");
     this.nanaStageEl = this.rootEl.querySelector(".nana-conversation__nana-stage");
     this.inputEl = this.rootEl.querySelector(".nana-conversation__input");
@@ -113,6 +121,35 @@
     if (this.dividerLabel) {
       this.dividerLabel.textContent = this.t("conversation.divider");
     }
+    this.updateMemoryBar();
+  };
+
+  NanaConversation.prototype.getMemoryMessageCount = function () {
+    if (!this.messagesEl) return 0;
+
+    return this.messagesEl.querySelectorAll(
+      ".nana-conversation__message--user, .nana-conversation__message--nana"
+    ).length;
+  };
+
+  NanaConversation.prototype.updateMemoryBar = function () {
+    if (!this.memoryBarLabelEl) return;
+
+    const count = this.getMemoryMessageCount();
+    if (count > 0) {
+      this.memoryBarLabelEl.textContent = this.t("conversation.memoryBarCount", {
+        count: count
+      });
+    } else {
+      this.memoryBarLabelEl.textContent = this.t("conversation.memoryBar");
+    }
+
+    if (this.memoryBarEl) {
+      this.memoryBarEl.setAttribute(
+        "aria-label",
+        this.memoryBarLabelEl.textContent
+      );
+    }
   };
 
   NanaConversation.prototype.escapeHtml = function (text) {
@@ -136,6 +173,7 @@
 
   NanaConversation.prototype.onLanguageChange = function () {
     this.applyStaticLabels();
+    this.updateMemoryBar();
     if (!this.hasUserMessages() && this.greetingBubbleEl) {
       this.greetingBubbleEl.textContent = this.t("conversation.greeting");
     }
@@ -231,6 +269,7 @@
     el.innerHTML =
       '<div class="nana-conversation__bubble">' + this.escapeHtml(text) + "</div>";
     this.messagesEl.appendChild(el);
+    this.updateMemoryBar();
     this.scrollToBottom();
   };
 
@@ -282,6 +321,7 @@
     }
 
     this.messagesEl.appendChild(el);
+    this.updateMemoryBar();
     this.scrollToBottom();
     return el.querySelector(".nana-conversation__bubble");
   };

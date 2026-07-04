@@ -18,8 +18,8 @@
   z-index: 1;
   flex-shrink: 0;
   margin: 0 auto;
-  width: clamp(96px, 100%, 160px);
-  height: clamp(96px, 100%, 160px);
+  width: clamp(110px, 28vw, 150px);
+  height: clamp(110px, 28vw, 150px);
   max-height: 100%;
 }
 
@@ -214,17 +214,19 @@
   transform: scale(1);
 }
 
+@media (max-width: 640px) {
+  .nana-companion--staged {
+    width: clamp(88px, 24vw, 120px);
+    height: clamp(88px, 24vw, 120px);
+  }
+}
+
 @media (max-width: 480px) {
   .nana-companion:not(.nana-companion--staged) {
     right: 10px;
     bottom: 92px;
     width: clamp(72px, 20vw, 96px);
     height: clamp(72px, 20vw, 96px);
-  }
-
-  .nana-companion--staged {
-    width: clamp(80px, 100%, 120px);
-    height: clamp(80px, 100%, 120px);
   }
 }
 

@@ -109,6 +109,8 @@
         sendAria: "Send message",
         divider: "Or generate with keywords",
         directionFeedback: "The {label} direction feels closer to what I want.",
+        memoryBar: "Conversation Memory",
+        memoryBarCount: "Conversation Memory ({count})",
         errors: {
           network: "Network error. Check your connection and try again.",
           generic: "Something went wrong. Please try again.",
@@ -225,6 +227,8 @@
         sendAria: "发送消息",
         divider: "或使用关键词快速生成",
         directionFeedback: "「{label}」这个方向更接近我想要的。",
+        memoryBar: "查看对话记忆",
+        memoryBarCount: "对话记忆（{count}）",
         errors: {
           network: "网络异常，请检查连接后重试。",
           generic: "出了点问题，请稍后再试。",
