@@ -24,8 +24,8 @@
 }
 
 .nana-companion--speech {
-  width: clamp(96px, 22vw, 132px);
-  height: clamp(96px, 22vw, 132px);
+  width: clamp(92px, 21vw, 128px);
+  height: clamp(92px, 21vw, 128px);
 }
 
 .nana-companion[data-state="idle"] {
@@ -226,8 +226,8 @@
   }
 
   .nana-companion--speech {
-    width: clamp(84px, 20vw, 108px);
-    height: clamp(84px, 20vw, 108px);
+    width: clamp(80px, 19vw, 104px);
+    height: clamp(80px, 19vw, 104px);
   }
 }
 

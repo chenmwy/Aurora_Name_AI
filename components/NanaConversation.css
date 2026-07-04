@@ -8,9 +8,9 @@
   align-items: stretch;
   position: relative;
   gap: 0;
-  --stage-bubble-width: min(24rem, calc(100% - 6.5rem));
+  --stage-bubble-width: min(27rem, calc(100% - 5rem));
   --stage-memory-width: min(32rem, 94%);
-  --stage-speech-width: min(36rem, 100%);
+  --stage-speech-width: min(38rem, 100%);
 }
 
 .nana-conversation__memory-bar {
@@ -40,11 +40,11 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
-  column-gap: 0.15rem;
+  column-gap: 0;
   width: var(--stage-speech-width);
   max-width: 100%;
-  min-height: clamp(112px, 20vh, 168px);
-  margin: 0 auto 0.35rem;
+  min-height: clamp(108px, 18vh, 156px);
+  margin: 0 auto 0.5rem;
   padding: 0 0.15rem;
 }
 
@@ -54,7 +54,7 @@
   height: auto;
   min-height: 0;
   margin: 0;
-  padding: 0 0.35rem 0.5rem 0;
+  padding: 0 0.25rem 0.45rem 0;
   box-sizing: border-box;
   overflow: visible;
   background: none;
@@ -74,7 +74,7 @@
   width: auto;
   height: auto;
   min-height: 0;
-  margin: 0 0 0.15rem -0.35rem;
+  margin: 0 0 0.1rem -0.75rem;
   padding: 0;
   box-sizing: border-box;
   overflow: visible;
@@ -83,7 +83,7 @@
 .nana-conversation__choices {
   width: var(--stage-speech-width);
   max-width: 100%;
-  margin: 0 auto 0.65rem;
+  margin: 0.25rem auto 1rem;
   max-height: 0;
   opacity: 0;
   overflow: hidden;
@@ -93,16 +93,93 @@
 }
 
 .nana-conversation__choices--visible {
-  max-height: 240px;
+  max-height: 320px;
   opacity: 1;
+  overflow: visible;
+}
+
+.nana-conversation__choices--visible.nana-conversation__choices--count-1,
+.nana-conversation__choices--visible.nana-conversation__choices--count-2,
+.nana-conversation__choices--visible.nana-conversation__choices--count-3,
+.nana-conversation__choices--visible.nana-conversation__choices--count-4 {
+  display: grid;
+  gap: 0.5rem;
+  overflow-x: visible;
+  overflow-y: visible;
+}
+
+.nana-conversation__choices--count-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.nana-conversation__choices--count-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.nana-conversation__choices--count-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.nana-conversation__choices--count-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.nana-conversation__choices--many {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
   overflow-x: auto;
   overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+}
+
+.nana-conversation__choices--many::-webkit-scrollbar {
+  height: 6px;
+}
+
+.nana-conversation__choices--many::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
 }
 
 .nana-conversation__choices .nana-conversation__direction {
-  flex: 0 0 min(220px, calc(100% - 0.5rem));
-  min-width: min(200px, 82%);
-  max-width: min(240px, 100%);
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.nana-conversation__choices--many .nana-conversation__direction {
+  flex: 0 0 min(200px, calc(100% - 0.5rem));
+  min-width: min(180px, 78%);
+  max-width: min(220px, 88%);
+  scroll-snap-align: start;
+}
+
+.nana-conversation__choices .nana-conversation__direction-label {
+  font-size: 0.8125rem;
+  margin-bottom: 0.15rem;
+}
+
+.nana-conversation__choices .nana-conversation__direction-desc {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  margin-bottom: 0.2rem;
+}
+
+.nana-conversation__choices .nana-conversation__direction-examples {
+  font-size: 0.75rem;
+  line-height: 1.3;
 }
 
 /* Stored history — preserved in DOM, not shown on the main stage */
@@ -303,7 +380,7 @@
 .nana-conversation__form {
   display: flex;
   gap: 0.5rem;
-  padding: 0 0 1rem;
+  padding: 0.35rem 0 1rem;
   flex-shrink: 0;
 }
 
@@ -376,7 +453,7 @@
 
 @media (max-width: 640px) {
   .nana-conversation-stage {
-    --stage-bubble-width: min(22rem, calc(100% - 5.5rem));
+    --stage-bubble-width: min(24rem, calc(100% - 4.75rem));
     --stage-memory-width: min(100%, 94%);
     --stage-speech-width: min(100%, 94%);
   }
@@ -392,26 +469,35 @@
   }
 
   .nana-conversation__speech-area {
-    min-height: clamp(100px, 18vh, 148px);
-    column-gap: 0.05rem;
+    min-height: clamp(96px, 16vh, 136px);
+    margin-bottom: 0.4rem;
   }
 
   .nana-conversation__nana-stage {
-    margin-left: -0.25rem;
-    margin-bottom: 0.1rem;
+    margin-left: -0.55rem;
+    margin-bottom: 0.05rem;
+  }
+
+  .nana-conversation__choices {
+    margin-bottom: 0.85rem;
+  }
+
+  .nana-conversation__choices--count-3,
+  .nana-conversation__choices--count-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .nana-conversation__choices--visible {
-    max-height: 220px;
+    max-height: 360px;
   }
 
   .nana-conversation__choices .nana-conversation__direction {
-    flex-basis: min(200px, calc(100% - 0.5rem));
-    min-width: min(180px, 88%);
+    padding: 0.6rem 0.65rem;
   }
 
   .nana-conversation__form {
     flex-direction: column;
+    padding-top: 0.25rem;
   }
 
   .nana-conversation__send {

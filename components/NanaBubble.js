@@ -78,7 +78,33 @@
 
     this.choicesEl.hidden = true;
     this.choicesEl.classList.remove("nana-conversation__choices--visible");
+    this.choicesEl.classList.remove(
+      "nana-conversation__choices--many",
+      "nana-conversation__choices--count-1",
+      "nana-conversation__choices--count-2",
+      "nana-conversation__choices--count-3",
+      "nana-conversation__choices--count-4"
+    );
     this.choicesEl.innerHTML = "";
+  };
+
+  NanaBubble.prototype.applyChoicesLayout = function () {
+    if (!this.choicesEl) return;
+
+    const count = this.currentDirections ? this.currentDirections.length : 0;
+    this.choicesEl.classList.remove(
+      "nana-conversation__choices--many",
+      "nana-conversation__choices--count-1",
+      "nana-conversation__choices--count-2",
+      "nana-conversation__choices--count-3",
+      "nana-conversation__choices--count-4"
+    );
+
+    if (count > 4) {
+      this.choicesEl.classList.add("nana-conversation__choices--many");
+    } else if (count > 0) {
+      this.choicesEl.classList.add("nana-conversation__choices--count-" + count);
+    }
   };
 
   NanaBubble.prototype.prepareChoices = function (directions) {
@@ -196,7 +222,10 @@
   NanaBubble.prototype.bindDirectionButtons = function () {
     if (!this.choicesEl || !this.currentDirections) return;
 
-    this.bindDirectionScroll(this.choicesEl);
+    if (this.currentDirections.length > 4) {
+      this.bindDirectionScroll(this.choicesEl);
+    }
+
     this.choicesEl.querySelectorAll(".nana-conversation__direction").forEach((btn) => {
       btn.addEventListener("click", () => {
         const idx = parseInt(btn.getAttribute("data-direction-index"), 10);
@@ -212,6 +241,7 @@
     }
 
     this.choicesEl.hidden = false;
+    this.applyChoicesLayout();
     this.choicesEl.classList.add("nana-conversation__choices--visible");
     this.bindDirectionButtons();
   };
