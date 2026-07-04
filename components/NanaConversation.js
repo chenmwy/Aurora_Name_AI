@@ -53,8 +53,10 @@
       '<div class="nana-conversation__memory-bar" aria-label="">' +
       '<span class="nana-conversation__memory-bar-label"></span>' +
       "</div>" +
+      '<div class="nana-conversation__presence">' +
       '<div class="nana-conversation__bubble-stage" aria-hidden="true"></div>' +
       '<div class="nana-conversation__nana-stage"></div>' +
+      "</div>" +
       '<div class="nana-conversation__error" hidden role="alert"></div>' +
       '<form class="nana-conversation__form" novalidate>' +
       '<input type="text" class="nana-conversation__input" autocomplete="off" maxlength="500" />' +
