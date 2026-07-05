@@ -19,7 +19,7 @@
   justify-content: center;
   width: var(--stage-memory-width);
   min-height: 2.5rem;
-  margin: 0.35rem auto 1.15rem;
+  margin: 0.35rem auto 0.6rem;
   padding: 0.6rem 1.35rem;
   border-radius: 12px;
   border: 1px solid rgba(129, 140, 248, 0.14);
@@ -35,17 +35,17 @@
   letter-spacing: 0.015em;
 }
 
-/* Speech area — Bubble and NANA as one connected unit */
+/* Speech area — Bubble high, NANA lower-right (speaking geometry) */
 .nana-conversation__speech-area {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
+  align-items: stretch;
   column-gap: 0;
   width: var(--stage-speech-width);
   max-width: 100%;
-  min-height: clamp(108px, 18vh, 156px);
-  margin: 0 auto 0.5rem;
-  padding: 0 0.15rem;
+  min-height: 0;
+  margin: 0 auto 1.35rem;
+  padding: 0 0.15rem 0.65rem;
 }
 
 .nana-conversation__bubble-stage {
@@ -54,7 +54,7 @@
   height: auto;
   min-height: 0;
   margin: 0;
-  padding: 0 0.25rem 0.45rem 0;
+  padding: 0 0.25rem 0 0;
   box-sizing: border-box;
   overflow: visible;
   background: none;
@@ -62,7 +62,8 @@
   border-radius: 0;
   display: flex;
   justify-content: flex-end;
-  align-items: flex-end;
+  align-items: flex-start;
+  align-self: start;
 }
 
 .nana-conversation__nana-stage {
@@ -74,16 +75,18 @@
   width: auto;
   height: auto;
   min-height: 0;
-  margin: 0 0 0.15rem -0.85rem;
+  margin: 0 0 0 -0.8rem;
   padding: 0;
   box-sizing: border-box;
   overflow: visible;
+  align-self: end;
+  transform: translateY(0.4rem);
 }
 
 .nana-conversation__choices {
   width: var(--stage-speech-width);
   max-width: 100%;
-  margin: 0.25rem auto 1rem;
+  margin: 0.35rem auto 1.35rem;
   max-height: 0;
   opacity: 0;
   overflow: hidden;
@@ -380,7 +383,7 @@
 .nana-conversation__form {
   display: flex;
   gap: 0.5rem;
-  padding: 0.35rem 0 1rem;
+  padding: 0.85rem 0 1rem;
   flex-shrink: 0;
 }
 
@@ -459,7 +462,7 @@
   }
 
   .nana-conversation__memory-bar {
-    margin: 0.25rem auto 0.9rem;
+    margin: 0.25rem auto 0.5rem;
     padding: 0.5rem 1rem;
     min-height: 2.35rem;
   }
@@ -469,17 +472,17 @@
   }
 
   .nana-conversation__speech-area {
-    min-height: clamp(96px, 16vh, 136px);
-    margin-bottom: 0.4rem;
+    margin-bottom: 1.1rem;
+    padding-bottom: 0.5rem;
   }
 
   .nana-conversation__nana-stage {
-    margin-left: -0.65rem;
-    margin-bottom: 0.05rem;
+    margin-left: -0.6rem;
+    transform: translateY(0.3rem);
   }
 
   .nana-conversation__choices {
-    margin-bottom: 0.85rem;
+    margin-bottom: 1.15rem;
   }
 
   .nana-conversation__choices--count-3,
@@ -497,7 +500,7 @@
 
   .nana-conversation__form {
     flex-direction: column;
-    padding-top: 0.25rem;
+    padding-top: 0.65rem;
   }
 
   .nana-conversation__send {

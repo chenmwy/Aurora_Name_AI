@@ -34,15 +34,17 @@
   display: inline-block;
   width: fit-content;
   max-width: 100%;
+  overflow: visible;
 }
 
 .nana-bubble__body {
   position: relative;
   display: block;
   padding: 1rem 1.3rem;
-  padding-right: 1.45rem;
+  padding-right: 1.5rem;
   padding-bottom: 1.05rem;
   border-radius: 2em;
+  border-bottom-right-radius: 1.35em;
   background: rgba(108, 99, 255, 0.11);
   border: 1px solid rgba(129, 140, 248, 0.2);
   color: #e8edf7;
@@ -55,12 +57,13 @@
   box-shadow: 0 2px 18px rgba(108, 99, 255, 0.06);
 }
 
+/* Tail — soft stem from lower-right toward NANA's head */
 .nana-bubble__tail {
   position: absolute;
-  right: -2px;
-  bottom: 11px;
-  width: 14px;
-  height: 12px;
+  right: -1px;
+  bottom: 4px;
+  width: 30px;
+  height: 26px;
   pointer-events: none;
   overflow: visible;
 }
@@ -68,16 +71,33 @@
 .nana-bubble__tail::before {
   content: "";
   position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 12px;
-  height: 12px;
+  right: 6px;
+  bottom: 6px;
+  width: 18px;
+  height: 11px;
   background: rgba(108, 99, 255, 0.11);
   border: 1px solid rgba(129, 140, 248, 0.2);
-  border-radius: 0 0 65% 65%;
-  transform: rotate(32deg) scale(0.72, 0.62);
+  border-radius: 0 0 100% 55%;
+  border-top: none;
+  border-left: none;
+  transform: rotate(46deg);
   transform-origin: top left;
-  opacity: 0.92;
+}
+
+.nana-bubble__tail::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 9px;
+  height: 9px;
+  background: rgba(108, 99, 255, 0.11);
+  border: 1px solid rgba(129, 140, 248, 0.2);
+  border-radius: 50%;
+  border-top-color: transparent;
+  border-left-color: transparent;
+  transform: rotate(18deg);
+  opacity: 0.88;
 }
 
 .nana-bubble__body strong {
@@ -116,22 +136,28 @@
 
   .nana-bubble__body {
     padding: 0.9rem 1.15rem;
-    padding-right: 1.25rem;
+    padding-right: 1.3rem;
     font-size: 0.9rem;
     max-height: min(68vh, 480px);
   }
 
   .nana-bubble__tail {
-    right: -1px;
-    bottom: 9px;
-    width: 12px;
-    height: 10px;
+    width: 26px;
+    height: 22px;
+    bottom: 3px;
   }
 
   .nana-bubble__tail::before {
-    width: 10px;
-    height: 10px;
-    transform: rotate(32deg) scale(0.68, 0.58);
+    width: 15px;
+    height: 9px;
+    right: 5px;
+    bottom: 5px;
+    transform: rotate(44deg);
+  }
+
+  .nana-bubble__tail::after {
+    width: 8px;
+    height: 8px;
   }
 }
 

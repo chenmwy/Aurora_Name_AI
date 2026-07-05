@@ -26,6 +26,7 @@
 .nana-companion--speech {
   width: clamp(88px, 20vw, 124px);
   height: clamp(88px, 20vw, 124px);
+  transform: translateY(0.15rem);
 }
 
 .nana-companion[data-state="idle"] {
