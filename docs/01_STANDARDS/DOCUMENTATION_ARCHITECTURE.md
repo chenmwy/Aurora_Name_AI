@@ -1,34 +1,44 @@
 ---
 Document:
+
 DOCUMENTATION_ARCHITECTURE
 
 Title:
+
 Documentation Architecture
 
 Tier:
+
 Standard
 
 Status:
+
 Canonical
 
 Version:
-1.0.0
+
+1.1.0
 
 Owner:
+
 NameAI Universe
 
 Purpose:
+
 Define the architecture, navigation principles, and organizational rules of the NameAI Documentation System.
 
 Depends On:
+
 DOCUMENTATION_STANDARD
 
 Related Documents:
+
 PROJECT_INDEX
 UNIVERSE_INDEX
 
 Last Updated:
-2026-07-06
+
+2026-07-07
 ---
 
 # Documentation Architecture
@@ -203,15 +213,15 @@ PROJECT_INDEX
 
 ↓
 
-UNIVERSE_INDEX
+COMPANIONS_INDEX
 
 ↓
 
-UNIVERSE_CONSTITUTION
+NANA_INDEX
 
 ↓
 
-CORE_PROTOCOL
+IDENTITY
 ```
 
 or
@@ -221,18 +231,20 @@ PROJECT_INDEX
 
 ↓
 
-PRODUCT_INDEX
-
-↓
-
-NANA_STAGE
+MECHANICS_INDEX
 
 ↓
 
 MEMORY_SYSTEM
+
+↓
+
+PEARL_SYSTEM
 ```
 
 Every document should have a predictable location.
+
+Navigation should never require guessing.
 
 ---
 
@@ -282,6 +294,8 @@ Models change.
 
 Architecture preserves understanding.
 
+As the NameAI Universe continues to grow, this architecture provides the stable foundation upon which every future companion, world, mechanic, product, and implementation will be built.
+
 That is why documentation is treated as a core system of the NameAI Universe.
 
 ---
@@ -294,4 +308,4 @@ Canonical
 
 Version:
 
-1.0.0
+1.1.0

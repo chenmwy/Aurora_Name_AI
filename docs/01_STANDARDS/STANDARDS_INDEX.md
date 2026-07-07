@@ -1,35 +1,53 @@
 ---
 Document:
+
 STANDARDS_INDEX
 
 Title:
+
 Standards Index
 
 Tier:
+
 Standard
 
 Status:
+
 Canonical
 
 Version:
-1.0.0
+
+1.1.1
 
 Owner:
+
 NameAI Universe
 
 Purpose:
+
 Provide the navigation structure for all documentation standards and define the reading order of the Standards layer.
 
 Depends On:
+
 UNIVERSE_INDEX
 
 Related Documents:
+
 DOCUMENTATION_STANDARD
+
 DOCUMENTATION_ARCHITECTURE
+
+STATUS_STANDARD
+
+VERSION_STANDARD
+
+INDEX_STANDARD
+
 COMPANION_STANDARD
 
 Last Updated:
-2026-07-06
+
+2026-07-07
 ---
 
 # Standards Index
@@ -67,10 +85,6 @@ DOCUMENTATION_ARCHITECTURE
 
 ↓
 
-COMPANION_STANDARD
-
-↓
-
 STATUS_STANDARD
 
 ↓
@@ -83,20 +97,20 @@ INDEX_STANDARD
 
 ↓
 
-DOCUMENT_NAMING_STANDARD
+COMPANION_STANDARD
 ```
 
 Readers should understand the documentation system before reading individual specifications.
 
 ---
 
-# Current Documents
+# Current Standards
 
 ## Canonical
 
 ### DOCUMENTATION_STANDARD
 
-Defines the official writing standard for every document.
+Defines the overall philosophy and governance of the documentation system.
 
 Status:
 
@@ -114,9 +128,9 @@ Canonical
 
 ---
 
-### COMPANION_STANDARD
+### STATUS_STANDARD
 
-Defines the common principles shared by every intelligent companion.
+Defines the official lifecycle and status system for every document.
 
 Status:
 
@@ -124,41 +138,39 @@ Canonical
 
 ---
 
-# Planned Specifications
-
-The following specifications are planned and reserved for future milestones.
-
-### STATUS_STANDARD
-
-Defines the official status system used throughout the Universe.
-
-Examples include:
-
-- Draft
-- Active
-- Canonical
-- Deprecated
-- Archived
-
----
-
 ### VERSION_STANDARD
 
-Defines version numbering rules.
+Defines semantic versioning rules used throughout the Universe.
 
-Examples include:
+Status:
 
-- Major
-- Minor
-- Patch
+Canonical
 
 ---
 
 ### INDEX_STANDARD
 
-Defines the required structure and responsibilities of every INDEX document.
+Defines the structure, responsibilities, and maintenance rules of every INDEX document.
+
+Status:
+
+Canonical
 
 ---
+
+### COMPANION_STANDARD
+
+Defines the common architecture shared by every Companion.
+
+Status:
+
+Canonical
+
+---
+
+# Planned Standards
+
+The following standards are reserved for future milestones.
 
 ### DOCUMENT_NAMING_STANDARD
 
@@ -170,22 +182,31 @@ Defines naming conventions for:
 - Standards
 - Companion files
 
+Status:
+
+Planned
+
 ---
 
 # Responsibilities
 
 The Standards layer is responsible for defining:
 
+- Documentation philosophy
 - Documentation rules
 - Structural consistency
 - Naming conventions
+- Header conventions
 - Status definitions
-- Version control
+- Version management
 - Navigation principles
+- Companion documentation standards
 
 Standards do not define product behavior.
 
-Standards define how specifications are written.
+Standards define how specifications are written and maintained.
+
+Header conventions are defined by DOCUMENTATION_STANDARD.
 
 ---
 
@@ -227,6 +248,10 @@ When changes are required,
 
 existing standards should be revised through version updates instead of creating duplicate standards.
 
+Every documentation rule should have one authoritative source.
+
+Standards should reference one another rather than duplicate definitions.
+
 Consistency is more important than convenience.
 
 ---
@@ -249,4 +274,4 @@ Canonical
 
 Version:
 
-1.0.0
+1.1.1

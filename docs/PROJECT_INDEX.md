@@ -27,7 +27,7 @@ Related Documents:
 CURRENT_STATE
 
 Last Updated:
-2026-07-06
+2026-07-07
 ---
 
 # PROJECT INDEX
@@ -211,7 +211,23 @@ DOCUMENTATION_STANDARD
 
 ↓
 
-Relevant Documents
+02_COMPANIONS
+
+↓
+
+03_WORLDS
+
+↓
+
+04_MECHANICS
+
+↓
+
+05_PRODUCT
+
+↓
+
+06_ENGINEERING
 
 ↓
 
@@ -219,6 +235,10 @@ CURRENT_STATE
 ```
 
 Read philosophy before implementation.
+
+Read stable specifications before operational status.
+
+CURRENT_STATE should be read last because it reflects the project's current progress rather than its long-term architecture.
 
 Never reverse this order.
 
@@ -242,29 +262,11 @@ documentation has higher priority than assumptions.
 
 # Document Lifecycle
 
-Documentation generally progresses through the following stages.
+Documentation lifecycle is officially defined by STATUS_STANDARD.
 
-Planning
+PROJECT_INDEX does not redefine lifecycle states.
 
-↓
-
-Draft
-
-↓
-
-Review
-
-↓
-
-Stable
-
-↓
-
-Canonical
-
-↓
-
-Deprecated
+Refer to STATUS_STANDARD for the authoritative lifecycle model.
 
 ---
 
@@ -281,7 +283,9 @@ Only major architectural evolution should modify PROJECT_INDEX.
 # End
 
 Status:
+
 Canonical
 
 Version:
+
 2.0.0

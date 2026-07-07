@@ -104,7 +104,7 @@ Companion
 
 Within the NameAI Universe, a Companion is neither a tool nor an assistant.
 
-A Companion is an intelligent resident of the Universe.
+A Companion is An intelligent, long-term resident of the Universe.
 
 Every Companion possesses:
 
