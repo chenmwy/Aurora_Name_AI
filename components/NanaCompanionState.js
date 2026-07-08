@@ -27,14 +27,14 @@
   };
 
   const NANA_POSES = {
-    front: "assets/companion/base/nana_front_v1.png",
-    front45Left: "assets/companion/base/nana_front45_left_v1.png",
-    left: "assets/companion/base/nana_left_v1.png",
-    back45Left: "assets/companion/base/nana_back45_left_v1.png",
-    back: "assets/companion/base/nana_back_v1.png",
-    back45Right: "assets/companion/base/nana_back45_right_v1.png",
-    right: "assets/companion/base/nana_left_v1.png",
-    front45Right: "assets/companion/base/nana_front45_left_v1.png"
+    front: "assets/companions/base/nana_front_v1.png",
+    front45Left: "assets/companions/base/nana_front45_left_v1.png",
+    left: "assets/companions/base/nana_left_v1.png",
+    back45Left: "assets/companions/base/nana_back45_left_v1.png",
+    back: "assets/companions/base/nana_back_v1.png",
+    back45Right: "assets/companions/base/nana_back45_right_v1.png",
+    right: "assets/companions/base/nana_left_v1.png",
+    front45Right: "assets/companions/base/nana_front45_left_v1.png"
   };
 
   const NANA_DEFAULT_DIRECTION = NANA_DIRECTIONS.front;

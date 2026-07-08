@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Namora Alpha · NameAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="namora.css" />
+</head>
+<body class="namora-body">
+  <div class="namora-bg" aria-hidden="true"></div>
+  <div class="namora-particles" aria-hidden="true">
+    <span class="namora-particle"></span>
+    <span class="namora-particle"></span>
+    <span class="namora-particle"></span>
+    <span class="namora-particle"></span>
+    <span class="namora-particle"></span>
+    <span class="namora-particle"></span>
+  </div>
+
+  <div class="namora-overlay" aria-hidden="true"></div>
+
+  <div class="namora-page">
+    <header class="namora-header">
+      <a class="namora-logo" href="/">NameAI</a>
+      <div class="namora-memory" aria-label="Memory">Memory</div>
+    </header>
+
+    <div class="namora-scene">
+      <main class="namora-main">
+        <section class="namora-stage" aria-label="Conversation with NANA">
+          <div class="namora-chat">
+            <div class="namora-messages" id="namoraMessages" role="log" aria-live="polite">
+              <div class="namora-msg namora-msg--nana">
+                <p>你好，我是 NANA。</p>
+                <p>今天你想创造怎样的名字？</p>
+              </div>
+            </div>
+          </div>
+          <figure class="namora-nana" aria-hidden="true">
+            <img
+              src="assets/companions/base/nana_front_v1.png"
+              alt=""
+              width="180"
+              height="180"
+              decoding="async"
+            />
+          </figure>
+        </section>
+      </main>
+
+      <div class="namora-compose">
+        <label class="namora-input-wrap">
+          <span class="visually-hidden">Message to NANA</span>
+          <input
+            type="text"
+            id="namoraInput"
+            class="namora-input"
+            placeholder="和 NANA 说说你的想法……"
+            autocomplete="off"
+            enterkeyhint="send"
+          />
+        </label>
+        <button type="button" class="namora-send" id="namoraSend" aria-label="Send message">
+          <img src="assets/ui/pearl-shell.png" alt="" width="58" height="58" decoding="async" />
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="namora.js"></script>
+</body>
+</html>
