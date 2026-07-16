@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "1.0.0",
+  "profileVersion": "0.1.2",
+  "profileId": "namora-mobile",
+  "profileName": "Namora Mobile Guided Flow",
+  "createdAt": "2026-07-16T00:00:00.000Z",
+  "updatedAt": "2026-07-16T13:25:00.000Z",
+  "source": "project-canonical",
+  "mode": "guided-flow",
+  "note": "Mobile authority for Task042. Companion and Input regions have independent lifts (Rev C).",
+  "sceneHeader": {
+    "heightVh": 34,
+    "minHeightPx": 180,
+    "maxHeightPx": 320
+  },
+  "companionRegion": {
+    "placement": "guided-flow-lower",
+    "visualOrder": 2,
+    "includes": ["speech-bubble", "nana"],
+    "liftPx": 96,
+    "nana": {
+      "anchor": "bottom-right",
+      "widthPx": 120,
+      "rightPx": 8,
+      "baseBottomPx": 12
+    },
+    "note": "Task042 Rev C: liftPx controls NANA + Speech Bubble only."
+  },
+  "inputRegion": {
+    "placement": "guided-flow-lower",
+    "visualOrder": 3,
+    "includes": ["input-panel", "pearl"],
+    "liftPx": 20,
+    "note": "Task042 Rev C: liftPx controls Input + Pearl as one band. Relative Input/Pearl spacing unchanged."
+  },
+  "presentationGroup": {
+    "placement": "guided-flow-upper",
+    "visualOrder": 1,
+    "width": "content",
+    "paddingInlinePx": 16,
+    "gapPx": 12,
+    "note": "Task042 Rev A: Presentation sits above Bubble in the upper/mid free space."
+  },
+  "speechBubble": {
+    "placement": "companion-region",
+    "maxWidthPx": 360,
+    "width": "calc(100% - 32px)"
+  },
+  "userInputGroup": {
+    "placement": "input-region",
+    "visualOrder": 3,
+    "layout": "row",
+    "inputFlex": 1,
+    "pearlSizePx": 64,
+    "gapPx": 10,
+    "paddingInlinePx": 16,
+    "paddingBottomSafe": true
+  },
+  "safeArea": {
+    "useEnvInsets": true
+  }
+}

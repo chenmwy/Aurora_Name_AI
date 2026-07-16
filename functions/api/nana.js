@@ -24,9 +24,11 @@ Rules:
 - Never mention Focus State, Question Engine, Signal Network, or internal systems.
 
 Reply in valid JSON only:
-{"reply":"...","focusUpdates":{},"directions":[]}
+{"reply":"...","presentationIntro":"","focusUpdates":{},"directions":[]}
 focusUpdates: optional, English values, only newly learned fields.
-directions: 3–4 objects when exploring (label, description, examples). Otherwise [].`;
+directions: 3–4 objects when exploring (label, description, examples). Otherwise [].
+presentationIntro: when directions is non-empty, one short sentence inviting the user to choose; do not list direction details there. When directions is empty, use "".
+reply: keep full conversational text for legacy clients; may briefly name directions.`;
 
 const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
 const DEEPSEEK_TIMEOUT_MS = 13000;
@@ -37,6 +39,11 @@ const MAX_CONTENT_LENGTH = 1200;
 const FALLBACK_REPLY = {
   en: "I'm having trouble thinking clearly right now. Could you try again in a moment?",
   zh: "我现在有点反应不过来，可以稍后再试一次吗？"
+};
+
+const DEFAULT_PRESENTATION_INTRO = {
+  en: "I have a few directions in mind — choose one or more to keep exploring.",
+  zh: "我想到几个方向，你可以选择一个或多个继续探索。"
 };
 
 function logDebug(stage, info) {
@@ -243,7 +250,7 @@ async function callDeepSeek(apiKey, messages, maxTokens) {
   return { response, data, rawText, timedOut: false };
 }
 
-function resolveResponse(parsed, focusState, userMessageCount) {
+function resolveResponse(parsed, focusState, userMessageCount, language) {
   let state = sanitizeFocusState(focusState);
 
   if (parsed.focusUpdates) {
@@ -265,7 +272,22 @@ function resolveResponse(parsed, focusState, userMessageCount) {
     directions = [];
   }
 
-  return { reply, phase, focusState: state, directions };
+  let presentationIntro = String(
+    parsed.presentationIntro || parsed.shortReply || ""
+  ).trim();
+
+  if (directions.length >= 2) {
+    if (!presentationIntro) {
+      presentationIntro =
+        language === "zh"
+          ? DEFAULT_PRESENTATION_INTRO.zh
+          : DEFAULT_PRESENTATION_INTRO.en;
+    }
+  } else {
+    presentationIntro = "";
+  }
+
+  return { reply, presentationIntro, phase, focusState: state, directions };
 }
 
 export async function onRequestPost(context) {
@@ -375,19 +397,30 @@ export async function onRequestPost(context) {
       return fallbackResponse(language, focusState);
     }
 
-    const result = resolveResponse(parsed, focusState, userMessageCount);
+    const result = resolveResponse(
+      parsed,
+      focusState,
+      userMessageCount,
+      language
+    );
 
     if (!result.reply) {
       return fallbackResponse(language, focusState);
     }
 
-    return jsonResponse({
+    const responseBody = {
       success: true,
       reply: result.reply,
       phase: result.phase,
       focusState: result.focusState,
       directions: result.directions
-    });
+    };
+
+    if (result.presentationIntro) {
+      responseBody.presentationIntro = result.presentationIntro;
+    }
+
+    return jsonResponse(responseBody);
   } catch (err) {
     logDebug("unhandled", { message: err?.message || "unknown" });
     return fallbackResponse(language, focusState);

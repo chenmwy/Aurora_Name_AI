@@ -11,17 +11,74 @@
   <link rel="stylesheet" href="namora.css" />
 </head>
 <body class="namora-body namora-stage1">
-  <!-- Stage 1: Namora Viewport → Namora World (Background + NANA only) -->
+  <!--
+    Task043 — UI Layer Architecture
+    Runtime owns state. Layer owns space. Renderer owns presentation.
+    Existing element IDs are preserved; only parent Layer ownership changes.
+  -->
   <div class="namora-viewport" id="namoraViewport" aria-hidden="false">
-    <div class="namora-world" id="namoraWorld">
-      <img
-        class="namora-world-bg"
-        id="namoraWorldBg"
-        src="assets/backgrounds/namora-bg-desktop.webp"
-        alt=""
-        decoding="async"
-        draggable="false"
-      />
+    <div
+      class="namora-ui-layer namora-ui-layer--background"
+      id="namoraBackgroundLayer"
+      data-ui-layer="background"
+    >
+      <div class="namora-world" id="namoraWorld">
+        <img
+          class="namora-world-bg"
+          id="namoraWorldBg"
+          src="assets/backgrounds/namora-bg-desktop.webp"
+          alt=""
+          decoding="async"
+          draggable="false"
+        />
+        <div class="namora-debug" id="namoraDebug" hidden>
+          <div class="namora-debug__bounds" id="namoraDebugBounds" aria-hidden="true"></div>
+          <div class="namora-debug__marker namora-debug__marker--standing" id="namoraDebugStanding" aria-hidden="true"></div>
+          <div class="namora-debug__marker namora-debug__marker--foot" id="namoraDebugFoot" aria-hidden="true"></div>
+          <div class="namora-debug__marker namora-debug__marker--center" id="namoraDebugCenter" aria-hidden="true"></div>
+          <div class="namora-debug__marker namora-debug__marker--head" id="namoraDebugHead" aria-hidden="true"></div>
+          <div class="namora-debug__marker namora-debug__marker--dialogue" id="namoraDebugDialogue" aria-hidden="true"></div>
+          <div class="namora-debug__marker namora-debug__marker--interaction" id="namoraDebugInteraction" aria-hidden="true"></div>
+          <pre class="namora-debug__panel" id="namoraDebugPanel" aria-live="polite"></pre>
+        </div>
+        <div class="namora-layout-selection" id="namoraLayoutSelection" hidden aria-hidden="true">
+          <div class="namora-layout-selection__bounds" id="namoraLayoutSelectionBounds"></div>
+          <div class="namora-layout-selection__points" id="namoraLayoutSelectionPoints"></div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="namora-ui-layer namora-ui-layer--presentation"
+      id="namoraPresentationLayer"
+      data-ui-layer="presentation"
+    >
+      <div
+        class="namora-presentation-group is-presentation-empty"
+        id="namoraPresentationGroup"
+        data-presentation-group="1"
+        hidden
+      >
+        <div
+          class="namora-interactive-presentation"
+          id="namoraInteractivePresentation"
+          hidden
+          aria-hidden="true"
+          aria-label="交互展示"
+        >
+          <div
+            class="namora-interactive-presentation__host"
+            data-presentation-host="1"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="namora-ui-layer namora-ui-layer--character"
+      id="namoraCharacterLayer"
+      data-ui-layer="character"
+    >
       <figure class="namora-nana" id="namoraNana" aria-hidden="true">
         <img
           class="namora-nana__sprite"
@@ -33,28 +90,38 @@
           draggable="false"
         />
       </figure>
+    </div>
+
+    <div
+      class="namora-ui-layer namora-ui-layer--dialogue"
+      id="namoraDialogueLayer"
+      data-ui-layer="dialogue"
+    >
       <div
-        class="namora-scene-components"
-        id="namoraSceneComponents"
-        aria-label="Scene Components"
+        class="namora-scene-component scene-component scene-speech-bubble"
+        id="sceneSpeechBubble"
+        data-scene-component-id="speech-bubble"
+        role="status"
+        aria-label="NANA 对话"
+        hidden
       >
-        <div
-          class="namora-scene-component scene-component scene-speech-bubble"
-          id="sceneSpeechBubble"
-          data-scene-component-id="speech-bubble"
-          role="status"
-          aria-label="NANA 对话"
-          hidden
-        >
-          <div class="scene-speech-bubble__body">
-            <div class="scene-speech-bubble__content">
-              <p class="scene-speech-bubble__text">
-                你好，我是 NANA。我们先从你想寻找的名字开始吧。
-              </p>
-            </div>
+        <div class="scene-speech-bubble__body">
+          <div class="scene-speech-bubble__content">
+            <p class="scene-speech-bubble__text">
+              你好，我是 NANA。我们先从你想寻找的名字开始吧。
+            </p>
           </div>
-          <div class="scene-speech-bubble__tail" aria-hidden="true"></div>
         </div>
+        <div class="scene-speech-bubble__tail" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div
+      class="namora-ui-layer namora-ui-layer--input"
+      id="namoraInputLayer"
+      data-ui-layer="input"
+    >
+      <div class="namora-user-input-flow" id="namoraUserInputFlow">
         <div
           class="namora-scene-component scene-input-panel"
           id="sceneInputPanel"
@@ -95,22 +162,15 @@
           </button>
         </div>
       </div>
-      <div class="namora-debug" id="namoraDebug" hidden>
-        <div class="namora-debug__bounds" id="namoraDebugBounds" aria-hidden="true"></div>
-        <div class="namora-debug__marker namora-debug__marker--standing" id="namoraDebugStanding" aria-hidden="true"></div>
-        <div class="namora-debug__marker namora-debug__marker--foot" id="namoraDebugFoot" aria-hidden="true"></div>
-        <div class="namora-debug__marker namora-debug__marker--center" id="namoraDebugCenter" aria-hidden="true"></div>
-        <div class="namora-debug__marker namora-debug__marker--head" id="namoraDebugHead" aria-hidden="true"></div>
-        <div class="namora-debug__marker namora-debug__marker--dialogue" id="namoraDebugDialogue" aria-hidden="true"></div>
-        <div class="namora-debug__marker namora-debug__marker--interaction" id="namoraDebugInteraction" aria-hidden="true"></div>
-        <pre class="namora-debug__panel" id="namoraDebugPanel" aria-live="polite"></pre>
-      </div>
-      <!-- Layout Editor selection overlay — inactive unless ?layout=edit -->
-      <div class="namora-layout-selection" id="namoraLayoutSelection" hidden aria-hidden="true">
-        <div class="namora-layout-selection__bounds" id="namoraLayoutSelectionBounds"></div>
-        <div class="namora-layout-selection__points" id="namoraLayoutSelectionPoints"></div>
-      </div>
     </div>
+
+    <!-- Legacy alias for scene-component refresh / editor tooling (no owned children). -->
+    <div
+      class="namora-scene-components"
+      id="namoraSceneComponents"
+      aria-hidden="true"
+      hidden
+    ></div>
   </div>
 
   <!-- Layout Editor panels — exist only for engineering; normal mode never shows them -->

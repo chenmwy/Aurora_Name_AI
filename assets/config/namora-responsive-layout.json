@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0.0",
+  "profileId": "namora-responsive-layout",
+  "profileName": "Namora Responsive Layout",
+  "revision": "Task042-A",
+  "resolutionOrder": [
+    "query-override (?layout=desktop|tablet|mobile)",
+    "mobile-input-portrait (coarse/none-hover + portrait + compact)",
+    "tablet-input-midwidth (touch + mid width)",
+    "desktop-default (including narrowed desktop browsers)"
+  ],
+  "breakpoints": {
+    "mobileMax": 600,
+    "tabletMax": 1024,
+    "note": "Breakpoints inform confident mobile/tablet detection only. Narrow desktop windows stay desktop."
+  },
+  "policies": {
+    "desktop": {
+      "id": "desktop",
+      "mode": "workspace",
+      "layoutProfile": "namora-default",
+      "background": "desktop",
+      "worldFit": "fixed-design-world",
+      "presentationLayout": "overlay-row",
+      "presentationGroup": "workspace-upper",
+      "scroll": "none",
+      "cardColumns": "auto-row"
+    },
+    "tablet": {
+      "id": "tablet",
+      "mode": "workspace-compact",
+      "layoutProfile": "namora-default",
+      "background": "tablet",
+      "worldFit": "fixed-design-world",
+      "presentationLayout": "overlay-wrap",
+      "presentationGroup": "workspace-upper",
+      "scroll": "none",
+      "cardColumns": 2
+    },
+    "mobile": {
+      "id": "mobile",
+      "mode": "guided-flow",
+      "layoutProfile": "namora-mobile",
+      "background": "mobile",
+      "worldFit": "mobile-cover",
+      "presentationLayout": "flow-column",
+      "presentationGroup": "guided-flow-upper",
+      "scroll": "document",
+      "cardColumns": 1,
+      "visualOrder": [
+        "presentation",
+        "companion-bubble",
+        "user-input-group"
+      ]
+    }
+  }
+}

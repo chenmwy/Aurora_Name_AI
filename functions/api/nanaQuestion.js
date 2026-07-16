@@ -129,6 +129,9 @@ export function buildQuestionGuidance(focusState, language, userMessageCount) {
     );
     lines.push("- User direction choice becomes the next signal. No more interview questions.");
     lines.push("- directions array required; reply briefly introduces them.");
+    lines.push(
+      "- Also set presentationIntro to one short sentence inviting choice; do not list direction details in presentationIntro."
+    );
     return lines.join("\n");
   }
 

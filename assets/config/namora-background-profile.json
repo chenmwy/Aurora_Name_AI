@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0.0",
+  "profileId": "namora-background",
+  "profileName": "Namora Background Profile",
+  "variants": {
+    "desktop": {
+      "source": "assets/backgrounds/namora-bg-desktop.webp",
+      "objectPosition": "right bottom",
+      "fit": "fill",
+      "note": "Canonical desktop world asset; paired with fixed-design-world fit."
+    },
+    "tablet": {
+      "source": "assets/backgrounds/namora-bg-desktop.webp",
+      "objectPosition": "right bottom",
+      "fit": "fill",
+      "note": "Tablet workspace reuses desktop asset with the same world fit."
+    },
+    "mobile": {
+      "source": "assets/backgrounds/namora-bg-mobile.webp",
+      "objectPosition": "center bottom",
+      "fit": "cover",
+      "fallbackSource": "assets/backgrounds/namora-bg-mobile-v2.webp",
+      "note": "Dedicated mobile background; not a crop of the desktop world."
+    }
+  }
+}

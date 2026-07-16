@@ -10,10 +10,20 @@
     var debug = false;
     var layoutEdit = false;
     var responseProvider = null;
+    var layoutPolicy = null;
     try {
       var params = new URLSearchParams(window.location.search);
       debug = params.get("debug") === "1";
-      layoutEdit = params.get("layout") === "edit";
+      var layoutParam = params.get("layout");
+      if (layoutParam === "edit") {
+        layoutEdit = true;
+      } else if (
+        layoutParam === "desktop" ||
+        layoutParam === "tablet" ||
+        layoutParam === "mobile"
+      ) {
+        layoutPolicy = layoutParam;
+      }
       var providerParam = params.get("provider");
       if (providerParam === "local" || providerParam === "deepseek") {
         responseProvider = providerParam;
@@ -22,6 +32,7 @@
       debug = false;
       layoutEdit = false;
       responseProvider = null;
+      layoutPolicy = null;
     }
     if (responseProvider == null) {
       responseProvider =
@@ -30,6 +41,7 @@
     return Object.freeze({
       debug: debug,
       layoutEdit: layoutEdit,
+      layoutPolicy: layoutPolicy,
       responseProvider: responseProvider
     });
   }
@@ -277,6 +289,97 @@
       enabled: true
     })
   });
+
+  /* ------------------------------------------------------------------------ */
+  /* Responsive Layout System (Task 042)                                       */
+  /* Authority for breakpoints / policies. Runtime state never stores device.  */
+  /* ------------------------------------------------------------------------ */
+
+  var RESPONSIVE_LAYOUT_CONFIG = Object.freeze({
+    breakpoints: Object.freeze({
+      mobileMax: 600,
+      tabletMax: 1024
+    }),
+    policies: Object.freeze({
+      desktop: Object.freeze({
+        id: "desktop",
+        mode: "workspace",
+        layoutProfile: "namora-default",
+        background: "desktop",
+        worldFit: "fixed-design-world",
+        presentationLayout: "overlay-row",
+        presentationGroup: "workspace-upper",
+        scroll: "none",
+        cardColumns: "auto-row"
+      }),
+      tablet: Object.freeze({
+        id: "tablet",
+        mode: "workspace-compact",
+        layoutProfile: "namora-default",
+        background: "tablet",
+        worldFit: "fixed-design-world",
+        presentationLayout: "overlay-wrap",
+        presentationGroup: "workspace-upper",
+        scroll: "none",
+        cardColumns: 2
+      }),
+      mobile: Object.freeze({
+        id: "mobile",
+        mode: "guided-flow",
+        layoutProfile: "namora-mobile",
+        background: "mobile",
+        worldFit: "mobile-cover",
+        presentationLayout: "flow-column",
+        presentationGroup: "guided-flow",
+        scroll: "document",
+        cardColumns: 1
+      })
+    })
+  });
+
+  var BACKGROUND_PROFILE = Object.freeze({
+    desktop: Object.freeze({
+      source: "assets/backgrounds/namora-bg-desktop.webp",
+      objectPosition: "right bottom",
+      fit: "fill"
+    }),
+    tablet: Object.freeze({
+      source: "assets/backgrounds/namora-bg-desktop.webp",
+      objectPosition: "right bottom",
+      fit: "fill"
+    }),
+    mobile: Object.freeze({
+      source: "assets/backgrounds/namora-bg-mobile.webp",
+      objectPosition: "center bottom",
+      fit: "cover"
+    })
+  });
+
+  var MOBILE_LAYOUT_POLICY = Object.freeze({
+    profileId: "namora-mobile",
+    sceneHeader: Object.freeze({
+      heightVh: 34,
+      minHeightPx: 180,
+      maxHeightPx: 320
+    }),
+    companionRegion: Object.freeze({
+      /* Task042 Rev C — NANA + Speech Bubble only. */
+      liftPx: 96,
+      nana: Object.freeze({
+        widthPx: 120,
+        rightPx: 8,
+        baseBottomPx: 12
+      })
+    }),
+    inputRegion: Object.freeze({
+      /* Task042 Rev C — Input + Pearl as one band. */
+      liftPx: 20
+    }),
+    contentPaddingInlinePx: 16
+  });
+
+  var responsiveLayoutResolverInstance = null;
+  var lastResolvedLayoutPolicyId = null;
 
   var DEFAULT_SCENE_ID = "namora-default";
 
@@ -1349,13 +1452,24 @@
   function applySpeechBubbleDomLayout(element, geometry, transform) {
     if (!element || !geometry || !transform) return;
 
-    element.style.left = transform.worldOrigin.x + "px";
-    element.style.top = transform.worldOrigin.y + "px";
+    var shellOrigin = worldPointToSceneShell(
+      transform.worldOrigin.x,
+      transform.worldOrigin.y,
+      lastLayout
+    );
+    element.style.left = shellOrigin.x + "px";
+    element.style.top = shellOrigin.y + "px";
+    element.style.right = "";
+    element.style.bottom = "";
+    element.style.transform = "";
 
     var body = element.querySelector(".scene-speech-bubble__body");
     var tail = element.querySelector(".scene-speech-bubble__tail");
     var text = element.querySelector(".scene-speech-bubble__text");
     if (!body || !tail || !text) return;
+
+    body.style.position = "absolute";
+    text.style.position = "absolute";
 
     var cfg = getSpeechBubbleRenderConfig();
     var lineHeightPx = cfg.fontSize * cfg.lineHeight;
@@ -1859,6 +1973,538 @@
   var worldBgEl = document.getElementById("namoraWorldBg");
   var nanaEl = document.getElementById("namoraNana");
   var sceneComponentsEl = document.getElementById("namoraSceneComponents");
+  var sceneShellEl =
+    document.getElementById("namoraSceneShell") || viewportEl;
+  var presentationGroupEl = document.getElementById("namoraPresentationGroup");
+  var userInputFlowEl = document.getElementById("namoraUserInputFlow");
+  var backgroundLayerEl = document.getElementById("namoraBackgroundLayer");
+  var presentationLayerEl = document.getElementById("namoraPresentationLayer");
+  var characterLayerEl = document.getElementById("namoraCharacterLayer");
+  var dialogueLayerEl = document.getElementById("namoraDialogueLayer");
+  var inputLayerEl = document.getElementById("namoraInputLayer");
+
+  /* ------------------------------------------------------------------------ */
+  /* UI Layer Registry (Task 043)                                              */
+  /* Layer owns space / stacking. Runtime must not store layer metadata.       */
+  /* ------------------------------------------------------------------------ */
+
+  var NAMORA_UI_LAYER_ORDER = Object.freeze([
+    "background",
+    "presentation",
+    "character",
+    "dialogue",
+    "input"
+  ]);
+
+  var NAMORA_UI_LAYER_CONFIG = Object.freeze({
+    background: Object.freeze({
+      id: "namoraBackgroundLayer",
+      zIndex: 10,
+      pointerPolicy: "none"
+    }),
+    presentation: Object.freeze({
+      id: "namoraPresentationLayer",
+      zIndex: 20,
+      pointerPolicy: "interactive-children"
+    }),
+    character: Object.freeze({
+      id: "namoraCharacterLayer",
+      zIndex: 30,
+      pointerPolicy: "none"
+    }),
+    dialogue: Object.freeze({
+      id: "namoraDialogueLayer",
+      zIndex: 40,
+      pointerPolicy: "interactive-children"
+    }),
+    input: Object.freeze({
+      id: "namoraInputLayer",
+      zIndex: 50,
+      pointerPolicy: "interactive"
+    })
+  });
+
+  var uiLayerDebugOutlines = false;
+
+  function createNamoraUILayers() {
+    var layerEls = Object.freeze({
+      background: backgroundLayerEl,
+      presentation: presentationLayerEl,
+      character: characterLayerEl,
+      dialogue: dialogueLayerEl,
+      input: inputLayerEl
+    });
+
+    function getLayer(name) {
+      return layerEls[name] || null;
+    }
+
+    function hasLayer(name) {
+      return !!(layerEls[name] && layerEls[name].isConnected);
+    }
+
+    function listLayers() {
+      return NAMORA_UI_LAYER_ORDER.slice();
+    }
+
+    function getState() {
+      var layers = {};
+      NAMORA_UI_LAYER_ORDER.forEach(function (name) {
+        var cfg = NAMORA_UI_LAYER_CONFIG[name];
+        var el = layerEls[name];
+        layers[name] = Object.freeze({
+          mounted: !!(el && el.isConnected),
+          elementId: cfg.id,
+          zIndex: cfg.zIndex,
+          pointerPolicy: cfg.pointerPolicy,
+          debugOutlined: !!(el && el.classList.contains("is-layer-debug"))
+        });
+      });
+      return Object.freeze({
+        order: listLayers(),
+        layers: Object.freeze(layers),
+        debugOutlines: uiLayerDebugOutlines
+      });
+    }
+
+    function setDebugOutlines(enabled) {
+      uiLayerDebugOutlines = !!enabled;
+      NAMORA_UI_LAYER_ORDER.forEach(function (name) {
+        var el = layerEls[name];
+        if (!el) return;
+        el.classList.toggle("is-layer-debug", uiLayerDebugOutlines);
+      });
+      return uiLayerDebugOutlines;
+    }
+
+    function applyLayerStacking() {
+      NAMORA_UI_LAYER_ORDER.forEach(function (name) {
+        var cfg = NAMORA_UI_LAYER_CONFIG[name];
+        var el = layerEls[name];
+        if (!el || !cfg) return;
+        el.style.zIndex = String(cfg.zIndex);
+        el.setAttribute("data-ui-layer", name);
+        el.setAttribute("data-ui-layer-z", String(cfg.zIndex));
+      });
+    }
+
+    applyLayerStacking();
+
+    return Object.freeze({
+      getLayer: getLayer,
+      hasLayer: hasLayer,
+      listLayers: listLayers,
+      getState: getState,
+      setDebugOutlines: setDebugOutlines,
+      applyLayerStacking: applyLayerStacking,
+      getConfig: function () {
+        return NAMORA_UI_LAYER_CONFIG;
+      }
+    });
+  }
+
+  var namoraUILayersInstance = null;
+
+  function getNamoraUILayers() {
+    if (!namoraUILayersInstance) {
+      namoraUILayersInstance = createNamoraUILayers();
+    }
+    return namoraUILayersInstance;
+  }
+
+  function worldPointToSceneShell(worldX, worldY, layout) {
+    layout = layout || lastLayout;
+    if (!layout) {
+      return { x: worldX, y: worldY };
+    }
+    var scale = layout.scale || 1;
+    return {
+      x: layout.worldOffsetX + worldX * scale,
+      y: layout.worldOffsetY + worldY * scale
+    };
+  }
+
+  function isGuidedFlowPolicy(policy) {
+    return !!(policy && policy.mode === "guided-flow");
+  }
+
+  function createResponsiveLayoutResolver(config) {
+    config = config || RESPONSIVE_LAYOUT_CONFIG;
+    var listeners = [];
+    var state = {
+      policyId: "desktop",
+      policy: config.policies.desktop,
+      forcedPolicy: null,
+      detectionReason: "desktop-default",
+      viewportWidth: 0,
+      viewportHeight: 0,
+      orientation: "landscape",
+      pointerCoarse: false,
+      hoverNone: false,
+      maxTouchPoints: 0,
+      backgroundKey: "desktop",
+      presentationLayout: "overlay-row",
+      layoutProfile: "namora-default"
+    };
+
+    function measureViewport() {
+      var size = getLayoutViewportSize();
+      return {
+        width: size.width,
+        height: size.height,
+        orientation: size.width >= size.height ? "landscape" : "portrait"
+      };
+    }
+
+    function readInputCapabilities() {
+      var pointerCoarse = false;
+      var hoverNone = false;
+      var maxTouchPoints = 0;
+      try {
+        if (window.matchMedia) {
+          pointerCoarse = !!window.matchMedia("(pointer: coarse)").matches;
+          hoverNone = !!window.matchMedia("(hover: none)").matches;
+        }
+      } catch (e) {
+        pointerCoarse = false;
+        hoverNone = false;
+      }
+      try {
+        maxTouchPoints =
+          typeof navigator !== "undefined" && navigator.maxTouchPoints
+            ? Number(navigator.maxTouchPoints) || 0
+            : 0;
+      } catch (e2) {
+        maxTouchPoints = 0;
+      }
+      return {
+        pointerCoarse: pointerCoarse,
+        hoverNone: hoverNone,
+        maxTouchPoints: maxTouchPoints
+      };
+    }
+
+    function getForcedPolicy() {
+      if (
+        NAMORA_BOOT_MODE.layoutPolicy === "desktop" ||
+        NAMORA_BOOT_MODE.layoutPolicy === "tablet" ||
+        NAMORA_BOOT_MODE.layoutPolicy === "mobile"
+      ) {
+        return NAMORA_BOOT_MODE.layoutPolicy;
+      }
+      return null;
+    }
+
+    /**
+     * Device-semantic resolution (Task042 Rev A).
+     * Width alone must not promote a narrowed desktop browser into mobile.
+     * Uncertain cases default to desktop; use ?layout=mobile for forced tests.
+     */
+    function resolvePolicyDecision(viewport) {
+      var forced = getForcedPolicy();
+      if (forced) {
+        return {
+          policyId: forced,
+          forcedPolicy: forced,
+          detectionReason: "query-override"
+        };
+      }
+
+      var caps = readInputCapabilities();
+      var bp = config.breakpoints;
+      var width = viewport.width;
+      var portrait = viewport.orientation === "portrait";
+      var touchLikely =
+        caps.pointerCoarse || caps.hoverNone || caps.maxTouchPoints > 0;
+
+      // Confident mobile: coarse pointer / no hover + compact portrait.
+      if (
+        touchLikely &&
+        portrait &&
+        width <= bp.mobileMax &&
+        (caps.pointerCoarse || caps.hoverNone)
+      ) {
+        return {
+          policyId: "mobile",
+          forcedPolicy: null,
+          detectionReason: "mobile-input-portrait"
+        };
+      }
+
+      // Confident tablet: touch + mid-width, not an ultra-narrow desktop crop.
+      if (
+        touchLikely &&
+        width > bp.mobileMax &&
+        width <= bp.tabletMax &&
+        (caps.pointerCoarse || caps.maxTouchPoints > 1)
+      ) {
+        return {
+          policyId: "tablet",
+          forcedPolicy: null,
+          detectionReason: "tablet-input-midwidth"
+        };
+      }
+
+      // Default: desktop workspace — including narrowed desktop browser windows.
+      return {
+        policyId: "desktop",
+        forcedPolicy: null,
+        detectionReason: "desktop-default"
+      };
+    }
+
+    function resolvePolicyId(viewport) {
+      return resolvePolicyDecision(viewport).policyId;
+    }
+
+    function getSnapshot() {
+      return Object.freeze({
+        policy: state.policyId,
+        policyId: state.policyId,
+        forcedPolicy: state.forcedPolicy,
+        detectionReason: state.detectionReason,
+        mode: state.policy.mode,
+        layoutProfile: state.layoutProfile,
+        layoutVariant: state.layoutProfile,
+        backgroundKey: state.backgroundKey,
+        backgroundVariant: state.backgroundKey,
+        presentationLayout: state.presentationLayout,
+        worldFit: state.policy.worldFit,
+        scroll: state.policy.scroll,
+        cardColumns: state.policy.cardColumns,
+        viewport: Object.freeze({
+          width: state.viewportWidth,
+          height: state.viewportHeight
+        }),
+        viewportWidth: state.viewportWidth,
+        viewportHeight: state.viewportHeight,
+        orientation: state.orientation,
+        pointer: state.pointerCoarse ? "coarse" : "fine",
+        hover: state.hoverNone ? "none" : "hover",
+        maxTouchPoints: state.maxTouchPoints
+      });
+    }
+
+    function applyBackground(backgroundKey) {
+      var profile = BACKGROUND_PROFILE[backgroundKey] || BACKGROUND_PROFILE.desktop;
+      if (!worldBgEl) return;
+      var nextSrc = profile.source;
+      var current = worldBgEl.getAttribute("src") || "";
+      if (current.indexOf(nextSrc) === -1 && current !== nextSrc) {
+        worldBgEl.setAttribute("src", nextSrc);
+      }
+      worldBgEl.style.objectFit = profile.fit || "fill";
+      worldBgEl.style.objectPosition = profile.objectPosition || "center bottom";
+    }
+
+    function applyDocumentClasses(policyId) {
+      if (!document.body) return;
+      document.body.classList.remove(
+        "namora-policy-desktop",
+        "namora-policy-tablet",
+        "namora-policy-mobile"
+      );
+      document.body.classList.add("namora-policy-" + policyId);
+      document.body.classList.toggle(
+        "namora-guided-flow",
+        policyId === "mobile"
+      );
+      document.body.classList.toggle(
+        "namora-workspace",
+        policyId !== "mobile"
+      );
+
+      var root = document.documentElement;
+      if (root) {
+        root.setAttribute("data-layout-policy", policyId);
+        root.setAttribute(
+          "data-presentation-layout",
+          state.presentationLayout
+        );
+      }
+      if (viewportEl) {
+        viewportEl.setAttribute("data-layout-policy", policyId);
+        viewportEl.setAttribute(
+          "data-presentation-layout",
+          state.presentationLayout
+        );
+      }
+    }
+
+    function applyMobileSceneHeader() {
+      if (!worldEl || !nanaEl) return;
+      var companion = MOBILE_LAYOUT_POLICY.companionRegion || {};
+      var inputRegion = MOBILE_LAYOUT_POLICY.inputRegion || {};
+      var nanaCfg = companion.nana || {};
+      var companionLiftPx =
+        typeof companion.liftPx === "number" && isFinite(companion.liftPx)
+          ? companion.liftPx
+          : 96;
+      var inputLiftPx =
+        typeof inputRegion.liftPx === "number" && isFinite(inputRegion.liftPx)
+          ? inputRegion.liftPx
+          : 20;
+      var nanaWidth =
+        typeof nanaCfg.widthPx === "number" ? nanaCfg.widthPx : 120;
+      var nanaRight =
+        typeof nanaCfg.rightPx === "number" ? nanaCfg.rightPx : 8;
+      var baseBottom =
+        typeof nanaCfg.baseBottomPx === "number" ? nanaCfg.baseBottomPx : 12;
+
+      // Full-bleed mobile background; companion and input lifts are independent.
+      worldEl.style.width = "100%";
+      worldEl.style.height = "100%";
+      worldEl.style.minHeight = "100%";
+      worldEl.style.transform = "none";
+      worldEl.style.right = "0";
+      worldEl.style.left = "0";
+      worldEl.style.top = "0";
+      worldEl.style.bottom = "0";
+      worldEl.style.transformOrigin = "center center";
+      worldEl.style.position = "absolute";
+
+      function setLiftVar(name, valuePx) {
+        var cssValue = valuePx + "px";
+        if (document.documentElement) {
+          document.documentElement.style.setProperty(name, cssValue);
+        }
+        if (document.body) {
+          document.body.style.setProperty(name, cssValue);
+        }
+      }
+
+      setLiftVar("--namora-mobile-companion-lift", companionLiftPx);
+      setLiftVar("--namora-mobile-input-lift", inputLiftPx);
+
+      nanaEl.style.width = nanaWidth + "px";
+      nanaEl.style.height = nanaWidth + "px";
+      nanaEl.style.left = "auto";
+      nanaEl.style.right = nanaRight + "px";
+      nanaEl.style.top = "auto";
+      nanaEl.style.bottom =
+        "calc(" +
+        baseBottom +
+        "px + " +
+        companionLiftPx +
+        "px + env(safe-area-inset-bottom, 0px))";
+    }
+
+    function clearMobileRegionLifts() {
+      ["--namora-mobile-companion-lift", "--namora-mobile-input-lift"].forEach(
+        function (name) {
+          if (document.documentElement) {
+            document.documentElement.style.removeProperty(name);
+          }
+          if (document.body) {
+            document.body.style.removeProperty(name);
+          }
+        }
+      );
+    }
+
+    function clearFlowInlineGeometry(element) {
+      if (!element) return;
+      element.style.left = "";
+      element.style.top = "";
+      element.style.right = "";
+      element.style.bottom = "";
+      element.style.width = "";
+      element.style.height = "";
+      element.style.transform = "";
+    }
+
+    function applyPolicy(policyId, options) {
+      options = options || {};
+      var policy = config.policies[policyId] || config.policies.desktop;
+      var viewport = options.viewport || measureViewport();
+      var caps = readInputCapabilities();
+      var decision = options.decision || {
+        policyId: policy.id,
+        forcedPolicy: null,
+        detectionReason: "explicit-apply"
+      };
+      var changed = state.policyId !== policy.id;
+
+      state.policyId = policy.id;
+      state.policy = policy;
+      state.forcedPolicy = decision.forcedPolicy;
+      state.detectionReason = decision.detectionReason;
+      state.viewportWidth = viewport.width;
+      state.viewportHeight = viewport.height;
+      state.orientation = viewport.orientation;
+      state.pointerCoarse = caps.pointerCoarse;
+      state.hoverNone = caps.hoverNone;
+      state.maxTouchPoints = caps.maxTouchPoints;
+      state.backgroundKey = policy.background;
+      state.presentationLayout = policy.presentationLayout;
+      state.layoutProfile = policy.layoutProfile;
+      lastResolvedLayoutPolicyId = policy.id;
+
+      applyDocumentClasses(policy.id);
+      applyBackground(policy.background);
+      if (policy.id !== "mobile") {
+        clearMobileRegionLifts();
+      }
+
+      if (changed || options.force) {
+        for (var i = 0; i < listeners.length; i++) {
+          try {
+            listeners[i](getSnapshot());
+          } catch (err) {
+            console.error("[ResponsiveLayoutResolver]", err);
+          }
+        }
+      }
+
+      return getSnapshot();
+    }
+
+    function resolveAndApply(options) {
+      var viewport = measureViewport();
+      var decision = resolvePolicyDecision(viewport);
+      return applyPolicy(decision.policyId, {
+        viewport: viewport,
+        decision: decision,
+        force: !!(options && options.force)
+      });
+    }
+
+    return Object.freeze({
+      resolve: resolvePolicyId,
+      resolveDecision: resolvePolicyDecision,
+      resolveAndApply: resolveAndApply,
+      applyPolicy: applyPolicy,
+      getState: getSnapshot,
+      getActivePolicyId: function () {
+        return state.policyId;
+      },
+      getActivePolicy: function () {
+        return state.policy;
+      },
+      isGuidedFlow: function () {
+        return isGuidedFlowPolicy(state.policy);
+      },
+      applyMobileSceneHeader: applyMobileSceneHeader,
+      clearFlowInlineGeometry: clearFlowInlineGeometry,
+      getConfig: function () {
+        return config;
+      },
+      onChange: function (handler) {
+        if (typeof handler === "function") listeners.push(handler);
+      }
+    });
+  }
+
+  function getResponsiveLayoutResolver() {
+    if (!responsiveLayoutResolverInstance) {
+      responsiveLayoutResolverInstance = createResponsiveLayoutResolver();
+    }
+    return responsiveLayoutResolverInstance;
+  }
+
+  function getActiveLayoutPolicy() {
+    return getResponsiveLayoutResolver().getActivePolicy();
+  }
   var debugEl = document.getElementById("namoraDebug");
   var debugStandingEl = document.getElementById("namoraDebugStanding");
   var debugFootEl = document.getElementById("namoraDebugFoot");
@@ -1930,6 +2576,9 @@
     var editorEnabled =
       !!(layoutEditorInstance && layoutEditorInstance.isEnabled());
     var positions = [];
+    var policy = getActiveLayoutPolicy();
+    var guidedFlow = isGuidedFlowPolicy(policy);
+    var resolver = getResponsiveLayoutResolver();
 
     Object.keys(SCENE_COMPONENTS).forEach(function (componentId) {
       var record = SCENE_COMPONENTS[componentId];
@@ -1944,7 +2593,26 @@
           : !!record.runtimeVisible);
       element.hidden = !shouldShow;
       element.classList.toggle("is-editor-preview", editorEnabled && shouldShow);
+      element.classList.toggle("is-flow-layout", guidedFlow);
       if (!shouldShow) return;
+
+      if (guidedFlow) {
+        resolver.clearFlowInlineGeometry(element);
+        if (componentId === "speech-bubble") {
+          applySpeechBubbleFlowLayout(element);
+        }
+        sceneComponentPositions[componentId] = {
+          x: null,
+          y: null,
+          layoutMode: "guided-flow"
+        };
+        positions.push({
+          id: componentId,
+          anchorId: record.anchorId,
+          layoutMode: "guided-flow"
+        });
+        return;
+      }
 
       if (componentId === "speech-bubble") {
         var bubbleGeometry = getEffectiveSpeechBubbleGeometry();
@@ -1979,11 +2647,20 @@
         return;
       }
 
-      element.style.left = worldPosition.x + "px";
-      element.style.top = worldPosition.y + "px";
+      var shellPoint = worldPointToSceneShell(
+        worldPosition.x,
+        worldPosition.y,
+        lastLayout
+      );
+      element.style.left = shellPoint.x + "px";
+      element.style.top = shellPoint.y + "px";
+      element.style.right = "";
+      element.style.bottom = "";
       sceneComponentPositions[componentId] = {
         x: worldPosition.x,
-        y: worldPosition.y
+        y: worldPosition.y,
+        shellX: shellPoint.x,
+        shellY: shellPoint.y
       };
       positions.push({
         id: componentId,
@@ -1992,6 +2669,10 @@
         y: worldPosition.y
       });
     });
+
+    if (userInputFlowEl) {
+      userInputFlowEl.classList.toggle("is-flow-layout", guidedFlow);
+    }
 
     document.body.classList.toggle(
       "namora-components-preview-on",
@@ -2002,7 +2683,40 @@
       editorEnabled && !sceneComponentPreviewEnabled
     );
     refreshUserInputRenderers();
+
     return positions;
+  }
+
+  function applySpeechBubbleFlowLayout(element) {
+    if (!element) return;
+    var body = element.querySelector(".scene-speech-bubble__body");
+    var text = element.querySelector(".scene-speech-bubble__text");
+    if (!body || !text) return;
+
+    var cfg = getSpeechBubbleRenderConfig();
+    element.style.left = "";
+    element.style.top = "";
+    element.style.width = "";
+    element.style.height = "";
+    element.style.transform = "";
+
+    body.style.position = "relative";
+    body.style.left = "";
+    body.style.top = "";
+    body.style.width = "100%";
+    body.style.height = "auto";
+    body.style.minHeight = "0";
+    body.style.padding =
+      cfg.paddingBlock + "px " + cfg.paddingInline + "px";
+
+    text.style.position = "relative";
+    text.style.left = "";
+    text.style.top = "";
+    text.style.width = "auto";
+    text.style.maxWidth = "100%";
+    text.style.whiteSpace = "normal";
+    text.style.fontSize = cfg.fontSize + "px";
+    text.style.lineHeight = String(cfg.lineHeight);
   }
 
   function formatSceneComponentDebugSummary() {
@@ -2093,7 +2807,7 @@
     var scaleY = world.designWorldHeight / world.sourceHeight;
     var scaleMismatch = Math.abs(scaleX - scaleY) > 1e-9;
 
-    if (scaleMismatch) {
+    if (scaleMismatch && !isGuidedFlowPolicy(getActiveLayoutPolicy())) {
       console.warn(
         "[NamoraWorld] scaleX (" + scaleX + ") != scaleY (" + scaleY + "); using scaleX."
       );
@@ -2123,15 +2837,16 @@
   }
 
   /**
-   * Fixed World Scale Policy (Task 017)
-   * scale = designWorldWidth / sourceWidth  (== designWorldHeight / sourceHeight)
-   * renderedWidth  = sourceWidth  × scale  (= designWorldWidth)
-   * renderedHeight = sourceHeight × scale  (= designWorldHeight)
-   * worldOffsetX = viewportWidth  - renderedWidth
-   * worldOffsetY = viewportHeight - renderedHeight
+   * Fixed World Scale Policy (Task 017) — desktop / tablet workspace.
+   * Mobile guided-flow uses mobile-cover scene header instead of forcing
+   * the 1918×1080 design world into a portrait viewport (Task 042).
    */
   function updateNamoraWorldLayout() {
     if (!viewportEl || !worldEl || !worldBgEl || !nanaEl) return;
+
+    var resolver = getResponsiveLayoutResolver();
+    var policySnapshot = resolver.resolveAndApply();
+    var guidedFlow = policySnapshot.mode === "guided-flow";
 
     var world = NAMORA_WORLD;
     var layoutVp = getLayoutViewportSize();
@@ -2145,14 +2860,44 @@
     var nana = computeNanaWorldPosition(world);
     var standing = getEffectiveStandingPoint(world);
 
-    worldEl.style.width = world.sourceWidth + "px";
-    worldEl.style.height = world.sourceHeight + "px";
-    worldEl.style.transform = "scale(" + s + ")";
+    if (guidedFlow) {
+      resolver.applyMobileSceneHeader();
+      renderedWidth = layoutVp.width;
+      renderedHeight = worldEl.offsetHeight || layoutVp.height;
+      worldOffsetX = 0;
+      worldOffsetY = 0;
+      s = 1;
+    } else {
+      worldEl.style.position = "";
+      worldEl.style.minHeight = "";
+      worldEl.style.left = "";
+      worldEl.style.top = "";
+      worldEl.style.right = "0";
+      worldEl.style.bottom = "0";
+      worldEl.style.transformOrigin = "bottom right";
+      worldEl.style.width = world.sourceWidth + "px";
+      worldEl.style.height = world.sourceHeight + "px";
+      worldEl.style.transform = "scale(" + s + ")";
 
-    nanaEl.style.width = nana.nanaWorldWidth + "px";
-    nanaEl.style.height = nana.nanaWorldHeight + "px";
-    nanaEl.style.left = nana.nanaWorldX + "px";
-    nanaEl.style.top = nana.nanaWorldY + "px";
+      // Character Layer is outside the scaled world (Task043).
+      // Map NANA world origin into viewport/shell coordinates.
+      var nanaShell = worldPointToSceneShell(
+        nana.nanaWorldX,
+        nana.nanaWorldY,
+        {
+          scale: s,
+          worldOffsetX: worldOffsetX,
+          worldOffsetY: worldOffsetY
+        }
+      );
+      nanaEl.style.width = nana.nanaWorldWidth * s + "px";
+      nanaEl.style.height = nana.nanaWorldHeight * s + "px";
+      nanaEl.style.left = nanaShell.x + "px";
+      nanaEl.style.top = nanaShell.y + "px";
+      nanaEl.style.right = "";
+      nanaEl.style.bottom = "";
+      nanaEl.style.transform = "";
+    }
 
     var registrationErrorPx = Math.hypot(
       nana.footWorldX - standing.x,
@@ -2164,8 +2909,12 @@
       layoutViewport: layoutVp,
       visualViewportScale: visualViewportScale,
       worldScale: worldScale,
-      scale: s,
-      scalePolicy: world.scalePolicy || "fixed-design-world",
+      scale: guidedFlow ? 1 : s,
+      scalePolicy: guidedFlow
+        ? "mobile-cover"
+        : world.scalePolicy || "fixed-design-world",
+      layoutPolicyId: policySnapshot.policyId,
+      presentationLayout: policySnapshot.presentationLayout,
       profileSwitching: "DISABLED",
       renderedWidth: renderedWidth,
       renderedHeight: renderedHeight,
@@ -2184,6 +2933,7 @@
     };
 
     refreshSceneComponents();
+    updateResponsiveDebugPanel(policySnapshot);
 
     if (isAnchorVisualizationEnabled()) {
       renderAnchorVisualization(lastLayout);
@@ -2192,6 +2942,40 @@
     if (layoutEditorInstance && layoutEditorInstance.isEnabled()) {
       layoutEditorInstance.refreshSelectionOverlay(lastLayout);
     }
+  }
+
+  function updateResponsiveDebugPanel(policySnapshot) {
+    var panel = document.getElementById("namoraResponsiveDebug");
+    if (!isDebugEnabled()) {
+      if (panel) panel.hidden = true;
+      return;
+    }
+    if (!panel) {
+      panel = document.createElement("pre");
+      panel.id = "namoraResponsiveDebug";
+      panel.className = "namora-responsive-debug";
+      document.body.appendChild(panel);
+    }
+    panel.hidden = false;
+    panel.textContent = [
+      "Responsive Layout",
+      "policy: " + (policySnapshot.policy || policySnapshot.policyId),
+      "forced: " + (policySnapshot.forcedPolicy || "none"),
+      "reason: " + (policySnapshot.detectionReason || "n/a"),
+      "mode: " + policySnapshot.mode,
+      "profile: " + policySnapshot.layoutProfile,
+      "presentation: " + policySnapshot.presentationLayout,
+      "background: " + policySnapshot.backgroundKey,
+      "pointer: " + (policySnapshot.pointer || "n/a"),
+      "hover: " + (policySnapshot.hover || "n/a"),
+      "touchPoints: " + (policySnapshot.maxTouchPoints || 0),
+      "worldFit: " + policySnapshot.worldFit,
+      "viewport: " +
+        Math.round(policySnapshot.viewportWidth) +
+        " × " +
+        Math.round(policySnapshot.viewportHeight),
+      "orientation: " + policySnapshot.orientation
+    ].join("\n");
   }
 
   function renderAnchorVisualization(layout) {
@@ -3054,7 +3838,254 @@
         "Empty reply content"
       );
     }
-    return reply;
+    return {
+      reply: reply,
+      presentationIntro:
+        typeof data.presentationIntro === "string"
+          ? data.presentationIntro.trim()
+          : typeof data.shortReply === "string"
+            ? data.shortReply.trim()
+            : "",
+      directions: Array.isArray(data.directions) ? data.directions : [],
+      focusState:
+        data.focusState && typeof data.focusState === "object"
+          ? data.focusState
+          : null,
+      phase: typeof data.phase === "string" ? data.phase : null,
+      fallback: !!data.fallback
+    };
+  }
+
+  var CHOICE_OPTION_DEFAULTS = Object.freeze({
+    defaultWeight: 50,
+    minWeight: 0,
+    maxWeight: 100,
+    step: 5
+  });
+
+  var CHOICE_PRESENTATION_COPY = Object.freeze({
+    title: "探索方向",
+    instruction: "选择一个或多个方向继续。需要时可以调整偏向程度。",
+    confirmLabel: "按这些方向继续",
+    emptySelectionHint: "请先选择至少一个方向。",
+    weightToggleExpand: "调整偏向",
+    weightToggleCollapse: "收起偏向",
+    weightLabel: "偏向程度"
+  });
+
+  var CHOICE_VISUAL_KEYS = Object.freeze([
+    "mythic",
+    "nature",
+    "regal",
+    "minimal",
+    "warm",
+    "ocean",
+    "craft",
+    "signal"
+  ]);
+
+  function slugifyChoiceId(text, index) {
+    var base = String(text || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\u4e00-\u9fff]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 24);
+    return "opt-" + (base || "direction") + "-" + (index + 1);
+  }
+
+  function clampChoiceWeight(value, minWeight, maxWeight, step) {
+    var n = typeof value === "number" ? value : parseFloat(value);
+    if (!isFinite(n)) n = CHOICE_OPTION_DEFAULTS.defaultWeight;
+    n = Math.max(minWeight, Math.min(maxWeight, n));
+    if (step > 0) {
+      n = Math.round(n / step) * step;
+      n = Math.max(minWeight, Math.min(maxWeight, n));
+    }
+    return n;
+  }
+
+  function normalizeChoiceOption(raw, index, usedIds) {
+    if (!raw || typeof raw !== "object") return null;
+
+    var title = String(raw.title || raw.label || "").trim();
+    var description = String(raw.description || "").trim();
+    if (!title || !description) return null;
+
+    var id = String(raw.id || "").trim();
+    if (!id) id = slugifyChoiceId(title, index);
+    if (usedIds[id]) id = id + "-" + (index + 1);
+    usedIds[id] = true;
+
+    var examples = Array.isArray(raw.examples)
+      ? raw.examples
+          .map(function (e) {
+            return String(e || "").trim();
+          })
+          .filter(Boolean)
+          .slice(0, 3)
+      : [];
+
+    var minWeight =
+      typeof raw.minWeight === "number"
+        ? raw.minWeight
+        : CHOICE_OPTION_DEFAULTS.minWeight;
+    var maxWeight =
+      typeof raw.maxWeight === "number"
+        ? raw.maxWeight
+        : CHOICE_OPTION_DEFAULTS.maxWeight;
+    if (!(maxWeight > minWeight)) {
+      minWeight = CHOICE_OPTION_DEFAULTS.minWeight;
+      maxWeight = CHOICE_OPTION_DEFAULTS.maxWeight;
+    }
+    var step =
+      typeof raw.step === "number" && raw.step > 0
+        ? raw.step
+        : CHOICE_OPTION_DEFAULTS.step;
+    var defaultWeight = clampChoiceWeight(
+      typeof raw.defaultWeight === "number"
+        ? raw.defaultWeight
+        : CHOICE_OPTION_DEFAULTS.defaultWeight,
+      minWeight,
+      maxWeight,
+      step
+    );
+
+    var visualKey = String(raw.visualKey || "").trim();
+    if (!visualKey) {
+      visualKey = CHOICE_VISUAL_KEYS[index % CHOICE_VISUAL_KEYS.length];
+    }
+
+    return Object.freeze({
+      id: id,
+      title: title,
+      description: description,
+      examples: Object.freeze(examples.slice()),
+      visualKey: visualKey,
+      defaultWeight: defaultWeight,
+      minWeight: minWeight,
+      maxWeight: maxWeight,
+      step: step
+    });
+  }
+
+  function normalizeChoicePresentationPayload(rawPayload) {
+    rawPayload = rawPayload || {};
+    var selectionMode =
+      rawPayload.selectionMode === "single" ? "single" : "multiple";
+    var usedIds = Object.create(null);
+    var sourceOptions = Array.isArray(rawPayload.options)
+      ? rawPayload.options
+      : Array.isArray(rawPayload.directions)
+        ? rawPayload.directions
+        : [];
+
+    var options = [];
+    for (var i = 0; i < sourceOptions.length; i++) {
+      var option = normalizeChoiceOption(sourceOptions[i], i, usedIds);
+      if (option) options.push(option);
+    }
+
+    if (options.length < 1) return null;
+
+    return Object.freeze({
+      title:
+        typeof rawPayload.title === "string" && rawPayload.title.trim()
+          ? rawPayload.title.trim()
+          : CHOICE_PRESENTATION_COPY.title,
+      instruction:
+        typeof rawPayload.instruction === "string" &&
+        rawPayload.instruction.trim()
+          ? rawPayload.instruction.trim()
+          : CHOICE_PRESENTATION_COPY.instruction,
+      selectionMode: selectionMode,
+      options: Object.freeze(options)
+    });
+  }
+
+  function normalizeProviderPresentation(rawPresentation, sourceMessageId) {
+    if (!rawPresentation || typeof rawPresentation !== "object") return null;
+    if (rawPresentation.type !== "choice") return null;
+
+    var payload = normalizeChoicePresentationPayload(
+      rawPresentation.payload || rawPresentation
+    );
+    if (!payload) return null;
+
+    var weights = Object.create(null);
+    for (var i = 0; i < payload.options.length; i++) {
+      weights[payload.options[i].id] = payload.options[i].defaultWeight;
+    }
+
+    return Object.freeze({
+      id:
+        typeof rawPresentation.id === "string" && rawPresentation.id
+          ? rawPresentation.id
+          : "presentation-" + Date.now(),
+      type: "choice",
+      sourceMessageId: sourceMessageId || null,
+      status: "visible",
+      payload: payload,
+      interaction: Object.freeze({
+        selectedOptionIds: Object.freeze([]),
+        weights: Object.freeze(Object.assign({}, weights)),
+        expandedWeightOptionIds: Object.freeze([])
+      }),
+      createdAt: Date.now()
+    });
+  }
+
+  function buildChoicePresentationFromDirections(directions) {
+    return normalizeProviderPresentation(
+      {
+        type: "choice",
+        payload: {
+          selectionMode: "multiple",
+          options: directions
+        }
+      },
+      null
+    );
+  }
+
+  function clonePresentationSnapshot(presentation) {
+    if (!presentation) return null;
+    var weights = Object.assign({}, presentation.interaction.weights);
+    return Object.freeze({
+      id: presentation.id,
+      type: presentation.type,
+      sourceMessageId: presentation.sourceMessageId,
+      status: presentation.status,
+      payload: Object.freeze({
+        title: presentation.payload.title,
+        instruction: presentation.payload.instruction,
+        selectionMode: presentation.payload.selectionMode,
+        options: Object.freeze(
+          presentation.payload.options.map(function (opt) {
+            return Object.freeze({
+              id: opt.id,
+              title: opt.title,
+              description: opt.description,
+              examples: Object.freeze(opt.examples.slice()),
+              visualKey: opt.visualKey,
+              defaultWeight: opt.defaultWeight,
+              minWeight: opt.minWeight,
+              maxWeight: opt.maxWeight,
+              step: opt.step
+            });
+          })
+        )
+      }),
+      interaction: Object.freeze({
+        selectedOptionIds: Object.freeze(
+          presentation.interaction.selectedOptionIds.slice()
+        ),
+        weights: Object.freeze(weights),
+        expandedWeightOptionIds: Object.freeze(
+          presentation.interaction.expandedWeightOptionIds.slice()
+        )
+      }),
+      createdAt: presentation.createdAt
+    });
   }
 
   function cloneConversationMessage(message) {
@@ -3071,11 +4102,44 @@
   function createLocalResponseProvider(config) {
     config = config || LOCAL_RESPONSE_PROVIDER_CONFIG;
     var simulateFailureOnce = false;
+    var simulateChoiceOnce = false;
 
     function randomDelayMs() {
       var min = config.delayMinMs;
       var max = config.delayMaxMs;
       return min + Math.floor(Math.random() * (max - min + 1));
+    }
+
+    function buildChoiceFixtureResult() {
+      var presentation = buildChoicePresentationFromDirections([
+        {
+          label: "北欧神话",
+          description: "从神话与传说中寻找有力量又安静的名字气质。",
+          examples: ["Freya", "Saga"]
+        },
+        {
+          label: "自然力量",
+          description: "贴近风、水、林地与潮汐的命名感受。",
+          examples: ["Harbor", "Moss"]
+        },
+        {
+          label: "温柔海洋",
+          description: "偏柔和、开阔、带一点潮汐节奏的方向。",
+          examples: ["Maris", "Lumen"]
+        }
+      ]);
+      return Object.freeze({
+        role: "assistant",
+        content: "我想到几个方向，你可以选择一个或多个继续探索。",
+        provider: "local",
+        presentation: presentation
+          ? Object.freeze({
+              type: "choice",
+              payload: presentation.payload
+            })
+          : null,
+        focusState: null
+      });
     }
 
     return Object.freeze({
@@ -3089,11 +4153,17 @@
               reject(new Error("LocalResponseProvider simulated failure"));
               return;
             }
+            if (simulateChoiceOnce) {
+              simulateChoiceOnce = false;
+              resolve(buildChoiceFixtureResult());
+              return;
+            }
             resolve(
               Object.freeze({
                 content: config.responseText,
                 role: "assistant",
-                provider: "local"
+                provider: "local",
+                presentation: null
               })
             );
           }, delay);
@@ -3101,6 +4171,9 @@
       },
       simulateFailureOnce: function () {
         simulateFailureOnce = true;
+      },
+      simulateChoicePresentationOnce: function () {
+        simulateChoiceOnce = true;
       },
       getConfig: function () {
         return config;
@@ -3179,6 +4252,12 @@
       ) {
         payload.focusState = metadata.focusState;
       }
+      if (metadata.interactionType) {
+        payload.interactionType = metadata.interactionType;
+      }
+      if (metadata.selections) {
+        payload.selections = metadata.selections;
+      }
 
       var startedAt = Date.now();
       if (isDebugEnabled()) {
@@ -3199,17 +4278,45 @@
         .then(function (response) {
           return response.text().then(function (rawText) {
             var data = parseProviderJsonText(rawText);
-            var reply = validateDeepSeekBackendResponse(response, data);
+            var validated = validateDeepSeekBackendResponse(response, data);
+            var presentation = null;
+            if (validated.directions && validated.directions.length >= 1) {
+              var choiceModel = buildChoicePresentationFromDirections(
+                validated.directions
+              );
+              if (choiceModel) {
+                presentation = Object.freeze({
+                  type: "choice",
+                  payload: choiceModel.payload
+                });
+              }
+            }
+
+            var bubbleContent = validated.reply;
+            if (presentation) {
+              bubbleContent =
+                validated.presentationIntro ||
+                CHOICE_PRESENTATION_COPY.instruction;
+            }
+
             if (isDebugEnabled()) {
               console.info("[DeepSeekResponseProvider] request complete", {
                 durationMs: Date.now() - startedAt,
-                fallback: !!(data && data.fallback)
+                fallback: validated.fallback,
+                hasPresentation: !!presentation,
+                directionCount: validated.directions
+                  ? validated.directions.length
+                  : 0
               });
             }
             return Object.freeze({
               role: "assistant",
-              content: reply,
-              provider: "deepseek"
+              content: bubbleContent,
+              provider: "deepseek",
+              presentation: presentation,
+              focusState: validated.focusState,
+              phase: validated.phase,
+              legacyReply: validated.reply
             });
           });
         })
@@ -3306,6 +4413,7 @@
     var inputRuntime = deps.inputRuntime || null;
     var pearlRuntime = deps.pearlRuntime || null;
     var speechBubbleRuntime = deps.speechBubbleRuntime || null;
+    var presentationRuntime = deps.presentationRuntime || null;
     var getResponseProvider = deps.getResponseProvider;
     if (typeof getResponseProvider !== "function") {
       var fixedResponseProvider =
@@ -3321,6 +4429,7 @@
 
     var messageSeq = 0;
     var requestSeq = 0;
+    var lastFocusState = null;
     var state = {
       messages: [],
       status: "idle",
@@ -3403,6 +4512,115 @@
       }
     }
 
+    function applyProviderPresentation(result, assistantMessage) {
+      if (!presentationRuntime) return;
+      if (result && result.presentation) {
+        presentationRuntime.present(
+          Object.assign({}, result.presentation, {
+            sourceMessageId: assistantMessage.id
+          })
+        );
+      }
+    }
+
+    function buildProviderMetadata(extra) {
+      var metadata = { language: "zh" };
+      if (lastFocusState) {
+        metadata.focusState = lastFocusState;
+      }
+      if (extra && typeof extra === "object") {
+        Object.keys(extra).forEach(function (key) {
+          metadata[key] = extra[key];
+        });
+      }
+      return Object.freeze(metadata);
+    }
+
+    function handleProviderSuccess(requestId, result) {
+      if (state.activeRequestId !== requestId) return;
+
+      var assistantContent =
+        result && typeof result.content === "string"
+          ? result.content.trim()
+          : "";
+      if (!assistantContent) {
+        throw createProviderError(
+          PROVIDER_ERROR_CATEGORIES.INVALID_RESPONSE,
+          "Empty provider response"
+        );
+      }
+
+      if (result && result.focusState) {
+        lastFocusState = result.focusState;
+      }
+
+      var assistantMessage = createMessage(
+        "assistant",
+        assistantContent,
+        "complete"
+      );
+      commitMessages(state.messages.concat([assistantMessage]));
+      notifyMessage("assistant-message-created", assistantMessage);
+
+      displayLatestAssistant(assistantContent);
+      applyProviderPresentation(result, assistantMessage);
+
+      state.status = "idle";
+      state.activeRequestId = null;
+      notifyStateChange();
+      restoreInteractiveUI();
+    }
+
+    function handleProviderFailure(requestId, err) {
+      if (state.activeRequestId !== requestId) return;
+
+      state.lastError =
+        err && err.message ? String(err.message) : "Response failed";
+      state.status = "error";
+      state.activeRequestId = null;
+      notifyStateChange();
+
+      var failureMessage = createMessage(
+        "assistant",
+        LOCAL_RESPONSE_PROVIDER_CONFIG.failureResponseText,
+        "complete"
+      );
+      commitMessages(state.messages.concat([failureMessage]));
+      notifyMessage("assistant-message-created", failureMessage);
+      notifyMessage("conversation-error", failureMessage);
+
+      displayLatestAssistant(failureMessage.content);
+      restoreInteractiveUI();
+    }
+
+    function beginProviderRequest(userMessage, metadataExtra) {
+      var requestId = nextRequestId();
+      state.status = "responding";
+      state.activeRequestId = requestId;
+      state.lastError = null;
+      notifyStateChange();
+      setRespondingUI(true);
+
+      var conversationSnapshot = state.messages.map(cloneConversationMessage);
+
+      getResponseProvider()
+        .respond({
+          requestId: requestId,
+          userMessage: cloneConversationMessage(userMessage),
+          messages: conversationSnapshot,
+          latestUserMessage: cloneConversationMessage(userMessage),
+          metadata: buildProviderMetadata(metadataExtra)
+        })
+        .then(function (result) {
+          handleProviderSuccess(requestId, result);
+        })
+        .catch(function (err) {
+          handleProviderFailure(requestId, err);
+        });
+
+      return true;
+    }
+
     function getLatestAssistantContent() {
       for (var i = state.messages.length - 1; i >= 0; i--) {
         if (state.messages[i].role === "assistant") {
@@ -3435,6 +4653,16 @@
       notifyStateChange();
     }
 
+    function formatChoiceSelectionText(selections) {
+      var lines = ["我选择了："];
+      for (var i = 0; i < selections.length; i++) {
+        lines.push(
+          selections[i].title + "（偏向 " + selections[i].weight + "）"
+        );
+      }
+      return lines.join("\n");
+    }
+
     function submitUserText(text) {
       if (layoutEditorInstance && layoutEditorInstance.isEnabled()) {
         return false;
@@ -3456,75 +4684,35 @@
         inputRuntime.clear();
       }
 
-      var requestId = nextRequestId();
-      state.status = "responding";
-      state.activeRequestId = requestId;
-      state.lastError = null;
-      notifyStateChange();
+      return beginProviderRequest(userMessage, null);
+    }
 
-      setRespondingUI(true);
+    function submitChoiceSelection(selectionResult) {
+      if (layoutEditorInstance && layoutEditorInstance.isEnabled()) {
+        return false;
+      }
+      if (state.status === "responding") {
+        return false;
+      }
+      if (
+        !selectionResult ||
+        selectionResult.type !== "choice-selection" ||
+        !Array.isArray(selectionResult.selections) ||
+        selectionResult.selections.length < 1
+      ) {
+        return false;
+      }
 
-      var conversationSnapshot = state.messages.map(cloneConversationMessage);
+      var readable = formatChoiceSelectionText(selectionResult.selections);
+      var userMessage = createMessage("user", readable, "submitted");
+      commitMessages(state.messages.concat([userMessage]));
+      notifyMessage("user-message-created", userMessage);
 
-      getResponseProvider()
-        .respond({
-          requestId: requestId,
-          userMessage: cloneConversationMessage(userMessage),
-          messages: conversationSnapshot,
-          latestUserMessage: cloneConversationMessage(userMessage),
-          metadata: Object.freeze({ language: "zh" })
-        })
-        .then(function (result) {
-          if (state.activeRequestId !== requestId) return;
-
-          var assistantContent =
-            result && typeof result.content === "string"
-              ? result.content.trim()
-              : "";
-          if (!assistantContent) {
-            throw createProviderError(
-              PROVIDER_ERROR_CATEGORIES.INVALID_RESPONSE,
-              "Empty provider response"
-            );
-          }
-          var assistantMessage = createMessage(
-            "assistant",
-            assistantContent,
-            "complete"
-          );
-          commitMessages(state.messages.concat([assistantMessage]));
-          notifyMessage("assistant-message-created", assistantMessage);
-
-          displayLatestAssistant(assistantContent);
-
-          state.status = "idle";
-          state.activeRequestId = null;
-          notifyStateChange();
-          restoreInteractiveUI();
-        })
-        .catch(function (err) {
-          if (state.activeRequestId !== requestId) return;
-
-          state.lastError =
-            err && err.message ? String(err.message) : "Response failed";
-          state.status = "error";
-          state.activeRequestId = null;
-          notifyStateChange();
-
-          var failureMessage = createMessage(
-            "assistant",
-            LOCAL_RESPONSE_PROVIDER_CONFIG.failureResponseText,
-            "complete"
-          );
-          commitMessages(state.messages.concat([failureMessage]));
-          notifyMessage("assistant-message-created", failureMessage);
-          notifyMessage("conversation-error", failureMessage);
-
-          displayLatestAssistant(failureMessage.content);
-          restoreInteractiveUI();
-        });
-
-      return true;
+      return beginProviderRequest(userMessage, {
+        interactionType: "choice-selection",
+        selections: selectionResult.selections.slice(),
+        presentationId: selectionResult.presentationId || null
+      });
     }
 
     return Object.freeze({
@@ -3550,6 +4738,7 @@
       },
       submitUserText: submitUserText,
       acceptUserText: submitUserText,
+      submitChoiceSelection: submitChoiceSelection,
       clearError: function () {
         if (state.status !== "error") return false;
         state.status = "idle";
@@ -3564,6 +4753,686 @@
         if (typeof handler === "function") listeners.message.push(handler);
       },
       getLatestAssistantContent: getLatestAssistantContent
+    });
+  }
+
+  var interactivePresentationRuntimeInstance = null;
+  var presentationSeq = 0;
+
+  function nextPresentationId() {
+    presentationSeq += 1;
+    return "presentation-" + presentationSeq;
+  }
+
+  function findChoiceOption(presentation, optionId) {
+    if (!presentation || !presentation.payload) return null;
+    var options = presentation.payload.options || [];
+    for (var i = 0; i < options.length; i++) {
+      if (options[i].id === optionId) return options[i];
+    }
+    return null;
+  }
+
+  function createInteractivePresentationRuntime(deps) {
+    deps = deps || {};
+    var renderer = deps.renderer || null;
+    var getConversationRuntime = deps.getConversationRuntime;
+
+    var state = {
+      currentPresentation: null,
+      lastSubmittedResult: null,
+      lastError: null,
+      selectionHintVisible: false
+    };
+    var listeners = {
+      stateChange: [],
+      submit: []
+    };
+
+    function notifyStateChange() {
+      var snapshot = getState();
+      for (var i = 0; i < listeners.stateChange.length; i++) {
+        try {
+          listeners.stateChange[i](snapshot);
+        } catch (err) {
+          console.error("[InteractivePresentationRuntime]", err);
+        }
+      }
+      if (renderer && typeof renderer.render === "function") {
+        renderer.render(snapshot);
+      }
+    }
+
+    function notifySubmit(result) {
+      for (var i = 0; i < listeners.submit.length; i++) {
+        try {
+          listeners.submit[i](result);
+        } catch (err) {
+          console.error("[InteractivePresentationRuntime]", err);
+        }
+      }
+    }
+
+    function getState() {
+      return Object.freeze({
+        currentPresentation: clonePresentationSnapshot(state.currentPresentation),
+        lastSubmittedResult: state.lastSubmittedResult
+          ? Object.freeze({
+              presentationId: state.lastSubmittedResult.presentationId,
+              type: state.lastSubmittedResult.type,
+              selections: Object.freeze(
+                state.lastSubmittedResult.selections.map(function (item) {
+                  return Object.freeze({
+                    optionId: item.optionId,
+                    title: item.title,
+                    weight: item.weight
+                  });
+                })
+              ),
+              submittedAt: state.lastSubmittedResult.submittedAt
+            })
+          : null,
+        lastError: state.lastError,
+        selectionHintVisible: !!state.selectionHintVisible
+      });
+    }
+
+    function mutateCurrent(mutator) {
+      if (!state.currentPresentation) return false;
+      if (state.currentPresentation.status !== "visible") return false;
+      var next = mutator(state.currentPresentation);
+      if (!next) return false;
+      state.currentPresentation = next;
+      state.lastError = null;
+      notifyStateChange();
+      return true;
+    }
+
+    function present(model) {
+      var normalized = normalizeProviderPresentation(
+        model,
+        model && model.sourceMessageId ? model.sourceMessageId : null
+      );
+      if (!normalized) {
+        state.lastError = "invalid-presentation";
+        if (isDebugEnabled()) {
+          console.info(
+            "[InteractivePresentationRuntime] rejected invalid presentation"
+          );
+        }
+        return false;
+      }
+
+      if (
+        state.currentPresentation &&
+        state.currentPresentation.status === "visible"
+      ) {
+        state.currentPresentation = Object.freeze(
+          Object.assign({}, state.currentPresentation, {
+            status: "replaced"
+          })
+        );
+      }
+
+      state.currentPresentation = Object.freeze(
+        Object.assign({}, normalized, {
+          id: nextPresentationId(),
+          sourceMessageId: model.sourceMessageId || normalized.sourceMessageId
+        })
+      );
+      state.selectionHintVisible = false;
+      state.lastError = null;
+      notifyStateChange();
+      return true;
+    }
+
+    function replace(model) {
+      if (model == null) {
+        clear();
+        return true;
+      }
+      return present(model);
+    }
+
+    function clear() {
+      state.currentPresentation = null;
+      state.selectionHintVisible = false;
+      state.lastError = null;
+      notifyStateChange();
+    }
+
+    function toggleOption(optionId) {
+      return mutateCurrent(function (presentation) {
+        var option = findChoiceOption(presentation, optionId);
+        if (!option) return null;
+
+        var selected = presentation.interaction.selectedOptionIds.slice();
+        var expanded = presentation.interaction.expandedWeightOptionIds.slice();
+        var weights = Object.assign({}, presentation.interaction.weights);
+        var idx = selected.indexOf(optionId);
+        var mode = presentation.payload.selectionMode;
+
+        if (idx >= 0) {
+          selected.splice(idx, 1);
+          var expIdx = expanded.indexOf(optionId);
+          if (expIdx >= 0) expanded.splice(expIdx, 1);
+        } else {
+          if (mode === "single") {
+            selected = [optionId];
+            expanded = expanded.filter(function (id) {
+              return id === optionId;
+            });
+          } else {
+            selected.push(optionId);
+          }
+          if (typeof weights[optionId] !== "number") {
+            weights[optionId] = option.defaultWeight;
+          }
+        }
+
+        state.selectionHintVisible = false;
+
+        return Object.freeze({
+          id: presentation.id,
+          type: presentation.type,
+          sourceMessageId: presentation.sourceMessageId,
+          status: presentation.status,
+          payload: presentation.payload,
+          interaction: Object.freeze({
+            selectedOptionIds: Object.freeze(selected),
+            weights: Object.freeze(weights),
+            expandedWeightOptionIds: Object.freeze(expanded)
+          }),
+          createdAt: presentation.createdAt
+        });
+      });
+    }
+
+    function selectOption(optionId) {
+      var presentation = state.currentPresentation;
+      if (!presentation) return false;
+      if (presentation.interaction.selectedOptionIds.indexOf(optionId) >= 0) {
+        return true;
+      }
+      return toggleOption(optionId);
+    }
+
+    function deselectOption(optionId) {
+      var presentation = state.currentPresentation;
+      if (!presentation) return false;
+      if (presentation.interaction.selectedOptionIds.indexOf(optionId) < 0) {
+        return true;
+      }
+      return toggleOption(optionId);
+    }
+
+    function setWeight(optionId, value) {
+      var presentation = state.currentPresentation;
+      if (!presentation || presentation.status !== "visible") return false;
+      var option = findChoiceOption(presentation, optionId);
+      if (!option) return false;
+      if (presentation.interaction.selectedOptionIds.indexOf(optionId) < 0) {
+        return false;
+      }
+
+      var weights = Object.assign({}, presentation.interaction.weights);
+      weights[optionId] = clampChoiceWeight(
+        value,
+        option.minWeight,
+        option.maxWeight,
+        option.step
+      );
+
+      state.currentPresentation = Object.freeze({
+        id: presentation.id,
+        type: presentation.type,
+        sourceMessageId: presentation.sourceMessageId,
+        status: presentation.status,
+        payload: presentation.payload,
+        interaction: Object.freeze({
+          selectedOptionIds: presentation.interaction.selectedOptionIds,
+          weights: Object.freeze(weights),
+          expandedWeightOptionIds:
+            presentation.interaction.expandedWeightOptionIds
+        }),
+        createdAt: presentation.createdAt
+      });
+      state.lastError = null;
+
+      if (renderer && typeof renderer.patchWeight === "function") {
+        renderer.patchWeight(optionId, weights[optionId]);
+      }
+
+      var snapshot = getState();
+      for (var i = 0; i < listeners.stateChange.length; i++) {
+        try {
+          listeners.stateChange[i](snapshot);
+        } catch (err) {
+          console.error("[InteractivePresentationRuntime]", err);
+        }
+      }
+      return true;
+    }
+
+    function toggleWeightControl(optionId) {
+      return mutateCurrent(function (presentation) {
+        if (
+          presentation.interaction.selectedOptionIds.indexOf(optionId) < 0
+        ) {
+          return null;
+        }
+        var expanded = presentation.interaction.expandedWeightOptionIds.slice();
+        var idx = expanded.indexOf(optionId);
+        if (idx >= 0) {
+          expanded.splice(idx, 1);
+        } else {
+          expanded.push(optionId);
+        }
+
+        return Object.freeze({
+          id: presentation.id,
+          type: presentation.type,
+          sourceMessageId: presentation.sourceMessageId,
+          status: presentation.status,
+          payload: presentation.payload,
+          interaction: Object.freeze({
+            selectedOptionIds: presentation.interaction.selectedOptionIds,
+            weights: presentation.interaction.weights,
+            expandedWeightOptionIds: Object.freeze(expanded)
+          }),
+          createdAt: presentation.createdAt
+        });
+      });
+    }
+
+    function buildSelectionResult(presentation) {
+      var selections = [];
+      var selected = presentation.interaction.selectedOptionIds;
+      for (var i = 0; i < selected.length; i++) {
+        var option = findChoiceOption(presentation, selected[i]);
+        if (!option) continue;
+        var weight =
+          typeof presentation.interaction.weights[option.id] === "number"
+            ? presentation.interaction.weights[option.id]
+            : option.defaultWeight;
+        selections.push(
+          Object.freeze({
+            optionId: option.id,
+            title: option.title,
+            weight: weight
+          })
+        );
+      }
+      return Object.freeze({
+        presentationId: presentation.id,
+        type: "choice-selection",
+        selections: Object.freeze(selections),
+        submittedAt: Date.now()
+      });
+    }
+
+    function submitCurrentSelection() {
+      var presentation = state.currentPresentation;
+      if (!presentation || presentation.status !== "visible") {
+        return false;
+      }
+      if (presentation.interaction.selectedOptionIds.length < 1) {
+        state.selectionHintVisible = true;
+        notifyStateChange();
+        return false;
+      }
+
+      var conversationRuntime =
+        typeof getConversationRuntime === "function"
+          ? getConversationRuntime()
+          : null;
+      if (
+        conversationRuntime &&
+        typeof conversationRuntime.isResponding === "function" &&
+        conversationRuntime.isResponding()
+      ) {
+        return false;
+      }
+
+      var result = buildSelectionResult(presentation);
+      var accepted = true;
+      if (
+        conversationRuntime &&
+        typeof conversationRuntime.submitChoiceSelection === "function"
+      ) {
+        accepted = conversationRuntime.submitChoiceSelection(result);
+      }
+
+      if (!accepted) {
+        return false;
+      }
+
+      state.currentPresentation = Object.freeze(
+        Object.assign({}, presentation, { status: "submitted" })
+      );
+      state.lastSubmittedResult = result;
+      state.selectionHintVisible = false;
+      state.lastError = null;
+      notifySubmit(result);
+      notifyStateChange();
+      return true;
+    }
+
+    return Object.freeze({
+      id: "interactive-presentation-runtime",
+      getState: getState,
+      getCurrentPresentation: function () {
+        return clonePresentationSnapshot(state.currentPresentation);
+      },
+      present: present,
+      replace: replace,
+      selectOption: selectOption,
+      deselectOption: deselectOption,
+      toggleOption: toggleOption,
+      setWeight: setWeight,
+      toggleWeightControl: toggleWeightControl,
+      submitCurrentSelection: submitCurrentSelection,
+      clear: clear,
+      onStateChange: function (handler) {
+        if (typeof handler === "function") listeners.stateChange.push(handler);
+      },
+      onSubmit: function (handler) {
+        if (typeof handler === "function") listeners.submit.push(handler);
+      }
+    });
+  }
+
+  function escapePresentationHtml(text) {
+    return String(text || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function createChoicePresentationRenderer(rootEl) {
+    var hostEl = rootEl
+      ? rootEl.querySelector("[data-presentation-host]")
+      : null;
+    if (!hostEl && rootEl) {
+      hostEl = document.createElement("div");
+      hostEl.className = "namora-presentation__host";
+      hostEl.setAttribute("data-presentation-host", "1");
+      rootEl.appendChild(hostEl);
+    }
+
+    function setRootVisible(visible) {
+      if (!rootEl) return;
+      if (visible) {
+        rootEl.hidden = false;
+        rootEl.setAttribute("aria-hidden", "false");
+      } else {
+        rootEl.hidden = true;
+        rootEl.setAttribute("aria-hidden", "true");
+      }
+      var group = rootEl.closest
+        ? rootEl.closest("[data-presentation-group]")
+        : null;
+      if (group) {
+        group.classList.toggle("is-presentation-empty", !visible);
+        group.hidden = !visible;
+      }
+    }
+
+    function patchWeight(optionId, weight) {
+      if (!hostEl) return;
+      var card = hostEl.querySelector(
+        '[data-option-id="' + optionId.replace(/"/g, "") + '"]'
+      );
+      if (!card) return;
+      var valueEl = card.querySelector(".namora-choice-card__weight-value");
+      if (valueEl) valueEl.textContent = String(weight);
+      var slider = card.querySelector("[data-weight-slider]");
+      if (slider && String(slider.value) !== String(weight)) {
+        slider.value = String(weight);
+      }
+    }
+
+    function renderExamples(examples) {
+      if (!examples || !examples.length) return "";
+      return (
+        '<ul class="namora-choice-card__examples">' +
+        examples
+          .map(function (example) {
+            return (
+              "<li>" + escapePresentationHtml(example) + "</li>"
+            );
+          })
+          .join("") +
+        "</ul>"
+      );
+    }
+
+    function renderCard(option, presentation, isSubmitted) {
+      var selected =
+        presentation.interaction.selectedOptionIds.indexOf(option.id) >= 0;
+      var expanded =
+        presentation.interaction.expandedWeightOptionIds.indexOf(option.id) >=
+        0;
+      var weight =
+        typeof presentation.interaction.weights[option.id] === "number"
+          ? presentation.interaction.weights[option.id]
+          : option.defaultWeight;
+      var classes = [
+        "namora-choice-card",
+        "namora-choice-card--" + option.visualKey
+      ];
+      if (selected) classes.push("is-selected");
+      if (expanded && selected) classes.push("is-weight-expanded");
+      if (isSubmitted) classes.push("is-readonly");
+
+      var weightPanel = "";
+      if (selected) {
+        weightPanel =
+          '<div class="namora-choice-card__weight">' +
+          '<button type="button" class="namora-choice-card__weight-toggle" data-weight-toggle="' +
+          escapePresentationHtml(option.id) +
+          '"' +
+          (isSubmitted ? " disabled" : "") +
+          ">" +
+          escapePresentationHtml(
+            expanded
+              ? CHOICE_PRESENTATION_COPY.weightToggleCollapse
+              : CHOICE_PRESENTATION_COPY.weightToggleExpand
+          ) +
+          "</button>";
+        if (expanded) {
+            weightPanel +=
+            '<label class="namora-choice-card__weight-label">' +
+            '<span class="namora-choice-card__weight-title">' +
+            escapePresentationHtml(CHOICE_PRESENTATION_COPY.weightLabel) +
+            '</span><span class="namora-choice-card__weight-value">' +
+            weight +
+            "</span></label>" +
+            '<div class="namora-choice-card__slider-wrap">' +
+            '<span class="namora-choice-card__slider-end" aria-hidden="true">弱</span>' +
+            '<input type="range" class="namora-choice-card__slider" data-weight-slider="' +
+            escapePresentationHtml(option.id) +
+            '" min="' +
+            option.minWeight +
+            '" max="' +
+            option.maxWeight +
+            '" step="' +
+            option.step +
+            '" value="' +
+            weight +
+            '"' +
+            (isSubmitted ? " disabled" : "") +
+            " />" +
+            '<span class="namora-choice-card__slider-end" aria-hidden="true">强</span>' +
+            "</div>";
+        }
+        weightPanel += "</div>";
+      }
+
+      return (
+        '<article class="' +
+        classes.join(" ") +
+        '" data-option-id="' +
+        escapePresentationHtml(option.id) +
+        '" role="button" tabindex="0" aria-pressed="' +
+        (selected ? "true" : "false") +
+        '">' +
+        '<div class="namora-choice-card__mark" aria-hidden="true"></div>' +
+        '<div class="namora-choice-card__accent" aria-hidden="true"></div>' +
+        '<h3 class="namora-choice-card__title">' +
+        escapePresentationHtml(option.title) +
+        "</h3>" +
+        '<p class="namora-choice-card__description">' +
+        escapePresentationHtml(option.description) +
+        "</p>" +
+        renderExamples(option.examples) +
+        weightPanel +
+        "</article>"
+      );
+    }
+
+    function render(snapshot) {
+      if (!rootEl || !hostEl) return;
+      var presentation = snapshot && snapshot.currentPresentation;
+      if (
+        !presentation ||
+        presentation.type !== "choice" ||
+        (presentation.status !== "visible" &&
+          presentation.status !== "submitted")
+      ) {
+        hostEl.innerHTML = "";
+        setRootVisible(false);
+        return;
+      }
+
+      var isSubmitted = presentation.status === "submitted";
+      var cardsHtml = presentation.payload.options
+        .map(function (option) {
+          return renderCard(option, presentation, isSubmitted);
+        })
+        .join("");
+
+      var hintHtml = snapshot.selectionHintVisible
+        ? '<p class="namora-presentation__hint" role="status">' +
+          escapePresentationHtml(CHOICE_PRESENTATION_COPY.emptySelectionHint) +
+          "</p>"
+        : "";
+
+      hostEl.innerHTML =
+        '<section class="namora-choice-presentation" data-presentation-id="' +
+        escapePresentationHtml(presentation.id) +
+        '">' +
+        '<header class="namora-choice-presentation__header">' +
+        '<h2 class="namora-choice-presentation__title">' +
+        escapePresentationHtml(presentation.payload.title) +
+        "</h2>" +
+        '<p class="namora-choice-presentation__instruction">' +
+        escapePresentationHtml(presentation.payload.instruction) +
+        "</p>" +
+        "</header>" +
+        '<div class="namora-choice-presentation__cards">' +
+        cardsHtml +
+        "</div>" +
+        hintHtml +
+        '<div class="namora-choice-presentation__actions">' +
+        '<button type="button" class="namora-choice-presentation__confirm" data-choice-confirm="1"' +
+        (isSubmitted ? " disabled" : "") +
+        ">" +
+        escapePresentationHtml(CHOICE_PRESENTATION_COPY.confirmLabel) +
+        "</button>" +
+        "</div>" +
+        "</section>";
+
+      setRootVisible(true);
+    }
+
+    function bindEvents(runtime) {
+      if (!rootEl || rootEl.dataset.presentationBound === "1") return;
+      rootEl.dataset.presentationBound = "1";
+
+      rootEl.addEventListener("click", function (event) {
+        var target = event.target;
+        if (!target || !runtime) return;
+
+        var confirmBtn = target.closest
+          ? target.closest("[data-choice-confirm]")
+          : null;
+        if (confirmBtn) {
+          event.preventDefault();
+          runtime.submitCurrentSelection();
+          return;
+        }
+
+        var weightToggle = target.closest
+          ? target.closest("[data-weight-toggle]")
+          : null;
+        if (weightToggle) {
+          event.preventDefault();
+          event.stopPropagation();
+          runtime.toggleWeightControl(weightToggle.getAttribute("data-weight-toggle"));
+          return;
+        }
+
+        if (target.closest && target.closest("[data-weight-slider]")) {
+          return;
+        }
+
+        var card = target.closest ? target.closest("[data-option-id]") : null;
+        if (card) {
+          var presentation = runtime.getCurrentPresentation();
+          if (!presentation || presentation.status !== "visible") return;
+          event.preventDefault();
+          runtime.toggleOption(card.getAttribute("data-option-id"));
+        }
+      });
+
+      rootEl.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        var card =
+          event.target && event.target.closest
+            ? event.target.closest("[data-option-id]")
+            : null;
+        if (!card || !runtime) return;
+        event.preventDefault();
+        runtime.toggleOption(card.getAttribute("data-option-id"));
+      });
+
+      rootEl.addEventListener("input", function (event) {
+        var slider = event.target;
+        if (
+          !slider ||
+          !slider.getAttribute ||
+          !slider.getAttribute("data-weight-slider") ||
+          !runtime
+        ) {
+          return;
+        }
+        runtime.setWeight(
+          slider.getAttribute("data-weight-slider"),
+          slider.value
+        );
+      });
+
+      rootEl.addEventListener(
+        "touchmove",
+        function (event) {
+          if (
+            event.target &&
+            event.target.classList &&
+            event.target.classList.contains("namora-choice-card__slider")
+          ) {
+            event.stopPropagation();
+          }
+        },
+        { passive: true }
+      );
+    }
+
+    return Object.freeze({
+      render: render,
+      patchWeight: patchWeight,
+      bindEvents: bindEvents
     });
   }
 
@@ -3586,6 +5455,22 @@
       deepSeekResponseProviderInstance
     );
 
+    var presentationRoot = document.getElementById(
+      "namoraInteractivePresentation"
+    );
+    var presentationRenderer = createChoicePresentationRenderer(presentationRoot);
+
+    interactivePresentationRuntimeInstance = createInteractivePresentationRuntime({
+      renderer: presentationRenderer,
+      getConversationRuntime: function () {
+        return conversationRuntimeInstance;
+      }
+    });
+
+    if (presentationRenderer && presentationRenderer.bindEvents) {
+      presentationRenderer.bindEvents(interactivePresentationRuntimeInstance);
+    }
+
     if (isDebugEnabled()) {
       console.info("[ResponseProviderRegistry] initialized", {
         active: responseProviderRegistryInstance.getActiveProviderName()
@@ -3596,6 +5481,7 @@
       inputRuntime: inputRuntimeInstance,
       pearlRuntime: pearlRuntimeInstance,
       speechBubbleRuntime: speechBubbleRuntimeInstance,
+      presentationRuntime: interactivePresentationRuntimeInstance,
       getResponseProvider: function () {
         return responseProviderRegistryInstance.getProvider();
       },
@@ -10163,6 +12049,7 @@
   objectIndexById = buildObjectIndex();
 
   document.body.classList.add("namora-scene-loading");
+  getNamoraUILayers();
 
   sceneRuntimeInstance = createSceneRuntime();
   sceneRuntimeInstance
@@ -10185,8 +12072,10 @@
       if (NAMORA_BOOT_MODE.debug) {
         console.info("[Namora] Boot Mode:", {
           debug: NAMORA_BOOT_MODE.debug,
-          layoutEdit: NAMORA_BOOT_MODE.layoutEdit
+          layoutEdit: NAMORA_BOOT_MODE.layoutEdit,
+          layoutPolicy: NAMORA_BOOT_MODE.layoutPolicy || null
         });
+        console.info("[NamoraUILayers]", NamoraUILayers.getState());
       }
       // Re-measure Speech Bubble content once webfonts finish loading so the
       // adaptive geometry reflects final glyph metrics (Task 036).
@@ -10318,9 +12207,53 @@
     },
     getSpeechBubbleRuntime: function () {
       return speechBubbleRuntimeInstance;
+    },
+    getInteractivePresentationRuntime: function () {
+      return interactivePresentationRuntimeInstance;
+    },
+    getResponsiveLayoutResolver: function () {
+      return getResponsiveLayoutResolver();
+    },
+    getUILayers: function () {
+      return getNamoraUILayers();
     }
   };
   Object.freeze(window.SceneRuntime);
+
+  window.NamoraUILayers = {
+    getLayer: function (name) {
+      return getNamoraUILayers().getLayer(name);
+    },
+    hasLayer: function (name) {
+      return getNamoraUILayers().hasLayer(name);
+    },
+    listLayers: function () {
+      return getNamoraUILayers().listLayers();
+    },
+    getState: function () {
+      return getNamoraUILayers().getState();
+    },
+    setDebugOutlines: function (enabled) {
+      return getNamoraUILayers().setDebugOutlines(enabled);
+    }
+  };
+  Object.freeze(window.NamoraUILayers);
+
+  window.ResponsiveLayoutResolver = {
+    get: function () {
+      return getResponsiveLayoutResolver();
+    },
+    getState: function () {
+      return getResponsiveLayoutResolver().getState();
+    },
+    getActivePolicyId: function () {
+      return getResponsiveLayoutResolver().getActivePolicyId();
+    },
+    resolveAndApply: function () {
+      return getResponsiveLayoutResolver().resolveAndApply({ force: true });
+    }
+  };
+  Object.freeze(window.ResponsiveLayoutResolver);
 
   window.ConversationRuntime = {
     get: function () {
@@ -10336,6 +12269,23 @@
   };
   Object.freeze(window.SpeechBubbleRuntime);
 
+  window.InteractivePresentationRuntime = {
+    get: function () {
+      return interactivePresentationRuntimeInstance;
+    },
+    getState: function () {
+      return interactivePresentationRuntimeInstance
+        ? interactivePresentationRuntimeInstance.getState()
+        : null;
+    },
+    getCurrentPresentation: function () {
+      return interactivePresentationRuntimeInstance
+        ? interactivePresentationRuntimeInstance.getCurrentPresentation()
+        : null;
+    }
+  };
+  Object.freeze(window.InteractivePresentationRuntime);
+
   window.LocalResponseProvider = {
     get: function () {
       return localResponseProviderInstance;
@@ -10346,6 +12296,15 @@
         typeof localResponseProviderInstance.simulateFailureOnce === "function"
       ) {
         localResponseProviderInstance.simulateFailureOnce();
+      }
+    },
+    simulateChoicePresentationOnce: function () {
+      if (
+        localResponseProviderInstance &&
+        typeof localResponseProviderInstance.simulateChoicePresentationOnce ===
+          "function"
+      ) {
+        localResponseProviderInstance.simulateChoicePresentationOnce();
       }
     }
   };
