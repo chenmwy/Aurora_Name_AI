@@ -10,63 +10,313 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="namora.css" />
 </head>
-<body class="namora-body">
-  <div class="namora-bg" aria-hidden="true"></div>
-  <div class="namora-particles" aria-hidden="true">
-    <span class="namora-particle"></span>
-    <span class="namora-particle"></span>
-    <span class="namora-particle"></span>
-    <span class="namora-particle"></span>
-    <span class="namora-particle"></span>
-    <span class="namora-particle"></span>
-  </div>
-
-  <div class="namora-overlay" aria-hidden="true"></div>
-
-  <div class="namora-page">
-    <header class="namora-header">
-      <a class="namora-logo" href="/">NameAI</a>
-      <div class="namora-memory" aria-label="Memory">Memory</div>
-    </header>
-
-    <div class="namora-scene">
-      <main class="namora-main">
-        <section class="namora-stage" aria-label="Conversation with NANA">
-          <div class="namora-chat">
-            <div class="namora-messages" id="namoraMessages" role="log" aria-live="polite">
-              <div class="namora-msg namora-msg--nana">
-                <p>你好，我是 NANA。</p>
-                <p>今天你想创造怎样的名字？</p>
-              </div>
+<body class="namora-body namora-stage1">
+  <!-- Stage 1: Namora Viewport → Namora World (Background + NANA only) -->
+  <div class="namora-viewport" id="namoraViewport" aria-hidden="false">
+    <div class="namora-world" id="namoraWorld">
+      <img
+        class="namora-world-bg"
+        id="namoraWorldBg"
+        src="assets/backgrounds/namora-bg-desktop.webp"
+        alt=""
+        decoding="async"
+        draggable="false"
+      />
+      <figure class="namora-nana" id="namoraNana" aria-hidden="true">
+        <img
+          class="namora-nana__sprite"
+          src="assets/companions/base/nana_front_v1.png"
+          alt=""
+          width="1024"
+          height="1024"
+          decoding="async"
+          draggable="false"
+        />
+      </figure>
+      <div
+        class="namora-scene-components"
+        id="namoraSceneComponents"
+        aria-label="Scene Components"
+      >
+        <div
+          class="namora-scene-component scene-component scene-speech-bubble"
+          id="sceneSpeechBubble"
+          data-scene-component-id="speech-bubble"
+          role="status"
+          aria-label="NANA 对话"
+          hidden
+        >
+          <div class="scene-speech-bubble__body">
+            <div class="scene-speech-bubble__content">
+              <p class="scene-speech-bubble__text">
+                你好，我是 NANA。我们先从你想寻找的名字开始吧。
+              </p>
             </div>
           </div>
-          <figure class="namora-nana" aria-hidden="true">
-            <img
-              src="assets/companions/base/nana_front_v1.png"
-              alt=""
-              width="180"
-              height="180"
-              decoding="async"
-            />
-          </figure>
-        </section>
-      </main>
-
-      <div class="namora-compose">
-        <label class="namora-input-wrap">
-          <span class="visually-hidden">Message to NANA</span>
+          <div class="scene-speech-bubble__tail" aria-hidden="true"></div>
+        </div>
+        <div
+          class="namora-scene-component scene-input-panel"
+          id="sceneInputPanel"
+          data-scene-component-id="input-panel"
+          role="group"
+          aria-label="输入"
+          hidden
+        >
           <input
             type="text"
-            id="namoraInput"
-            class="namora-input"
-            placeholder="和 NANA 说说你的想法……"
+            class="scene-input-panel__field"
+            id="sceneInputField"
             autocomplete="off"
             enterkeyhint="send"
+            spellcheck="false"
           />
-        </label>
-        <button type="button" class="namora-send" id="namoraSend" aria-label="Send message">
-          <img src="assets/ui/pearl-shell.png" alt="" width="58" height="58" decoding="async" />
+        </div>
+        <div
+          class="namora-scene-component scene-pearl"
+          id="scenePearl"
+          data-scene-component-id="pearl"
+          hidden
+        >
+          <button
+            type="button"
+            class="scene-pearl__button"
+            id="scenePearlButton"
+            aria-label="发送"
+          >
+            <img
+              class="scene-pearl__icon"
+              src="assets/ui/pearl-shell.png"
+              alt=""
+              width="58"
+              height="58"
+              decoding="async"
+            />
+          </button>
+        </div>
+      </div>
+      <div class="namora-debug" id="namoraDebug" hidden>
+        <div class="namora-debug__bounds" id="namoraDebugBounds" aria-hidden="true"></div>
+        <div class="namora-debug__marker namora-debug__marker--standing" id="namoraDebugStanding" aria-hidden="true"></div>
+        <div class="namora-debug__marker namora-debug__marker--foot" id="namoraDebugFoot" aria-hidden="true"></div>
+        <div class="namora-debug__marker namora-debug__marker--center" id="namoraDebugCenter" aria-hidden="true"></div>
+        <div class="namora-debug__marker namora-debug__marker--head" id="namoraDebugHead" aria-hidden="true"></div>
+        <div class="namora-debug__marker namora-debug__marker--dialogue" id="namoraDebugDialogue" aria-hidden="true"></div>
+        <div class="namora-debug__marker namora-debug__marker--interaction" id="namoraDebugInteraction" aria-hidden="true"></div>
+        <pre class="namora-debug__panel" id="namoraDebugPanel" aria-live="polite"></pre>
+      </div>
+      <!-- Layout Editor selection overlay — inactive unless ?layout=edit -->
+      <div class="namora-layout-selection" id="namoraLayoutSelection" hidden aria-hidden="true">
+        <div class="namora-layout-selection__bounds" id="namoraLayoutSelectionBounds"></div>
+        <div class="namora-layout-selection__points" id="namoraLayoutSelectionPoints"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layout Editor panels — exist only for engineering; normal mode never shows them -->
+  <div class="namora-layout-editor" id="namoraLayoutEditor" hidden lang="zh-CN">
+    <header class="namora-layout-editor__chrome" aria-label="Namora 布局编辑器">
+      <div class="namora-layout-editor__brand">
+        <div class="namora-layout-editor__title">Namora 布局编辑器</div>
+        <div class="namora-layout-editor__subtitle">Layout Editor</div>
+      </div>
+      <div class="namora-layout-editor__toolbar" id="namoraLayoutToolbar" role="toolbar" aria-label="工具栏">
+        <button type="button" class="namora-layout-editor__tool is-active" data-tool="select" title="选择" aria-label="选择">选择</button>
+        <button type="button" class="namora-layout-editor__tool" data-tool="move" title="移动" aria-label="移动">移动</button>
+        <button type="button" class="namora-layout-editor__tool" data-tool="anchor" title="锚点" aria-label="锚点" disabled>锚点</button>
+        <button type="button" class="namora-layout-editor__tool" data-tool="grid" title="网格" aria-label="网格" disabled>网格</button>
+        <button type="button" class="namora-layout-editor__tool" data-tool="snap" title="吸附" aria-label="吸附" disabled>吸附</button>
+        <button type="button" class="namora-layout-editor__tool" data-tool="measure" title="测量" aria-label="测量" disabled>测量</button>
+        <span class="namora-layout-editor__tool-sep" aria-hidden="true"></span>
+        <button type="button" class="namora-layout-editor__tool" data-tool="reset-current" title="恢复当前点" aria-label="恢复当前点">恢复当前点</button>
+        <button type="button" class="namora-layout-editor__tool" data-tool="reset-all" title="恢复全部" aria-label="恢复全部">恢复全部</button>
+        <button type="button" class="namora-layout-editor__tool" data-tool="components" title="显示组件" aria-label="显示组件" aria-pressed="false">显示组件：关</button>
+        <span class="namora-layout-editor__tool-sep" aria-hidden="true"></span>
+        <button type="button" class="namora-layout-editor__tool" data-tool="copy" title="复制布局 JSON" aria-label="复制布局 JSON" disabled>复制布局 JSON</button>
+        <button type="button" class="namora-layout-editor__tool" data-tool="export" title="下载布局文件" aria-label="下载布局文件" disabled>下载布局文件</button>
+        <button type="button" class="namora-layout-editor__tool" data-tool="preview-profile" title="预览布局配置" aria-label="预览布局配置" disabled>预览</button>
+        <button type="button" class="namora-layout-editor__tool" data-tool="import" title="导入布局 JSON" aria-label="导入布局 JSON">导入布局 JSON</button>
+        <button type="button" class="namora-layout-editor__tool" data-tool="restore-canonical" title="恢复项目默认布局" aria-label="恢复项目默认布局">恢复项目默认布局</button>
+        <input type="file" id="namoraLayoutProfileImportInput" accept=".json,application/json" hidden />
+      </div>
+      <div
+        class="namora-layout-editor__profile-status"
+        id="namoraLayoutProfileStatus"
+        aria-live="polite"
+      >
+        <span id="namoraLayoutBaselineStatus">当前基准：项目默认布局</span>
+        <span id="namoraLayoutDirtyStatus">未保存修改：否</span>
+        <span id="namoraLayoutSourceStatus">布局来源：assets/config/namora-layout-default.json</span>
+        <span class="namora-layout-editor__profile-feedback" id="namoraLayoutProfileFeedback" hidden></span>
+      </div>
+    </header>
+    <aside class="namora-layout-editor__panel namora-layout-editor__panel--left" aria-label="对象树">
+      <header class="namora-layout-editor__header">对象树</header>
+      <ul class="namora-layout-editor__tree" id="namoraLayoutTree" role="tree"></ul>
+      <section
+        class="namora-layout-editor__uig"
+        id="namoraLayoutUserInputGroup"
+        aria-label="用户输入组"
+      >
+        <header class="namora-layout-editor__uig-title">用户输入组</header>
+        <div class="namora-layout-editor__uig-status">
+          状态：
+          <strong id="namoraLayoutUserInputBindStatus">已解绑</strong>
+        </div>
+        <div class="namora-layout-editor__uig-actions">
+          <button
+            type="button"
+            class="namora-layout-editor__action-btn"
+            data-editor-action="bind-user-input"
+          >
+            绑定珍珠贝与输入框
+          </button>
+          <button
+            type="button"
+            class="namora-layout-editor__action-btn"
+            data-editor-action="unbind-user-input"
+            disabled
+          >
+            解除珍珠贝与输入框绑定
+          </button>
+        </div>
+        <div class="namora-layout-editor__uig-legend" aria-label="图例">
+          <div class="namora-layout-editor__uig-legend-title">图例</div>
+          <div class="namora-layout-editor__uig-legend-row">
+            <span class="namora-layout-editor__swatch namora-layout-editor__swatch--group"></span>
+            用户输入组根点（橙）
+          </div>
+          <div class="namora-layout-editor__uig-legend-row">
+            <span class="namora-layout-editor__swatch namora-layout-editor__swatch--pearl"></span>
+            珍珠贝根点（红）
+          </div>
+          <div class="namora-layout-editor__uig-legend-row">
+            <span class="namora-layout-editor__swatch namora-layout-editor__swatch--input"></span>
+            用户输入框根点（白）
+          </div>
+        </div>
+      </section>
+    </aside>
+    <aside class="namora-layout-editor__panel namora-layout-editor__panel--right" aria-label="属性">
+      <header class="namora-layout-editor__header">属性</header>
+      <div class="namora-layout-editor__props" id="namoraLayoutProps">
+        <p class="namora-layout-editor__empty">请选择一个对象</p>
+      </div>
+    </aside>
+  </div>
+
+  <div
+    class="namora-layout-profile-modal"
+    id="namoraLayoutProfileModal"
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="namoraLayoutProfileModalTitle"
+  >
+    <div class="namora-layout-profile-modal__panel">
+      <header class="namora-layout-profile-modal__header">
+        <h2 id="namoraLayoutProfileModalTitle">布局配置预览</h2>
+        <button
+          type="button"
+          class="namora-layout-editor__action-btn"
+          id="namoraLayoutProfileModalClose"
+        >
+          关闭
         </button>
+        <button
+          type="button"
+          class="namora-layout-editor__action-btn namora-layout-profile-modal__apply"
+          id="namoraProfilePreviewApply"
+          hidden
+        >
+          应用到编辑器
+        </button>
+      </header>
+      <div class="namora-layout-profile-modal__meta">
+        <div><span>配置 ID</span><strong id="namoraProfilePreviewId">—</strong></div>
+        <div><span>配置版本</span><strong id="namoraProfilePreviewVersion">—</strong></div>
+        <div><span>布局校验</span><strong id="namoraProfilePreviewValidation">—</strong></div>
+        <div><span>世界资源</span><strong id="namoraProfilePreviewAsset">—</strong></div>
+        <div><span>站立点</span><strong id="namoraProfilePreviewStanding">—</strong></div>
+        <div><span>NANA 锚点数</span><strong id="namoraProfilePreviewAnchorCount">—</strong></div>
+        <div><span>用户输入组</span><strong id="namoraProfilePreviewBound">—</strong></div>
+        <div><span>珍珠贝位置</span><strong id="namoraProfilePreviewPearl">—</strong></div>
+        <div><span>输入框位置</span><strong id="namoraProfilePreviewInput">—</strong></div>
+        <div><span>关系数量</span><strong id="namoraProfilePreviewRelationships">—</strong></div>
+        <div><span>未保存修改</span><strong id="namoraProfilePreviewDirty">—</strong></div>
+      </div>
+      <pre class="namora-layout-profile-modal__errors" id="namoraProfilePreviewErrors" hidden></pre>
+      <label class="namora-layout-profile-modal__json-label" for="namoraProfilePreviewJson">
+        JSON（只读）
+      </label>
+      <textarea
+        id="namoraProfilePreviewJson"
+        class="namora-layout-profile-modal__json"
+        readonly
+        spellcheck="false"
+      ></textarea>
+    </div>
+  </div>
+
+  <!-- Legacy UI — hidden during Stage 1, preserved for later restoration -->
+  <div class="namora-legacy-ui" id="namoraLegacyUi" hidden>
+    <div class="namora-bg" aria-hidden="true"></div>
+    <div class="namora-particles" aria-hidden="true">
+      <span class="namora-particle"></span>
+      <span class="namora-particle"></span>
+      <span class="namora-particle"></span>
+      <span class="namora-particle"></span>
+      <span class="namora-particle"></span>
+      <span class="namora-particle"></span>
+    </div>
+
+    <div class="namora-overlay" aria-hidden="true"></div>
+
+    <div class="namora-page">
+      <header class="namora-header">
+        <a class="namora-logo" href="/">NameAI</a>
+        <div class="namora-memory" aria-label="Memory">Memory</div>
+      </header>
+
+      <div class="namora-scene">
+        <main class="namora-main">
+          <section class="namora-stage" aria-label="Conversation with NANA">
+            <div class="namora-chat">
+              <div class="namora-messages" id="namoraMessages" role="log" aria-live="polite">
+                <div class="namora-msg namora-msg--nana">
+                  <p>你好，我是 NANA。</p>
+                  <p>今天你想创造怎样的名字？</p>
+                </div>
+              </div>
+            </div>
+            <figure class="namora-nana namora-nana--legacy" aria-hidden="true">
+              <img
+                src="assets/companions/base/nana_front_v1.png"
+                alt=""
+                width="180"
+                height="180"
+                decoding="async"
+              />
+            </figure>
+          </section>
+        </main>
+
+        <div class="namora-compose">
+          <label class="namora-input-wrap">
+            <span class="visually-hidden">Message to NANA</span>
+            <input
+              type="text"
+              id="namoraInput"
+              class="namora-input"
+              placeholder="和 NANA 说说你的想法……"
+              autocomplete="off"
+              enterkeyhint="send"
+            />
+          </label>
+          <button type="button" class="namora-send" id="namoraSend" aria-label="Send message">
+            <img src="assets/ui/pearl-shell.png" alt="" width="58" height="58" decoding="async" />
+          </button>
+        </div>
       </div>
     </div>
   </div>

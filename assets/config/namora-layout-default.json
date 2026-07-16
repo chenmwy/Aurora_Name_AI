@@ -1,0 +1,268 @@
+{
+  "schemaVersion": "1.1.0",
+  "profileVersion": "0.1.0",
+  "profileId": "namora-default",
+  "profileName": "Namora Default Layout",
+  "createdAt": "2026-07-14T00:00:00.000Z",
+  "updatedAt": "2026-07-15T13:18:00.000Z",
+  "source": "project-canonical",
+  "world": {
+    "asset": {
+      "path": "assets/backgrounds/namora-bg-desktop.webp",
+      "formatDeclared": "webp",
+      "formatDetected": "png",
+      "sourceWidth": 1672,
+      "sourceHeight": 941
+    },
+    "designSize": {
+      "width": 1918.98,
+      "height": 1080
+    },
+    "scalePolicy": "fixed-design-world",
+    "origin": "bottom-right",
+    "standingPoint": {
+      "space": "background-source",
+      "x": 1420.271,
+      "y": 706.569,
+      "u": 0.849444,
+      "v": 0.75087,
+      "status": "locked",
+      "canonical": {
+        "x": 1420.271,
+        "y": 706.569
+      },
+      "modified": false
+    }
+  },
+  "objects": {
+    "world-background": {
+      "id": "world-background",
+      "type": "environment",
+      "coordinateSpace": "world",
+      "structuralParentId": null,
+      "transformParentId": null
+    },
+    "nana": {
+      "id": "nana",
+      "type": "character",
+      "coordinateSpace": "world",
+      "structuralParentId": "world-background",
+      "transformParentId": "world-background",
+      "worldOrigin": {
+        "x": 1352.566,
+        "y": 575.758
+      },
+      "worldHeight": 150,
+      "sprite": {
+        "sourceWidth": 1024,
+        "sourceHeight": 1024
+      },
+      "registration": {
+        "standingPointId": "background-standing-point",
+        "footAnchorId": "foot"
+      },
+      "anchors": {
+        "foot": {
+          "id": "foot",
+          "label": "Foot Anchor",
+          "purpose": "World registration anchor — register NANA to the background and maintain shell contact",
+          "space": "nana-local",
+          "x": 462.2,
+          "y": 893,
+          "u": 0.451367,
+          "v": 0.87207,
+          "canonical": {
+            "x": 462.2,
+            "y": 893
+          },
+          "modified": false,
+          "status": "locked",
+          "editorLockState": "locked"
+        },
+        "expression-center": {
+          "id": "expression-center",
+          "label": "Expression Center",
+          "purpose": "Visual center of NANA's face for expressions, eye animation, smile animation, and emotional particles",
+          "space": "nana-local",
+          "x": 510.607,
+          "y": 416.727,
+          "u": 0.49864,
+          "v": 0.40696,
+          "canonical": {
+            "x": 510.607,
+            "y": 416.727
+          },
+          "modified": false,
+          "status": "locked",
+          "editorLockState": "locked"
+        },
+        "head-center": {
+          "id": "head-center",
+          "label": "Head Center",
+          "purpose": "Top semantic position of NANA for accessories, halo, crown, status icons, and floating indicators",
+          "space": "nana-local",
+          "x": 507.644,
+          "y": 144.866,
+          "u": 0.495746,
+          "v": 0.141471,
+          "canonical": {
+            "x": 507.644,
+            "y": 144.866
+          },
+          "modified": false,
+          "status": "locked",
+          "editorLockState": "locked"
+        },
+        "dialogue-tail": {
+          "id": "dialogue-tail",
+          "label": "Dialogue Tail Anchor",
+          "purpose": "Origin of the speech bubble tail — only the tail connects here; the bubble body extends by layout rules",
+          "space": "nana-local",
+          "x": 182.687,
+          "y": 351.184,
+          "u": 0.178405,
+          "v": 0.342953,
+          "canonical": {
+            "x": 182.687,
+            "y": 351.184
+          },
+          "modified": false,
+          "status": "locked",
+          "editorLockState": "locked"
+        }
+      }
+    },
+    "user-input-group": {
+      "id": "user-input-group",
+      "type": "interface-group",
+      "coordinateSpace": "world",
+      "structuralParentId": "world-background",
+      "transformParentId": "world-background"
+    },
+    "pearl": {
+      "id": "pearl",
+      "type": "interface-root",
+      "coordinateSpace": "user-input-group-local",
+      "structuralParentId": "user-input-group",
+      "transformParentId": "user-input-group",
+      "worldPosition": {
+        "x": 1342.392,
+        "y": 827.932
+      },
+      "localOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "status": "locked"
+    },
+    "input-panel": {
+      "id": "input-panel",
+      "type": "interface-root",
+      "coordinateSpace": "user-input-group-local",
+      "structuralParentId": "user-input-group",
+      "transformParentId": "user-input-group",
+      "worldPosition": {
+        "x": 1286.653,
+        "y": 828.012
+      },
+      "localOffset": {
+        "x": -55.739,
+        "y": 0.08
+      },
+      "status": "locked"
+    },
+    "speech-bubble": {
+      "id": "speech-bubble",
+      "type": "interface-component",
+      "coordinateSpace": "speech-bubble-local",
+      "structuralParentId": "nana",
+      "transformParentId": "nana",
+      "status": "draft",
+      "attachment": {
+        "sourcePoint": "speech-bubble.points.tail",
+        "targetAnchor": "nana.anchors.dialogue-tail"
+      },
+      "localSize": {
+        "width": 268,
+        "height": 102
+      },
+      "points": {
+        "root": {
+          "x": 0,
+          "y": 0,
+          "canonical": { "x": 0, "y": 0 },
+          "modified": false
+        },
+        "tail": {
+          "x": 252,
+          "y": 86,
+          "canonical": { "x": 252, "y": 86 },
+          "modified": false
+        },
+        "body-center": {
+          "x": 118,
+          "y": 40,
+          "canonical": { "x": 118, "y": 40 },
+          "modified": false
+        },
+        "text-origin": {
+          "x": 18,
+          "y": 14,
+          "canonical": { "x": 18, "y": 14 },
+          "modified": false
+        }
+      },
+      "constraints": {
+        "minWidth": 120,
+        "maxWidth": 360,
+        "minHeight": 48
+      }
+    }
+  },
+  "groups": {
+    "user-input-group": {
+      "id": "user-input-group",
+      "bound": true,
+      "coordinateSpace": "world",
+      "root": {
+        "x": 1342.392,
+        "y": 827.932
+      },
+      "members": [
+        "pearl",
+        "input-panel"
+      ]
+    }
+  },
+  "relationships": [
+    {
+      "id": "nana-standing-registration",
+      "type": "registration",
+      "source": "nana.anchors.foot",
+      "target": "world.standingPoint",
+      "enabled": true
+    },
+    {
+      "id": "user-input-group-binding",
+      "type": "group",
+      "parent": "user-input-group",
+      "members": [
+        "pearl",
+        "input-panel"
+      ],
+      "enabled": true
+    },
+    {
+      "id": "speech-bubble-tail-attachment",
+      "type": "attachment",
+      "source": "speech-bubble.points.tail",
+      "target": "nana.anchors.dialogue-tail",
+      "enabled": true
+    }
+  ],
+  "editorMetadata": {
+    "dirty": false,
+    "temporary": false,
+    "exportNote": "Task 038 Rev B1 — promoted from Layout Editor export; User Input Group recalibrated to (1342.392, 827.932)"
+  }
+}

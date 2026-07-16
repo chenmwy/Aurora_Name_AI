@@ -1,4 +1,4 @@
-/* Namora Alpha — Website 2.0 design validation */
+/* Namora Alpha — Stage 1 World Coordinate System */
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -23,42 +23,1022 @@
   color: #4a5568;
   min-height: 100vh;
   min-height: 100dvh;
-  overflow-x: hidden;
+  overflow: hidden;
+  background: #e8eef8;
 }
 
-/* World layer — recedes, never dominates */
-.namora-bg {
+.namora-body.namora-scene-loading .namora-viewport {
+  visibility: hidden;
+}
+
+.namora-scene-boot-error {
   position: fixed;
   inset: 0;
-  z-index: -2;
-  background-color: #e8eef8;
-  background-image: url("assets/backgrounds/namora-bg-mobile.webp");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  animation: namora-breathe 14s ease-in-out infinite;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: #0f172a;
+  color: #f8fafc;
+  font-family: "DM Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  text-align: center;
 }
 
-.namora-bg::after {
-  content: "";
-  position: absolute;
+.namora-scene-boot-error strong {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.namora-scene-boot-error pre {
+  max-width: min(40rem, 92vw);
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: left;
+}
+
+/* Stage 1: hide legacy UI shell */
+.namora-stage1 .namora-legacy-ui {
+  display: none !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Namora Viewport — clips the visible region                                  */
+/* -------------------------------------------------------------------------- */
+
+.namora-viewport {
+  position: fixed;
   inset: 0;
-  background: linear-gradient(
-    165deg,
-    rgba(232, 238, 248, 0.55) 0%,
-    rgba(237, 230, 245, 0.45) 50%,
-    rgba(228, 236, 250, 0.5) 100%
-  );
+  overflow: hidden;
+  background: #e8eef8;
+  z-index: 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Namora World — single shared transformation (source pixel coordinate space) */
+/* -------------------------------------------------------------------------- */
+
+.namora-world {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  transform-origin: bottom right;
+  will-change: transform;
+  pointer-events: none;
+  user-select: none;
+}
+
+.namora-world-bg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.namora-nana {
+  position: absolute;
+  margin: 0;
   pointer-events: none;
 }
 
-@keyframes namora-breathe {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.025); }
+.namora-nana__sprite {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
-/* Sparse CSS particles — life from runtime, not background */
+.namora-scene-components {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.namora-scene-component {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid #94a3b8;
+  font-family: "DM Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.namora-scene-component[hidden] {
+  display: none;
+}
+
+/* User Input Group — Input Runtime + Pearl Runtime (Task 038) */
+.scene-input-panel,
+.scene-pearl {
+  background: none;
+  border: none;
+  color: inherit;
+  display: block;
+  overflow: visible;
+}
+
+.scene-input-panel {
+  /* Elongated composer. Anchored at its right-edge midpoint (Task 038 Rev A).
+     Width is visual-only; spatial position comes from the Layout Profile. */
+  width: 480px;
+  height: 40px;
+  transform: translate(-100%, -50%);
+  pointer-events: auto;
+}
+
+.scene-input-panel__field {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0 0.85rem;
+  font-family: "DM Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.4;
+  color: #e8edf7;
+  background: rgba(94, 88, 214, 0.22);
+  border: 1px solid rgba(150, 160, 255, 0.42);
+  /* Rounded-rectangle silhouette — exchanged with Speech Bubble (Task 038 Rev B2).
+     Materials (fill, border, glow) remain Input–owned. */
+  border-radius: 1.25em;
+  outline: none;
+  box-shadow:
+    0 2px 12px rgba(60, 55, 130, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.scene-input-panel__field::placeholder {
+  color: rgba(203, 213, 225, 0.72);
+}
+
+.scene-input-panel__field:focus {
+  border-color: rgba(167, 178, 255, 0.62);
+  box-shadow:
+    0 2px 14px rgba(60, 55, 130, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.scene-input-panel__field:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.scene-pearl {
+  /* Independent underwater shell — anchored at its own geometric center.
+     Size is visual-only; position comes from the Layout Profile. */
+  width: 92px;
+  height: 92px;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+
+.scene-pearl__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  /* No circular button chrome — the shell itself is the clickable object. */
+  background: none;
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    filter 0.16s ease;
+}
+
+.scene-pearl__button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.scene-pearl__button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.scene-pearl__icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  /* Original brightness restored (Task 038 Rev B1) — soft underwater glow. */
+  filter: drop-shadow(0 3px 10px rgba(60, 55, 130, 0.28));
+  transition: filter 0.16s ease;
+}
+
+.scene-pearl__button:hover:not(:disabled) .scene-pearl__icon,
+.scene-pearl.is-pearl-hover .scene-pearl__button:not(:disabled) .scene-pearl__icon {
+  filter: drop-shadow(0 4px 13px rgba(129, 140, 248, 0.42));
+}
+
+.scene-pearl__button:active:not(:disabled) .scene-pearl__icon,
+.scene-pearl.is-pearl-pressed .scene-pearl__button:not(:disabled) .scene-pearl__icon {
+  filter: drop-shadow(0 2px 7px rgba(129, 140, 248, 0.5));
+}
+
+.scene-pearl.is-pearl-pressed .scene-pearl__button:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.scene-pearl.is-pearl-loading .scene-pearl__button {
+  cursor: wait;
+}
+
+.scene-pearl.is-pearl-loading .scene-pearl__icon {
+  opacity: 0.72;
+  filter: drop-shadow(0 2px 8px rgba(60, 55, 130, 0.22));
+}
+
+/* Layout Editor: product interaction off while spatial editing is active. */
+.namora-body.namora-layout-edit .scene-input-panel,
+.namora-body.namora-layout-edit .scene-pearl {
+  pointer-events: none;
+}
+
+.namora-body.namora-layout-edit.namora-components-preview-on
+  .scene-input-panel,
+.namora-body.namora-layout-edit.namora-components-preview-on .scene-pearl {
+  cursor: grab;
+}
+
+/* Speech Bubble — component local space (Task 035) */
+.scene-speech-bubble {
+  display: block;
+  overflow: visible;
+  background: none;
+  border: none;
+  color: inherit;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.scene-speech-bubble__body {
+  position: absolute;
+  box-sizing: border-box;
+  /* Capsule silhouette — exchanged with Input (Task 038 Rev B2).
+     Materials (fill, border, glow) remain Speech Bubble–owned. */
+  border-radius: 999px;
+  /* Recognizable dialogue container against both bright and dark underwater
+     regions (Task 037 Rev C). Clarity comes primarily from a deeper fill and a
+     clearer edge; glow stays restrained so edges do not blur. A subtle inset
+     ring separates the Body from the background without a glass effect. */
+  background: rgba(94, 88, 214, 0.28);
+  border: 1px solid rgba(150, 160, 255, 0.5);
+  box-shadow:
+    0 2px 16px rgba(60, 55, 130, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  overflow: visible;
+}
+
+.scene-speech-bubble__content {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.scene-speech-bubble__text {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  color: #e8edf7;
+  font-family: "DM Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+  /* Lines stay left-aligned; the block is centered by symmetric padding
+     computed in the renderer (Task 036). Never use text-align:center. */
+  text-align: left;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Dialogue Tail — visible shape removed (Task 037 Rev C).
+   The DOM element is retained for Runtime compatibility (the renderer still
+   sets its left/top to the canonical Dialogue Tail point and updates the
+   --tail-scale-* variables), but it renders nothing. The canonical attachment
+   point, Relationship Graph, and reconstruction logic are unchanged; a future
+   renderer can re-enable a visible connector without Runtime changes. */
+.scene-speech-bubble__tail {
+  display: none;
+  pointer-events: none;
+}
+
+.namora-body.namora-layout-edit .namora-scene-component.is-editor-preview {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.namora-body.namora-layout-edit.namora-components-preview-off
+  .namora-scene-components {
+  display: none;
+}
+
+.namora-body.namora-layout-edit.namora-components-preview-on
+  .namora-scene-component {
+  cursor: grab;
+  touch-action: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Debug mode                                                                  */
+/* -------------------------------------------------------------------------- */
+
+.namora-debug__bounds {
+  position: absolute;
+  inset: 0;
+  border: 2px dashed rgba(59, 130, 246, 0.75);
+  pointer-events: none;
+}
+
+.namora-debug__marker {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  margin-top: -7px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.35);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.namora-debug__marker--standing {
+  background: #ef4444;
+}
+
+.namora-debug__marker--foot {
+  background: #22c55e;
+}
+
+.namora-debug__marker--center {
+  background: #06b6d4;
+}
+
+.namora-debug__marker--head {
+  background: #3b82f6;
+}
+
+.namora-debug__marker--dialogue {
+  background: #d946ef;
+}
+
+.namora-debug__marker--interaction {
+  background: #eab308;
+}
+
+.namora-debug__panel {
+  position: fixed;
+  left: max(0.5rem, env(safe-area-inset-left));
+  top: max(0.5rem, env(safe-area-inset-top));
+  z-index: 20;
+  max-width: min(22rem, calc(100vw - 1rem));
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.82);
+  color: #e2e8f0;
+  font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  pointer-events: none;
+}
+
+.namora-body.namora-debug-on .namora-debug {
+  display: block;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Layout Editor — engineering tool only (?layout=edit). Normal mode untouched. */
+/* -------------------------------------------------------------------------- */
+
+.namora-layout-editor {
+  display: none;
+}
+
+.namora-body.namora-layout-edit .namora-layout-editor {
+  display: block;
+}
+
+.namora-body.namora-layout-edit .namora-viewport {
+  left: 240px;
+  right: 280px;
+  top: 48px;
+  width: auto;
+  height: auto;
+}
+
+.namora-layout-editor__chrome {
+  position: fixed;
+  top: 0;
+  left: 240px;
+  right: 280px;
+  height: auto;
+  min-height: 48px;
+  z-index: 31;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1rem;
+  padding: 0.35rem 0.85rem;
+  background: #0b1220;
+  border-bottom: 1px solid #1e293b;
+  color: #e2e8f0;
+  font-family: "DM Sans", "PingFang SC", "Microsoft YaHei", ui-sans-serif, sans-serif;
+}
+
+.namora-layout-editor__brand {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.namora-layout-editor__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f8fafc;
+  line-height: 1.2;
+}
+
+.namora-layout-editor__subtitle {
+  font-size: 10px;
+  color: #64748b;
+  letter-spacing: 0.04em;
+}
+
+.namora-layout-editor__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.namora-layout-editor__tool {
+  flex-shrink: 0;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  background: #1e293b;
+  color: #cbd5e1;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 1;
+}
+
+.namora-layout-editor__tool:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.namora-layout-editor__tool.is-active {
+  border-color: #38bdf8;
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.namora-layout-editor__tool-sep {
+  width: 1px;
+  height: 1.1rem;
+  margin: 0 0.25rem;
+  background: #334155;
+  flex-shrink: 0;
+}
+
+.namora-layout-editor__panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: "DM Sans", "PingFang SC", "Microsoft YaHei", ui-sans-serif, sans-serif;
+  font-size: 12px;
+  line-height: 1.45;
+  border: 0 solid #1e293b;
+}
+
+.namora-layout-editor__panel--left {
+  left: 0;
+  width: 240px;
+  border-right-width: 1px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.namora-layout-editor__panel--left .namora-layout-editor__tree {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.namora-layout-editor__panel--right {
+  right: 0;
+  width: 280px;
+  border-left-width: 1px;
+}
+
+.namora-layout-editor__header {
+  flex-shrink: 0;
+  padding: 0.75rem 0.85rem;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  border-bottom: 1px solid #1e293b;
+}
+
+.namora-layout-editor__tree {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.namora-layout-editor__tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.namora-layout-editor__node {
+  display: block;
+}
+
+.namora-layout-editor__label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.4rem 0.85rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.namora-layout-editor__label:hover {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.namora-layout-editor__label.is-selected {
+  background: rgba(56, 189, 248, 0.18);
+  color: #7dd3fc;
+}
+
+.namora-layout-editor__label.is-disabled {
+  color: #64748b;
+}
+
+.namora-layout-editor__label.is-disabled.is-selected {
+  color: #7dd3fc;
+}
+
+.namora-layout-editor__badge {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: #64748b;
+}
+
+.namora-layout-editor__group-label {
+  display: block;
+  padding: 0.35rem 0.85rem 0.15rem;
+  font-size: 10px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.namora-layout-editor__props {
+  padding: 0.75rem 0.85rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.namora-layout-editor__empty {
+  color: #64748b;
+}
+
+.namora-layout-editor__field {
+  margin-bottom: 0.85rem;
+}
+
+.namora-layout-editor__field-label {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: #64748b;
+}
+
+.namora-layout-editor__field-value {
+  color: #e2e8f0;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.namora-layout-editor__field-value--muted {
+  color: #94a3b8;
+}
+
+.namora-layout-selection {
+  display: none;
+  pointer-events: none;
+}
+
+.namora-body.namora-layout-edit .namora-layout-selection:not([hidden]) {
+  display: block;
+}
+
+.namora-layout-selection__bounds {
+  position: absolute;
+  border: 2px solid rgba(56, 189, 248, 0.9);
+  box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.35);
+  background: rgba(56, 189, 248, 0.08);
+  pointer-events: none;
+  z-index: 6;
+}
+
+.namora-layout-selection__bounds.is-hidden {
+  display: none;
+}
+
+.namora-layout-selection__point {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  margin-top: -6px;
+  border-radius: 2px;
+  border: 2px solid #fff;
+  background: #38bdf8;
+  box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.55);
+  pointer-events: none;
+  z-index: 7;
+}
+
+.namora-layout-selection__point.is-editable {
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+}
+
+.namora-layout-selection__point.is-locked-temp {
+  pointer-events: auto;
+  cursor: pointer;
+  background: #64748b;
+  touch-action: none;
+}
+
+.namora-layout-selection__point.is-standing-point {
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.45);
+  z-index: 9;
+}
+
+.namora-layout-selection__point.is-standing-point.is-active-point {
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  margin-top: -9px;
+  background: #f97316;
+  box-shadow:
+    0 0 0 2px rgba(249, 115, 22, 0.8),
+    0 0 0 5px rgba(249, 115, 22, 0.25);
+}
+
+.namora-layout-selection__point.is-temp-unlocked.is-active-point {
+  background: #f472b6;
+}
+
+.namora-layout-selection__point.is-readonly-point {
+  background: #94a3b8;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.namora-layout-selection__point.is-active-point {
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  margin-top: -8px;
+  background: #f472b6;
+  border: 2px solid #fff;
+  box-shadow:
+    0 0 0 2px rgba(244, 114, 182, 0.75),
+    0 0 0 4px rgba(244, 114, 182, 0.25);
+  z-index: 8;
+}
+
+.namora-layout-selection__point.is-selected {
+  background: #f472b6;
+  box-shadow: 0 0 0 2px rgba(244, 114, 182, 0.55);
+}
+
+.namora-layout-selection__point.is-pearl-root {
+  width: 13px;
+  height: 13px;
+  margin-left: -6.5px;
+  margin-top: -6.5px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.45);
+  z-index: 10;
+}
+
+.namora-layout-selection__point.is-input-root {
+  width: 13px;
+  height: 13px;
+  margin-left: -6.5px;
+  margin-top: -6.5px;
+  border-radius: 2px;
+  background: #f8fafc;
+  border: 2px solid #334155;
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.7);
+  z-index: 10;
+}
+
+.namora-layout-selection__point.is-user-input-group-root {
+  width: 15px;
+  height: 15px;
+  margin-left: -7.5px;
+  margin-top: -7.5px;
+  border-radius: 3px;
+  background: #f97316;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.5);
+  z-index: 11;
+}
+
+.namora-layout-selection__point.is-pearl-root.is-active-point,
+.namora-layout-selection__point.is-input-root.is-active-point,
+.namora-layout-selection__point.is-user-input-group-root.is-active-point {
+  width: 17px;
+  height: 17px;
+  margin-left: -8.5px;
+  margin-top: -8.5px;
+}
+
+.namora-layout-selection__point.is-bubble-tail {
+  background: #f472b6;
+  border-color: #fff;
+  box-shadow: 0 0 0 1px rgba(244, 114, 182, 0.55);
+}
+
+.namora-layout-selection__point.is-bubble-body-center {
+  background: #38bdf8;
+  border-color: #fff;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.55);
+}
+
+.namora-layout-selection__point.is-bubble-text-origin {
+  background: #a78bfa;
+  border-color: #fff;
+  box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.55);
+}
+
+.namora-layout-selection__point.is-bubble-root {
+  background: #94a3b8;
+  border-color: #fff;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  margin-top: -5px;
+  opacity: 0.75;
+}
+
+.namora-layout-editor__uig {
+  flex: 0 0 auto;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+  padding: 0.75rem 0.85rem 0.9rem;
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.namora-layout-editor__uig-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #e2e8f0;
+  margin-bottom: 0.45rem;
+}
+
+.namora-layout-editor__uig-status {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-bottom: 0.55rem;
+}
+
+.namora-layout-editor__uig-status strong {
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+.namora-layout-editor__uig-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.7rem;
+}
+
+.namora-layout-editor__uig-actions .namora-layout-editor__action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.namora-layout-editor__uig-legend-title {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  margin-bottom: 0.35rem;
+}
+
+.namora-layout-editor__uig-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.68rem;
+  color: #cbd5e1;
+  margin-bottom: 0.2rem;
+}
+
+.namora-layout-editor__swatch {
+  width: 10px;
+  height: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  flex: 0 0 auto;
+}
+
+.namora-layout-editor__swatch--group {
+  background: #f97316;
+  border-radius: 2px;
+}
+
+.namora-layout-editor__swatch--pearl {
+  background: #ef4444;
+  border-radius: 50%;
+}
+
+.namora-layout-editor__swatch--input {
+  background: #f8fafc;
+  border-color: #334155;
+  border-radius: 2px;
+}
+
+.namora-body.namora-layout-dragging,
+.namora-body.namora-layout-dragging * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  cursor: grabbing !important;
+}
+
+.namora-layout-editor__cp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.85rem;
+}
+
+.namora-layout-editor__cp-row {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  background: #1e293b;
+  color: #e2e8f0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.namora-layout-editor__cp-row:hover:not(:disabled) {
+  border-color: #38bdf8;
+}
+
+.namora-layout-editor__cp-row.is-selected {
+  border-color: #f472b6;
+  background: rgba(244, 114, 182, 0.12);
+  color: #f9a8d4;
+}
+
+.namora-layout-editor__cp-row:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.namora-layout-editor__coord-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+}
+
+.namora-layout-editor__coord-grid span {
+  display: block;
+  font-size: 10px;
+  color: #64748b;
+}
+
+.namora-layout-editor__coord-grid strong {
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.namora-layout-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0.85rem;
+}
+
+.namora-layout-editor__action-btn {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #38bdf8;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.namora-layout-editor__divider {
+  margin: 0.85rem 0 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid #1e293b;
+  font-size: 11px;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+}
+
+.namora-layout-editor__dirty {
+  margin-top: 0.75rem;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.namora-body.namora-layout-edit .namora-world {
+  pointer-events: auto;
+}
+
+.namora-body.namora-layout-edit .namora-world-bg,
+.namora-body.namora-layout-edit .namora-nana,
+.namora-body.namora-layout-edit .namora-nana__sprite {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.namora-body.namora-layout-edit.namora-debug-on .namora-debug__panel {
+  left: calc(240px + max(0.5rem, env(safe-area-inset-left)));
+  top: calc(48px + max(0.5rem, env(safe-area-inset-top)));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Legacy UI styles — inactive during Stage 1, kept for later restoration        */
+/* -------------------------------------------------------------------------- */
+
+.namora-bg {
+  background-color: #e8eef8;
+}
+
 .namora-particles {
   position: fixed;
   inset: 0;
@@ -73,19 +1053,19 @@
   height: 3px;
   border-radius: 50%;
   background: rgba(180, 198, 230, 0.35);
-  animation: namora-drift 18s ease-in-out infinite;
 }
 
-.namora-particle:nth-child(1) { left: 12%; top: 22%; animation-delay: 0s; animation-duration: 20s; }
-.namora-particle:nth-child(2) { left: 78%; top: 18%; animation-delay: -4s; animation-duration: 22s; }
-.namora-particle:nth-child(3) { left: 45%; top: 65%; animation-delay: -8s; animation-duration: 19s; }
-.namora-particle:nth-child(4) { left: 88%; top: 72%; animation-delay: -2s; animation-duration: 24s; }
-.namora-particle:nth-child(5) { left: 24%; top: 80%; animation-delay: -6s; animation-duration: 21s; }
-.namora-particle:nth-child(6) { left: 62%; top: 38%; animation-delay: -10s; animation-duration: 23s; }
-
-@keyframes namora-drift {
-  0%, 100% { transform: translate(0, 0); opacity: 0.2; }
-  50% { transform: translate(6px, -10px); opacity: 0.45; }
+.namora-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    175deg,
+    rgba(168, 205, 220, 0.07) 0%,
+    rgba(155, 195, 215, 0.11) 45%,
+    rgba(170, 210, 228, 0.08) 100%
+  );
 }
 
 .namora-page {
@@ -100,21 +1080,6 @@
   padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
 }
 
-/* Subtle sea-tone overlay — unifies page without dimming background */
-.namora-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    175deg,
-    rgba(168, 205, 220, 0.07) 0%,
-    rgba(155, 195, 215, 0.11) 45%,
-    rgba(170, 210, 228, 0.08) 100%
-  );
-}
-
-/* Header */
 .namora-header {
   display: flex;
   align-items: center;
@@ -131,10 +1096,6 @@
   text-decoration: none;
 }
 
-.namora-logo:hover {
-  color: #475569;
-}
-
 .namora-memory {
   font-size: 0.75rem;
   font-weight: 500;
@@ -147,7 +1108,6 @@
   background: rgba(255, 255, 255, 0.35);
 }
 
-/* Scene — dialogue zone anchored lower on page */
 .namora-scene {
   flex: 1;
   display: flex;
@@ -158,7 +1118,6 @@
   padding-top: 2.5rem;
 }
 
-/* Stage: unified scene — NANA + dialogue */
 .namora-main {
   display: flex;
   flex-direction: column;
@@ -173,7 +1132,6 @@
   max-width: 680px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: auto;
   align-items: end;
   gap: 0.15rem 0.35rem;
   margin-bottom: 1.75rem;
@@ -197,8 +1155,6 @@
   max-height: min(42vh, 360px);
   overflow-y: auto;
   padding: 0.25rem 0.5rem 0.25rem 0;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
 }
 
 .namora-msg {
@@ -207,12 +1163,6 @@
   border-radius: 1.15rem;
   font-size: 0.9rem;
   line-height: 1.55;
-  animation: namora-msg-in 0.35s ease-out;
-}
-
-@keyframes namora-msg-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .namora-msg--nana {
@@ -221,31 +1171,8 @@
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(186, 200, 224, 0.45);
   color: #475569;
-  box-shadow: 0 2px 10px rgba(148, 163, 184, 0.1);
   border-radius: 1.15rem 1.15rem 0.45rem 1.15rem;
   margin-right: 0.15rem;
-}
-
-.namora-msg--nana::after {
-  content: "";
-  position: absolute;
-  right: -7px;
-  bottom: 14px;
-  width: 10px;
-  height: 10px;
-  background: rgba(255, 255, 255, 0.72);
-  border-right: 1px solid rgba(186, 200, 224, 0.45);
-  border-bottom: 1px solid rgba(186, 200, 224, 0.45);
-  transform: rotate(-45deg);
-  border-radius: 0 0 2px 0;
-}
-
-.namora-msg--nana p + p {
-  margin-top: 0.35rem;
-}
-
-.namora-msg--user p + p {
-  margin-top: 0.35rem;
 }
 
 .namora-msg--user {
@@ -255,30 +1182,15 @@
   color: #334155;
 }
 
-/* NANA — natural presence in scene */
-.namora-nana {
+.namora-nana--legacy {
   position: relative;
   grid-column: 2;
   grid-row: 1;
   flex-shrink: 0;
-  width: clamp(96px, 24vw, 132px);
+  width: 132px;
   margin: 0;
 }
 
-.namora-nana img {
-  display: block;
-  width: 100%;
-  height: auto;
-  object-fit: contain;
-  animation: namora-float 7s ease-in-out infinite;
-}
-
-@keyframes namora-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
-}
-
-/* Compose row — input and shell as separate world objects */
 .namora-compose {
   display: flex;
   align-items: center;
@@ -304,16 +1216,6 @@
   border: 1px solid rgba(186, 200, 224, 0.5);
   border-radius: 999px;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.namora-input::placeholder {
-  color: rgba(100, 116, 139, 0.55);
-}
-
-.namora-input:focus {
-  border-color: rgba(148, 163, 184, 0.65);
-  box-shadow: 0 0 0 3px rgba(186, 200, 224, 0.25);
 }
 
 .namora-send {
@@ -328,8 +1230,6 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.5);
   cursor: pointer;
-  transition: transform 150ms ease;
-  -webkit-tap-highlight-color: transparent;
 }
 
 .namora-send img {
@@ -340,57 +1240,131 @@
   pointer-events: none;
 }
 
-.namora-send:active {
-  transform: scale(0.95);
+.namora-layout-editor__profile-status {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  font-size: 11px;
+  color: #94a3b8;
 }
 
-.namora-send:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.namora-layout-editor__profile-feedback {
+  color: #e2e8f0;
 }
 
-@media (min-width: 640px) {
-  .namora-page {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
+.namora-layout-editor__profile-feedback.is-success {
+  color: #86efac;
+}
 
-  .namora-bg {
-    background-image: url("assets/backgrounds/namora-bg-desktop.webp");
-  }
+.namora-layout-editor__profile-feedback.is-error {
+  color: #fda4af;
+}
 
-  .namora-scene {
-    padding-top: 3rem;
-  }
+.namora-layout-profile-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(2, 6, 23, 0.72);
+}
 
-  .namora-main {
-    padding-bottom: 1.5rem;
-  }
+.namora-layout-profile-modal[hidden] {
+  display: none !important;
+}
 
-  .namora-stage {
-    max-width: 700px;
-    gap: 0.1rem 0.5rem;
-    margin-bottom: 2rem;
-  }
+.namora-layout-profile-modal__panel {
+  width: min(720px, 100%);
+  max-height: min(88vh, 900px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem 1.15rem;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
 
-  .namora-chat {
-    padding-bottom: 1.75rem;
-  }
+.namora-layout-profile-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
 
-  .namora-messages {
-    max-height: min(46vh, 400px);
-  }
+.namora-layout-profile-modal__header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f8fafc;
+  flex: 1 1 auto;
+}
 
-  .namora-msg {
-    font-size: 0.9375rem;
-    padding: 0.75rem 1rem;
-  }
+.namora-layout-profile-modal__apply {
+  background: #2563eb;
+  border-color: #1d4ed8;
+  color: #fff;
+}
 
-  .namora-nana {
-    width: clamp(140px, 17vw, 176px);
-  }
+.namora-layout-profile-modal__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem 0.85rem;
+  font-size: 12px;
+}
 
-  .namora-compose {
-    max-width: 660px;
-  }
+.namora-layout-profile-modal__meta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.namora-layout-profile-modal__meta span {
+  color: #94a3b8;
+}
+
+.namora-layout-profile-modal__meta strong {
+  color: #f8fafc;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.namora-layout-profile-modal__errors {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(127, 29, 29, 0.35);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+  white-space: pre-wrap;
+  font-size: 12px;
+  max-height: 8rem;
+  overflow: auto;
+}
+
+.namora-layout-profile-modal__json-label {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.namora-layout-profile-modal__json {
+  flex: 1 1 auto;
+  min-height: 220px;
+  width: 100%;
+  resize: vertical;
+  padding: 0.7rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #cbd5e1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.45;
 }
