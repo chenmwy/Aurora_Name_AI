@@ -3838,14 +3838,18 @@
         "Empty reply content"
       );
     }
+    var dialogue =
+      typeof data.dialogue === "string" ? data.dialogue.trim() : "";
+    var presentationIntro =
+      typeof data.presentationIntro === "string"
+        ? data.presentationIntro.trim()
+        : typeof data.shortReply === "string"
+          ? data.shortReply.trim()
+          : "";
     return {
       reply: reply,
-      presentationIntro:
-        typeof data.presentationIntro === "string"
-          ? data.presentationIntro.trim()
-          : typeof data.shortReply === "string"
-            ? data.shortReply.trim()
-            : "",
+      dialogue: dialogue,
+      presentationIntro: presentationIntro,
       directions: Array.isArray(data.directions) ? data.directions : [],
       focusState:
         data.focusState && typeof data.focusState === "object"
@@ -3854,6 +3858,60 @@
       phase: typeof data.phase === "string" ? data.phase : null,
       fallback: !!data.fallback
     };
+  }
+
+  var DEFAULT_NAMORA_DIALOGUE = Object.freeze({
+    zh: "我记住了你的选择，我们继续从这里往下探索。",
+    en: "I've noted your choices — let's keep exploring from here."
+  });
+
+  var STRICT_SHORT_DIALOGUE_MAX_CHARS = 87;
+
+  function isStrictShortDialogue(text) {
+    if (typeof text !== "string") return false;
+    var t = text.trim();
+    if (!t) return false;
+    if (t.length > STRICT_SHORT_DIALOGUE_MAX_CHARS) return false;
+    if (t.indexOf("\n") !== -1) return false;
+    return true;
+  }
+
+  function resolveNamoraDialogue(validated, hasPresentation) {
+    validated = validated || {};
+    var candidates = [];
+
+    if (hasPresentation) {
+      if (validated.presentationIntro) {
+        candidates.push(validated.presentationIntro);
+      }
+      if (validated.dialogue) {
+        candidates.push(validated.dialogue);
+      }
+    } else {
+      if (validated.dialogue) {
+        candidates.push(validated.dialogue);
+      }
+      if (validated.presentationIntro) {
+        candidates.push(validated.presentationIntro);
+      }
+    }
+
+    for (var i = 0; i < candidates.length; i++) {
+      if (isStrictShortDialogue(candidates[i])) {
+        return candidates[i].trim();
+      }
+    }
+
+    if (isStrictShortDialogue(validated.reply)) {
+      return validated.reply.trim();
+    }
+
+    if (isDebugEnabled()) {
+      console.warn(
+        "[DeepSeekResponseProvider] dialogue missing or too long; using default short dialogue"
+      );
+    }
+    return DEFAULT_NAMORA_DIALOGUE.zh;
   }
 
   var CHOICE_OPTION_DEFAULTS = Object.freeze({
@@ -4142,6 +4200,16 @@
       });
     }
 
+    function buildChoiceSelectionAckResult() {
+      return Object.freeze({
+        role: "assistant",
+        content: DEFAULT_NAMORA_DIALOGUE.zh,
+        provider: "local",
+        presentation: null,
+        focusState: null
+      });
+    }
+
     return Object.freeze({
       id: "local-response-provider",
       respond: function (request) {
@@ -4156,6 +4224,14 @@
             if (simulateChoiceOnce) {
               simulateChoiceOnce = false;
               resolve(buildChoiceFixtureResult());
+              return;
+            }
+            var metadata =
+              request && request.metadata && typeof request.metadata === "object"
+                ? request.metadata
+                : {};
+            if (metadata.interactionType === "choice-selection") {
+              resolve(buildChoiceSelectionAckResult());
               return;
             }
             resolve(
@@ -4292,12 +4368,7 @@
               }
             }
 
-            var bubbleContent = validated.reply;
-            if (presentation) {
-              bubbleContent =
-                validated.presentationIntro ||
-                CHOICE_PRESENTATION_COPY.instruction;
-            }
+            var dialogue = resolveNamoraDialogue(validated, !!presentation);
 
             if (isDebugEnabled()) {
               console.info("[DeepSeekResponseProvider] request complete", {
@@ -4306,17 +4377,19 @@
                 hasPresentation: !!presentation,
                 directionCount: validated.directions
                   ? validated.directions.length
-                  : 0
+                  : 0,
+                dialogueLength: dialogue.length,
+                replyLength: validated.reply.length
               });
             }
             return Object.freeze({
               role: "assistant",
-              content: bubbleContent,
+              content: dialogue,
+              fullReply: validated.reply,
               provider: "deepseek",
               presentation: presentation,
               focusState: validated.focusState,
-              phase: validated.phase,
-              legacyReply: validated.reply
+              phase: validated.phase
             });
           });
         })
@@ -5107,10 +5180,10 @@
         return false;
       }
 
-      state.currentPresentation = Object.freeze(
-        Object.assign({}, presentation, { status: "submitted" })
-      );
+      // Exit visible Presentation immediately after successful submit.
+      // Selections remain in lastSubmittedResult; Conversation keeps the user message.
       state.lastSubmittedResult = result;
+      state.currentPresentation = null;
       state.selectionHintVisible = false;
       state.lastError = null;
       notifySubmit(result);
@@ -5295,21 +5368,20 @@
     function render(snapshot) {
       if (!rootEl || !hostEl) return;
       var presentation = snapshot && snapshot.currentPresentation;
+      // Only visible Presentations render. submitted / dismissed / replaced / null → empty layer.
       if (
         !presentation ||
         presentation.type !== "choice" ||
-        (presentation.status !== "visible" &&
-          presentation.status !== "submitted")
+        presentation.status !== "visible"
       ) {
         hostEl.innerHTML = "";
         setRootVisible(false);
         return;
       }
 
-      var isSubmitted = presentation.status === "submitted";
       var cardsHtml = presentation.payload.options
         .map(function (option) {
-          return renderCard(option, presentation, isSubmitted);
+          return renderCard(option, presentation, false);
         })
         .join("");
 
@@ -5336,9 +5408,7 @@
         "</div>" +
         hintHtml +
         '<div class="namora-choice-presentation__actions">' +
-        '<button type="button" class="namora-choice-presentation__confirm" data-choice-confirm="1"' +
-        (isSubmitted ? " disabled" : "") +
-        ">" +
+        '<button type="button" class="namora-choice-presentation__confirm" data-choice-confirm="1">' +
         escapePresentationHtml(CHOICE_PRESENTATION_COPY.confirmLabel) +
         "</button>" +
         "</div>" +

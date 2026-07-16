@@ -17,24 +17,26 @@ import {
 const SYSTEM_PROMPT = `You are NANA, a warm, calm naming companion for nameAI.
 
 Rules:
-- Be concise: 2–4 sentences. Exactly ONE question OR exploration directions — never both patterns at once.
+- Be concise: 2–4 sentences in reply. Exactly ONE question OR exploration directions — never both patterns at once.
 - Follow Question Engine guidance. Maximize information gain; never interview.
 - Never re-ask confirmed Focus fields. Never low-value questions (color, frequency, vague audience).
 - At exploration: 3–4 distinct directions (hypotheses), not similar names.
 - Never mention Focus State, Question Engine, Signal Network, or internal systems.
 
 Reply in valid JSON only:
-{"reply":"...","presentationIntro":"","focusUpdates":{},"directions":[]}
+{"reply":"...","dialogue":"...","presentationIntro":"","focusUpdates":{},"directions":[]}
 focusUpdates: optional, English values, only newly learned fields.
 directions: 3–4 objects when exploring (label, description, examples). Otherwise [].
 presentationIntro: when directions is non-empty, one short sentence inviting the user to choose; do not list direction details there. When directions is empty, use "".
-reply: keep full conversational text for legacy clients; may briefly name directions.`;
+dialogue: one short bubble sentence for Namora Speech Bubble — warm confirmation, emotion, or next-step cue. Target at most ~87 Chinese characters or two short sentences. Never put name lists, multi-paragraph analysis, or long recommendations in dialogue.
+reply: keep full conversational text for legacy clients; may include longer explanation.`;
 
 const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
 const DEEPSEEK_TIMEOUT_MS = 13000;
 const MAX_HISTORY_MESSAGES = 4;
 const MAX_TOKENS = 400;
 const MAX_CONTENT_LENGTH = 1200;
+const STRICT_DIALOGUE_MAX_CHARS = 87;
 
 const FALLBACK_REPLY = {
   en: "I'm having trouble thinking clearly right now. Could you try again in a moment?",
@@ -44,6 +46,16 @@ const FALLBACK_REPLY = {
 const DEFAULT_PRESENTATION_INTRO = {
   en: "I have a few directions in mind — choose one or more to keep exploring.",
   zh: "我想到几个方向，你可以选择一个或多个继续探索。"
+};
+
+const DEFAULT_DIALOGUE = {
+  en: "I've noted your choices — let's keep exploring from here.",
+  zh: "我记住了你的选择，我们继续从这里往下探索。"
+};
+
+const DEFAULT_CHOICE_ACK_DIALOGUE = {
+  en: "Got it — I'll lean into those directions as we keep exploring.",
+  zh: "好的，我记住了这两个方向。我们继续沿着它们往下探索。"
 };
 
 function logDebug(stage, info) {
@@ -80,6 +92,7 @@ function fallbackResponse(language, focusState) {
   return jsonResponse({
     success: true,
     reply,
+    dialogue: reply,
     phase: statusToPhase(state.status),
     focusState: state,
     directions: [],
@@ -188,18 +201,76 @@ function sanitizeForDeepSeek(messages) {
   return cleaned;
 }
 
-function buildSystemPrompt(language, focusState, userMessageCount) {
+function isStrictShortDialogue(text) {
+  const t = String(text || "").trim();
+  if (!t) return false;
+  if (t.length > STRICT_DIALOGUE_MAX_CHARS) return false;
+  if (t.includes("\n")) return false;
+  return true;
+}
+
+function formatSelectionSummary(selections) {
+  if (!Array.isArray(selections) || selections.length === 0) return "";
+  return selections
+    .map((item) => {
+      if (!item || typeof item !== "object") return "";
+      const title = String(item.title || item.optionId || "").trim();
+      const weight =
+        typeof item.weight === "number" ? item.weight : null;
+      if (!title) return "";
+      return weight == null ? title : `${title} (weight ${weight})`;
+    })
+    .filter(Boolean)
+    .join("; ");
+}
+
+function buildChoiceSelectionGuidance(language, selections) {
+  const summary = formatSelectionSummary(selections);
+  const lines = ["Choice Selection Turn:"];
+  if (summary) {
+    lines.push(`- User confirmed these directions: ${summary}.`);
+  } else {
+    lines.push("- User confirmed one or more naming directions.");
+  }
+  lines.push(
+    "- Acknowledge briefly. Do NOT interview again. Do NOT dump a long name list into dialogue."
+  );
+  lines.push(
+    "- dialogue must be one short warm confirmation for the Speech Bubble (max ~87 Chinese chars / two short sentences)."
+  );
+  lines.push(
+    language === "zh"
+      ? '- Example dialogue: "好的，我记住了这两个方向。我们继续沿着它们往下探索。"'
+      : '- Example dialogue: "Got it — I\'ll lean into those directions as we keep exploring."'
+  );
+  lines.push(
+    "- reply may keep fuller legacy text for older clients, but keep it focused."
+  );
+  lines.push(
+    "- directions: [] for this turn unless you truly need a new short set of next-level branches (then also set presentationIntro)."
+  );
+  lines.push("- Never put candidate name lists or multi-paragraph analysis into dialogue.");
+  return lines.join("\n");
+}
+
+function buildSystemPrompt(language, focusState, userMessageCount, extras) {
   const langLine =
     language === "zh"
       ? "Reply in Simplified Chinese. JSON keys in English."
       : "Reply in English. JSON keys in English.";
 
-  return [
+  const parts = [
     SYSTEM_PROMPT,
     langLine,
     buildCurrentUnderstanding(focusState),
     buildQuestionGuidance(focusState, language, userMessageCount)
-  ].join("\n\n");
+  ];
+
+  if (extras && extras.choiceSelectionGuidance) {
+    parts.push(extras.choiceSelectionGuidance);
+  }
+
+  return parts.join("\n\n");
 }
 
 async function callDeepSeek(apiKey, messages, maxTokens) {
@@ -250,7 +321,7 @@ async function callDeepSeek(apiKey, messages, maxTokens) {
   return { response, data, rawText, timedOut: false };
 }
 
-function resolveResponse(parsed, focusState, userMessageCount, language) {
+function resolveResponse(parsed, focusState, userMessageCount, language, options) {
   let state = sanitizeFocusState(focusState);
 
   if (parsed.focusUpdates) {
@@ -263,12 +334,19 @@ function resolveResponse(parsed, focusState, userMessageCount, language) {
   let directions = normalizeDirections(parsed.directions);
 
   const explore = shouldExplore(state, userMessageCount);
+  const isChoiceSelection = !!(options && options.isChoiceSelection);
 
   if (explore && directions.length < 2) {
     directions = [];
   }
 
   if (!explore) {
+    directions = [];
+  }
+
+  // After a choice submit, prefer short acknowledgement over a fresh card dump
+  // unless the model truly returned a new branch set (>= 2).
+  if (isChoiceSelection && directions.length < 2) {
     directions = [];
   }
 
@@ -287,7 +365,34 @@ function resolveResponse(parsed, focusState, userMessageCount, language) {
     presentationIntro = "";
   }
 
-  return { reply, presentationIntro, phase, focusState: state, directions };
+  let dialogue = String(parsed.dialogue || "").trim();
+
+  if (directions.length >= 2) {
+    // Prefer presentationIntro as the bubble line when cards are shown.
+    if (isStrictShortDialogue(presentationIntro)) {
+      dialogue = presentationIntro;
+    } else if (!isStrictShortDialogue(dialogue)) {
+      dialogue =
+        language === "zh"
+          ? DEFAULT_PRESENTATION_INTRO.zh
+          : DEFAULT_PRESENTATION_INTRO.en;
+    }
+  } else if (!isStrictShortDialogue(dialogue)) {
+    if (isStrictShortDialogue(reply)) {
+      dialogue = reply;
+    } else {
+      dialogue =
+        language === "zh"
+          ? isChoiceSelection
+            ? DEFAULT_CHOICE_ACK_DIALOGUE.zh
+            : DEFAULT_DIALOGUE.zh
+          : isChoiceSelection
+            ? DEFAULT_CHOICE_ACK_DIALOGUE.en
+            : DEFAULT_DIALOGUE.en;
+    }
+  }
+
+  return { reply, dialogue, presentationIntro, phase, focusState: state, directions };
 }
 
 export async function onRequestPost(context) {
@@ -313,6 +418,9 @@ export async function onRequestPost(context) {
     language = normalizeLanguage(body);
     focusState = sanitizeFocusState(body.focusState);
 
+    const isChoiceSelection = body.interactionType === "choice-selection";
+    const selections = Array.isArray(body.selections) ? body.selections : [];
+
     logDebug("body", {
       keys: Object.keys(body),
       messagesLength: Array.isArray(body.messages) ? body.messages.length : null,
@@ -320,7 +428,9 @@ export async function onRequestPost(context) {
         ? body.messages.map((m) => (m && m.role ? m.role : "invalid"))
         : [],
       language,
-      focusStatus: focusState.status
+      focusStatus: focusState.status,
+      interactionType: body.interactionType || null,
+      selectionCount: selections.length
     });
 
     const normalizedMessages = normalizeMessages(body.messages);
@@ -354,10 +464,16 @@ export async function onRequestPost(context) {
     const exploring = shouldExplore(focusState, userMessageCount);
     const maxTokens = exploring ? MAX_TOKENS : Math.min(MAX_TOKENS, 320);
 
+    const choiceSelectionGuidance = isChoiceSelection
+      ? buildChoiceSelectionGuidance(language, selections)
+      : null;
+
     const chatMessages = [
       {
         role: "system",
-        content: buildSystemPrompt(language, focusState, userMessageCount)
+        content: buildSystemPrompt(language, focusState, userMessageCount, {
+          choiceSelectionGuidance
+        })
       },
       ...deepSeekMessages
     ];
@@ -401,7 +517,8 @@ export async function onRequestPost(context) {
       parsed,
       focusState,
       userMessageCount,
-      language
+      language,
+      { isChoiceSelection }
     );
 
     if (!result.reply) {
@@ -411,6 +528,7 @@ export async function onRequestPost(context) {
     const responseBody = {
       success: true,
       reply: result.reply,
+      dialogue: result.dialogue,
       phase: result.phase,
       focusState: result.focusState,
       directions: result.directions

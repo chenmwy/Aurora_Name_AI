@@ -132,6 +132,9 @@ export function buildQuestionGuidance(focusState, language, userMessageCount) {
     lines.push(
       "- Also set presentationIntro to one short sentence inviting choice; do not list direction details in presentationIntro."
     );
+    lines.push(
+      "- Also set dialogue to the same short bubble sentence (or equal to presentationIntro). Keep dialogue under ~87 Chinese characters."
+    );
     return lines.join("\n");
   }
 
@@ -150,6 +153,9 @@ export function buildQuestionGuidance(focusState, language, userMessageCount) {
   if (examples[nextField]) lines.push(`- ${examples[nextField]}`);
   lines.push("- Never ask multiple questions. Never ask low-value logistics.");
   lines.push("- Avoid: color, update frequency, generic audience unless naming-critical.");
+  lines.push(
+    "- Set dialogue to one short Speech Bubble sentence (the question itself or a brief lead-in). Do not put long analysis in dialogue."
+  );
   if (remainingBudget <= 1) {
     lines.push("- Question budget nearly spent; prefer exploration on next turn if gain is low.");
   }
