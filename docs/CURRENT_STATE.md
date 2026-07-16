@@ -17,7 +17,7 @@ Active
 
 Version:
 
-1.2.0
+1.3.0
 
 Owner:
 
@@ -38,7 +38,7 @@ DOCUMENTATION_ARCHITECTURE
 
 Last Updated:
 
-2026-07-07
+2026-07-16
 ---
 
 # Current State
@@ -53,138 +53,113 @@ It serves as the project's operational dashboard and should always reflect the l
 
 # Current Milestone
 
-World Architecture Phase
-
-Current Focus:
-
-Establish Namora as the first living World of the NameAI Universe and prepare the foundation for future Region, Mechanic, and Companion World specifications.
+Interaction Architecture Foundation
 
 Status:
 
-🟢 Active
+🟢 Completed
 
 ---
 
-# Documentation Progress
+# Current Focus
 
-## Foundation
+Discovery Runtime Foundation
 
-✅ PROJECT_INDEX
+Status:
 
-✅ CURRENT_STATE
+🟡 Active
 
----
+Namora now has a verified interaction stack:
 
-## Universe
+Input → Conversation → Provider → Presentation → Layout → UI Layers.
 
-✅ UNIVERSE_INDEX
+The next phase turns that stack into guided Discovery:
 
-✅ UNIVERSE_CONSTITUTION
-
-✅ CORE_PROTOCOL
+fewer high-value choices, clearer Direction Tree navigation, and stronger companion intelligence.
 
 ---
 
-## Standards
+# Architecture Milestone
 
-✅ STANDARDS_INDEX
+## Interaction Architecture Foundation
 
-✅ DOCUMENTATION_STANDARD
+Completed through the Namora Behavior / Runtime expansion sequence (Task039–Task043).
 
-✅ DOCUMENTATION_ARCHITECTURE
+These tasks are recorded as one Architecture Milestone, not as separate open workstreams.
 
-✅ STATUS_STANDARD
+### What was established
 
-✅ VERSION_STANDARD
+Conversation Runtime
 
-✅ INDEX_STANDARD
+- Canonical message model
+- Submit lifecycle
+- Speech Bubble integration
+- Loading / error / duplicate-submit protection
+- Chinese IME safety
+- Local Response Provider for offline verification
 
-✅ COMPANION_STANDARD
+DeepSeek Provider
 
----
+- Replaceable Response Provider boundary
+- Protected `/api/nana` reuse
+- Provider Registry with Local fallback
+- Normalized success / failure contract
+- No credential exposure in the browser
 
-## Companions
+Interactive Presentation Runtime
 
-✅ COMPANIONS_INDEX
+- Generic Presentation model
+- Choice Presentation (multi-select + optional weight refinement)
+- Confirm → Conversation Runtime handoff
+- Structured selection metadata for Provider requests
+- Speech Bubble reserved for short dialogue only
 
-✅ NANA Companion Blueprint
+Responsive Layout System
 
----
+- Desktop Workspace vs Mobile Guided Flow
+- Device-semantic layout resolution (desktop windows stay desktop)
+- Mobile Presentation → Companion → Input order
+- Independent companion / input lift policy
+- Mobile background policy
 
-## Worlds
+UI Layer Architecture
 
-✅ WORLDS_INDEX
+- Background / Presentation / Character / Dialogue / Input layers
+- Runtime owns state · Layer owns space · Renderer owns presentation
+- Centralized z-index and pointer boundaries
+- `NamoraUILayers` inspection API
 
----
+### Approved interaction flow
 
-## Mechanics
+User thought
 
-✅ MECHANICS_INDEX
+↓
 
----
+Input Runtime
 
-## Product
+↓
 
-✅ PRODUCT_INDEX
+Conversation Runtime
 
----
+↓
 
-## Engineering
+Response Provider (DeepSeek / Local)
 
-✅ ENGINEERING_INDEX
+↓
 
----
+Conversation Runtime
 
-# Frozen Specifications
+↓
 
-The following documents are considered Canonical specifications.
+Speech Bubble Runtime
 
-Major revisions require version updates.
+↓
 
-## Foundation
+Interactive Presentation Runtime (when structured content exists)
 
-- PROJECT_INDEX
-- UNIVERSE_INDEX
-- UNIVERSE_CONSTITUTION
-- CORE_PROTOCOL
+↓
 
-## Standards
-
-- STANDARDS_INDEX
-- DOCUMENTATION_STANDARD
-- DOCUMENTATION_ARCHITECTURE
-- STATUS_STANDARD
-- VERSION_STANDARD
-- INDEX_STANDARD
-- COMPANION_STANDARD
-
-## Companion
-
-- COMPANIONS_INDEX
-- NANA_INDEX
-- IDENTITY
-- PERSONALITY
-- SOUL
-- MIND
-- RELATIONSHIP
-- MEMORY
-- GROWTH
-- BEHAVIOR
-- SKILLS
-
----
-
-# Current Objective
-
-Complete the Documentation Verification cycle.
-
-Resolve all remaining synchronization issues.
-
-Verify consistency across navigation, dependencies, metadata, and governance.
-
-Documentation remains the authoritative source of truth.
-
-Implementation follows documentation.
+Responsive Layout + UI Layers
 
 ---
 
@@ -192,77 +167,82 @@ Implementation follows documentation.
 
 Priority Order
 
-1. Resolve remaining Verification findings
-2. Complete Documentation Verification
-3. Begin shared World specifications
-4. Begin shared Mechanics specifications
-5. Migrate Product and Engineering specifications from Archive
+1. Discovery Runtime
+2. Discovery Tree Navigation
+3. Direction Weight Propagation
+4. Interaction Intelligence
+5. Companion Intelligence Expansion
 
-After Documentation Verification:
+These objectives build on the completed Interaction Architecture Foundation.
 
-- Companion System Expansion
-- World Specification Development
-- Shared Mechanics Development
-- Product Specification Development
-- Engineering Specification Development
+They must not reopen Runtime ownership boundaries already established for Conversation, Presentation, Input, Pearl, Provider, Layout, or UI Layers.
 
 ---
 
-# Documentation Health
+# Recent Achievements
 
-Architecture
+- Conversation Runtime
+- DeepSeek Provider
+- Interactive Presentation Runtime
+- Responsive Layout System
+- UI Layer Architecture
+- Interaction Architecture Foundation Completed
 
-🟢 Stable
+---
 
-Navigation
+# Operational Health
 
-🟢 Stable
-
-Documentation Standards
-
-🟢 Stable
-
-Header Standard
-
-🟢 Stable
-
-Layer Structure
+Conversation Runtime
 
 🟢 Stable
 
-Companion Framework
+Response Providers
 
 🟢 Stable
 
-Documentation Verification
+Interactive Presentation
 
-🟡 In Progress
+🟢 Stable
+
+Responsive Layout
+
+🟢 Stable
+
+UI Layer Architecture
+
+🟢 Stable
+
+Discovery Runtime
+
+🟡 Not Started
+
+Legacy Public Frontend (`index.html`)
+
+🟢 Compatible
 
 ---
 
 # Current Development Principles
 
-Current development follows these priorities.
-
 Priority 1
-
-Documentation before implementation.
-
-Priority 2
 
 Architecture before features.
 
+Priority 2
+
+Runtime ownership before visual convenience.
+
 Priority 3
 
-Principles before optimization.
+Same state, different layout.
 
 Priority 4
 
-Consistency before expansion.
+Fewer high-value interactions over large name dumps.
 
 Priority 5
 
-Verification before new milestones.
+Preserve the operational public frontend while Namora expands.
 
 ---
 
@@ -272,30 +252,27 @@ Build the world's first companion-centered AI Universe.
 
 Create an ecosystem where intelligent companions, shared mechanics, evolving worlds, and thoughtful products work together to help people think, create, and grow.
 
+Within Namora, Discovery should feel like walking a living tree:
+
+NANA points to a few branches,
+
+the user chooses and refines,
+
+and the path narrows toward the right leaf.
+
 ---
 
 # Notes
 
-Recent achievements
+CURRENT_STATE is the live operational overview.
 
-- Documentation Framework v1.0 completed.
-- Seven-layer documentation architecture established.
-- All layer INDEX documents completed.
-- Companion Blueprint established.
-- NANA became the first official companion.
-- Documentation Review Phase 1 completed.
-- Documentation Verification initiated.
-- Namora established as the first World of the NameAI Universe.
-- The natural laws of Namora were discovered.
-- World layer development officially began.
-- NANA's WORLD boundary was clarified.
-- Future path confirmed: NAMORA → LIVING_OCEAN → CORAL_ARCHIVE → PEARL_SYSTEM → NANA WORLD.
+Canonical documents remain the source of truth for frozen specifications.
 
-Current reminder
+Every accepted engineering milestone that changes project direction must be reflected here.
 
-Synchronize documentation before expanding the Universe.
+Do not use CURRENT_STATE as a task changelog.
 
-Every accepted documentation milestone must be reflected in CURRENT_STATE.
+Use Architecture Milestones and Current Focus instead.
 
 ---
 
@@ -307,67 +284,16 @@ Active
 
 Version:
 
-1.2.0
+1.3.0
 
 ---
 
-## 2026-07-06
+## 2026-07-16
 
-### Companion Blueprint v1.0 Completed
+### Interaction Architecture Foundation Completed
 
-The first complete companion architecture has been established through the design of NANA.
+Namora completed the Interaction Architecture Foundation milestone.
 
-The blueprint defines ten fundamental dimensions of every future companion:
+Conversation Runtime, DeepSeek Provider integration, Interactive Presentation Runtime, Responsive Layout System, and UI Layer Architecture now form a coherent replaceable interaction stack.
 
-- Identity
-- Personality
-- Mind
-- Soul
-- Relationship
-- Memory
-- Growth
-- Behavior
-- Skills
-- World
-
-Although first implemented for NANA, this blueprint is intended to become the universal framework for all future companions in the NameAI Universe.
-
----
-
-## 2026-07-07
-
-### Documentation Framework v1.0 Completed
-
-The Documentation Framework reached its first complete operational milestone.
-
-All foundational standards, navigation principles, and layer INDEX documents were established.
-
-The project entered the Documentation Verification phase to ensure long-term consistency before expanding into shared World, Mechanics, Product, and Engineering specifications.
-
----
-
-## 2026-07-07
-
-### Documentation Verification Initiated
-
-The first comprehensive Documentation Verification was performed after completing Documentation Framework v1.0.
-
-The review confirmed that the overall architecture was sound.
-
-The remaining work focuses on synchronization, metadata consistency, and governance maintenance rather than architectural redesign.
-
-Documentation has now entered a maintenance-driven evolution stage.
-
----
-
-## 2026-07-07
-
-### The Discovery of Namora
-
-Namora was established as the first living World of the NameAI Universe.
-
-This milestone marks the beginning of the World Architecture Phase.
-
-Namora defines how life, belonging, understanding, relationships, meaning, pearls, corals, and growth form the living foundation of the Universe.
-
-The project now moves from Documentation Framework construction into Worldbuilding.
+The project focus advances to Discovery Runtime Foundation.
