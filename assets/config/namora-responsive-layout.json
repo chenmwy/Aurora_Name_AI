@@ -23,6 +23,10 @@
       "worldFit": "fixed-design-world",
       "presentationLayout": "overlay-row",
       "presentationGroup": "workspace-upper",
+      "presentationRegion": {
+        "offsetYPx": -64,
+        "note": "Task043 Rev B — lift Choice Presentation above Speech Bubble overlap"
+      },
       "scroll": "none",
       "cardColumns": "auto-row"
     },

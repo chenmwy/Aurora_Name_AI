@@ -142,11 +142,19 @@
 }
 
 .namora-ui-layer--presentation .namora-interactive-presentation,
-.namora-ui-layer--dialogue .scene-speech-bubble__body,
 .namora-ui-layer--input .namora-scene-component,
 .namora-ui-layer--input .scene-pearl__button,
 .namora-ui-layer--input .scene-input-panel__field {
   pointer-events: auto;
+}
+
+/* Task043 Rev B ? Speech Bubble has no controls; never block Presentation. */
+#sceneSpeechBubble,
+#sceneSpeechBubble .scene-speech-bubble__body,
+#sceneSpeechBubble .scene-speech-bubble__content,
+#sceneSpeechBubble .scene-speech-bubble__text,
+#sceneSpeechBubble .scene-speech-bubble__tail {
+  pointer-events: none !important;
 }
 
 .namora-ui-layer.is-layer-debug {
@@ -185,6 +193,23 @@
   justify-content: center;
   pointer-events: none;
   padding: 0.5rem 1rem;
+}
+
+/* Hard-hide empty Presentation on all policies (desktop included). */
+.namora-presentation-group[hidden],
+.namora-presentation-group.is-presentation-empty {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Task043 Rev B ? Desktop only: lift whole Presentation Group above Bubble. */
+.namora-body.namora-policy-desktop .namora-presentation-group {
+  transform: translateY(var(--namora-desktop-presentation-offset-y, -64px));
+}
+
+.namora-body.namora-policy-tablet .namora-presentation-group,
+.namora-body.namora-guided-flow .namora-presentation-group {
+  transform: none;
 }
 
 .namora-presentation-group .namora-interactive-presentation {

@@ -309,6 +309,10 @@
         worldFit: "fixed-design-world",
         presentationLayout: "overlay-row",
         presentationGroup: "workspace-upper",
+        presentationRegion: Object.freeze({
+          /* Task043 Rev B — lift whole Choice group above Bubble overlap. */
+          offsetYPx: -64
+        }),
         scroll: "none",
         cardColumns: "auto-row"
       }),
@@ -2015,7 +2019,7 @@
     dialogue: Object.freeze({
       id: "namoraDialogueLayer",
       zIndex: 40,
-      pointerPolicy: "interactive-children"
+      pointerPolicy: "none"
     }),
     input: Object.freeze({
       id: "namoraInputLayer",
@@ -2402,6 +2406,31 @@
       );
     }
 
+    function applyDesktopPresentationOffset(policy) {
+      var offsetYPx = 0;
+      if (
+        policy &&
+        policy.id === "desktop" &&
+        policy.presentationRegion &&
+        typeof policy.presentationRegion.offsetYPx === "number"
+      ) {
+        offsetYPx = policy.presentationRegion.offsetYPx;
+      }
+      var cssValue = offsetYPx + "px";
+      if (document.documentElement) {
+        document.documentElement.style.setProperty(
+          "--namora-desktop-presentation-offset-y",
+          cssValue
+        );
+      }
+      if (document.body) {
+        document.body.style.setProperty(
+          "--namora-desktop-presentation-offset-y",
+          cssValue
+        );
+      }
+    }
+
     function clearFlowInlineGeometry(element) {
       if (!element) return;
       element.style.left = "";
@@ -2442,6 +2471,7 @@
 
       applyDocumentClasses(policy.id);
       applyBackground(policy.background);
+      applyDesktopPresentationOffset(policy);
       if (policy.id !== "mobile") {
         clearMobileRegionLifts();
       }
@@ -4593,6 +4623,15 @@
             sourceMessageId: assistantMessage.id
           })
         );
+        return;
+      }
+      // Non-presentation replies must not leave a prior Choice visible.
+      if (
+        typeof presentationRuntime.dismissVisibleKeepHistory === "function"
+      ) {
+        presentationRuntime.dismissVisibleKeepHistory();
+      } else if (typeof presentationRuntime.clear === "function") {
+        presentationRuntime.clear();
       }
     }
 
@@ -4876,6 +4915,16 @@
       }
     }
 
+    function forceClearVisiblePresentation() {
+      state.currentPresentation = null;
+      state.selectionHintVisible = false;
+      state.lastError = null;
+      if (renderer && typeof renderer.clearDom === "function") {
+        renderer.clearDom();
+      }
+      notifyStateChange();
+    }
+
     function notifySubmit(result) {
       for (var i = 0; i < listeners.submit.length; i++) {
         try {
@@ -4968,10 +5017,18 @@
     }
 
     function clear() {
-      state.currentPresentation = null;
-      state.selectionHintVisible = false;
-      state.lastError = null;
-      notifyStateChange();
+      forceClearVisiblePresentation();
+    }
+
+    function dismissVisibleKeepHistory() {
+      // Clears visible Presentation without touching lastSubmittedResult.
+      if (!state.currentPresentation) {
+        if (renderer && typeof renderer.clearDom === "function") {
+          renderer.clearDom();
+        }
+        return;
+      }
+      forceClearVisiblePresentation();
     }
 
     function toggleOption(optionId) {
@@ -5181,12 +5238,15 @@
       }
 
       // Exit visible Presentation immediately after successful submit.
-      // Selections remain in lastSubmittedResult; Conversation keeps the user message.
+      // Must clear DOM before the next Provider round-trip completes.
       state.lastSubmittedResult = result;
       state.currentPresentation = null;
       state.selectionHintVisible = false;
       state.lastError = null;
       notifySubmit(result);
+      if (renderer && typeof renderer.clearDom === "function") {
+        renderer.clearDom();
+      }
       notifyStateChange();
       return true;
     }
@@ -5206,6 +5266,7 @@
       toggleWeightControl: toggleWeightControl,
       submitCurrentSelection: submitCurrentSelection,
       clear: clear,
+      dismissVisibleKeepHistory: dismissVisibleKeepHistory,
       onStateChange: function (handler) {
         if (typeof handler === "function") listeners.stateChange.push(handler);
       },
@@ -5224,35 +5285,76 @@
   }
 
   function createChoicePresentationRenderer(rootEl) {
-    var hostEl = rootEl
-      ? rootEl.querySelector("[data-presentation-host]")
-      : null;
-    if (!hostEl && rootEl) {
-      hostEl = document.createElement("div");
-      hostEl.className = "namora-presentation__host";
-      hostEl.setAttribute("data-presentation-host", "1");
-      rootEl.appendChild(hostEl);
+    function resolveHostEl() {
+      if (!rootEl) return null;
+      var hosts = rootEl.querySelectorAll("[data-presentation-host]");
+      if (!hosts.length) {
+        var created = document.createElement("div");
+        created.className = "namora-interactive-presentation__host";
+        created.setAttribute("data-presentation-host", "1");
+        rootEl.appendChild(created);
+        return created;
+      }
+      // Single canonical host: clear and remove any duplicates.
+      var primary = hosts[0];
+      for (var i = 1; i < hosts.length; i++) {
+        hosts[i].innerHTML = "";
+        if (hosts[i].parentNode) {
+          hosts[i].parentNode.removeChild(hosts[i]);
+        }
+      }
+      return primary;
     }
+
+    var hostEl = resolveHostEl();
 
     function setRootVisible(visible) {
       if (!rootEl) return;
       if (visible) {
         rootEl.hidden = false;
+        rootEl.removeAttribute("hidden");
         rootEl.setAttribute("aria-hidden", "false");
+        rootEl.classList.remove("is-presentation-empty");
       } else {
         rootEl.hidden = true;
+        rootEl.setAttribute("hidden", "");
         rootEl.setAttribute("aria-hidden", "true");
+        rootEl.classList.add("is-presentation-empty");
       }
       var group = rootEl.closest
         ? rootEl.closest("[data-presentation-group]")
         : null;
       if (group) {
         group.classList.toggle("is-presentation-empty", !visible);
-        group.hidden = !visible;
+        if (visible) {
+          group.hidden = false;
+          group.removeAttribute("hidden");
+        } else {
+          group.hidden = true;
+          group.setAttribute("hidden", "");
+        }
       }
     }
 
+    function clearDom() {
+      hostEl = resolveHostEl();
+      if (hostEl) {
+        hostEl.innerHTML = "";
+      }
+      if (rootEl) {
+        // Remove any orphaned choice sections rendered outside the host.
+        var orphans = rootEl.querySelectorAll(".namora-choice-presentation");
+        for (var i = 0; i < orphans.length; i++) {
+          if (orphans[i].parentNode) {
+            orphans[i].parentNode.removeChild(orphans[i]);
+          }
+        }
+      }
+      setRootVisible(false);
+    }
+
     function patchWeight(optionId, weight) {
+      hostEl = resolveHostEl();
       if (!hostEl) return;
       var card = hostEl.querySelector(
         '[data-option-id="' + optionId.replace(/"/g, "") + '"]'
@@ -5366,16 +5468,18 @@
     }
 
     function render(snapshot) {
-      if (!rootEl || !hostEl) return;
+      if (!rootEl) return;
+      hostEl = resolveHostEl();
+      if (!hostEl) return;
+
       var presentation = snapshot && snapshot.currentPresentation;
-      // Only visible Presentations render. submitted / dismissed / replaced / null → empty layer.
+      // Only visible Presentations render. null / submitted / replaced → hard clear.
       if (
         !presentation ||
         presentation.type !== "choice" ||
         presentation.status !== "visible"
       ) {
-        hostEl.innerHTML = "";
-        setRootVisible(false);
+        clearDom();
         return;
       }
 
@@ -5501,6 +5605,7 @@
 
     return Object.freeze({
       render: render,
+      clearDom: clearDom,
       patchWeight: patchWeight,
       bindEvents: bindEvents
     });
