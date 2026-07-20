@@ -3335,6 +3335,7 @@
     };
     var fieldEl = null;
     var syncingDom = false;
+    var nameAnchorDraft = null;
     var listeners = {
       change: [],
       submit: [],
@@ -3369,6 +3370,14 @@
       fieldEl.addEventListener("input", function () {
         if (syncingDom) return;
         state.text = fieldEl.value;
+        if (nameAnchorDraft) {
+          nameAnchorDraft = Object.freeze(
+            Object.assign({}, nameAnchorDraft, {
+              untouched: false,
+              userEdited: true
+            })
+          );
+        }
         notify("change", { text: state.text });
       });
       fieldEl.addEventListener("focus", function () {
@@ -3404,7 +3413,59 @@
         return state.text;
       },
       clear: function () {
+        nameAnchorDraft = null;
         return this.setText("");
+      },
+      applyNameAnchorDraft: function (draft) {
+        draft = draft || {};
+        var text = String(draft.text || "").trim();
+        if (!text) return false;
+
+        var current = state.text;
+        var trimmed = current.trim();
+        var isEmpty = !trimmed;
+        var isUntouchedDraft =
+          nameAnchorDraft &&
+          nameAnchorDraft.untouched &&
+          trimmed === String(nameAnchorDraft.text || "").trim();
+
+        if (isEmpty || isUntouchedDraft) {
+          state.text = text;
+          nameAnchorDraft = Object.freeze({
+            text: text,
+            candidateId: draft.candidateId || null,
+            origin: draft.origin || null,
+            sourceDirectionId: draft.sourceDirectionId || null,
+            untouched: true,
+            userEdited: false
+          });
+        } else {
+          var next = trimmed;
+          if (next.indexOf(text) < 0) {
+            next = next + (next ? " " : "") + text;
+          }
+          state.text = next;
+          nameAnchorDraft = Object.freeze({
+            text: text,
+            candidateId: draft.candidateId || null,
+            origin: draft.origin || null,
+            sourceDirectionId: draft.sourceDirectionId || null,
+            untouched: false,
+            userEdited: true
+          });
+        }
+
+        renderField();
+        notify("change", { text: state.text, nameAnchorDraft: nameAnchorDraft });
+        return true;
+      },
+      getNameAnchorDraft: function () {
+        return nameAnchorDraft
+          ? Object.freeze(Object.assign({}, nameAnchorDraft))
+          : null;
+      },
+      clearNameAnchorDraft: function () {
+        nameAnchorDraft = null;
       },
       focus: function () {
         if (fieldEl && !state.disabled) {
@@ -3983,6 +4044,170 @@
     "signal"
   ]);
 
+  var NAME_CANDIDATE_ORIGIN = Object.freeze({
+    INSIDE_CONSTRAINT: "inside-constraint",
+    OUTSIDE_CONSTRAINT: "outside-constraint"
+  });
+
+  var NAME_CANDIDATE_PRESENTATION_COPY = Object.freeze({
+    title: "名字候选",
+    instruction: "点击一个名字作为起点。你可以在输入框中继续补充，再发送给 NANA。"
+  });
+
+  var PROTOTYPE_DIRECTION_CONSTRAINTS = Object.freeze({
+    activeDirections: Object.freeze([
+      Object.freeze({ id: "modern", label: "现代" })
+    ]),
+    excludedDirections: Object.freeze([
+      Object.freeze({ id: "classic", label: "经典" }),
+      Object.freeze({ id: "mystical", label: "神秘" }),
+      Object.freeze({ id: "minimal", label: "简约" })
+    ])
+  });
+
+  var PROTOTYPE_NAME_CANDIDATES = Object.freeze([
+    Object.freeze({
+      id: "name-lumi",
+      name: "Lumi",
+      meaning: "Light",
+      origin: NAME_CANDIDATE_ORIGIN.INSIDE_CONSTRAINT,
+      sourceDirectionId: "modern",
+      sourceDirectionLabel: "现代",
+      similarityReason: null
+    }),
+    Object.freeze({
+      id: "name-luma",
+      name: "Luma",
+      meaning: "Glow",
+      origin: NAME_CANDIDATE_ORIGIN.INSIDE_CONSTRAINT,
+      sourceDirectionId: "modern",
+      sourceDirectionLabel: "现代",
+      similarityReason: null
+    }),
+    Object.freeze({
+      id: "name-luno",
+      name: "Luno",
+      meaning: "Moon-like calm",
+      origin: NAME_CANDIDATE_ORIGIN.INSIDE_CONSTRAINT,
+      sourceDirectionId: "modern",
+      sourceDirectionLabel: "现代",
+      similarityReason: null
+    }),
+    Object.freeze({
+      id: "name-miu",
+      name: "Miu",
+      meaning: "A soft and minimal sound",
+      origin: NAME_CANDIDATE_ORIGIN.OUTSIDE_CONSTRAINT,
+      sourceDirectionId: "minimal",
+      sourceDirectionLabel: "简约",
+      similarityReason: "与 Lumi 一样简短，发音轻柔，并以元音结尾"
+    })
+  ]);
+
+  function cloneDirectionConstraintState(state) {
+    state = state || PROTOTYPE_DIRECTION_CONSTRAINTS;
+    return Object.freeze({
+      activeDirections: Object.freeze(
+        (state.activeDirections || []).map(function (item) {
+          return Object.freeze({
+            id: String(item.id || ""),
+            label: String(item.label || item.id || "")
+          });
+        })
+      ),
+      excludedDirections: Object.freeze(
+        (state.excludedDirections || []).map(function (item) {
+          return Object.freeze({
+            id: String(item.id || ""),
+            label: String(item.label || item.id || "")
+          });
+        })
+      )
+    });
+  }
+
+  function normalizeNameCandidate(raw, index, usedIds) {
+    if (!raw || typeof raw !== "object") return null;
+    var name = String(raw.name || "").trim();
+    if (!name) return null;
+
+    var id = String(raw.id || "").trim();
+    if (!id) id = "name-" + slugifyChoiceId(name, index);
+    if (usedIds[id]) id = id + "-" + (index + 1);
+    usedIds[id] = true;
+
+    var origin =
+      raw.origin === NAME_CANDIDATE_ORIGIN.OUTSIDE_CONSTRAINT
+        ? NAME_CANDIDATE_ORIGIN.OUTSIDE_CONSTRAINT
+        : NAME_CANDIDATE_ORIGIN.INSIDE_CONSTRAINT;
+
+    return Object.freeze({
+      id: id,
+      name: name,
+      meaning: String(raw.meaning || "").trim(),
+      origin: origin,
+      sourceDirectionId: String(raw.sourceDirectionId || "").trim() || null,
+      sourceDirectionLabel:
+        String(raw.sourceDirectionLabel || raw.sourceDirectionId || "").trim() ||
+        null,
+      similarityReason:
+        typeof raw.similarityReason === "string"
+          ? raw.similarityReason.trim()
+          : null
+    });
+  }
+
+  function normalizeNameCandidatePresentationPayload(rawPayload) {
+    rawPayload = rawPayload || {};
+    var usedIds = Object.create(null);
+    var sourceCandidates = Array.isArray(rawPayload.candidates)
+      ? rawPayload.candidates
+      : [];
+    var candidates = [];
+    for (var i = 0; i < sourceCandidates.length; i++) {
+      var candidate = normalizeNameCandidate(sourceCandidates[i], i, usedIds);
+      if (candidate) candidates.push(candidate);
+    }
+    if (candidates.length < 1) return null;
+
+    var outsideCount = candidates.filter(function (c) {
+      return c.origin === NAME_CANDIDATE_ORIGIN.OUTSIDE_CONSTRAINT;
+    }).length;
+    if (outsideCount > 1) return null;
+
+    return Object.freeze({
+      title:
+        typeof rawPayload.title === "string" && rawPayload.title.trim()
+          ? rawPayload.title.trim()
+          : NAME_CANDIDATE_PRESENTATION_COPY.title,
+      instruction:
+        typeof rawPayload.instruction === "string" &&
+        rawPayload.instruction.trim()
+          ? rawPayload.instruction.trim()
+          : NAME_CANDIDATE_PRESENTATION_COPY.instruction,
+      candidates: Object.freeze(candidates.slice()),
+      constraintState: cloneDirectionConstraintState(
+        rawPayload.constraintState || PROTOTYPE_DIRECTION_CONSTRAINTS
+      )
+    });
+  }
+
+  function buildNameCandidatePrototypePayload() {
+    return Object.freeze({
+      title: NAME_CANDIDATE_PRESENTATION_COPY.title,
+      instruction: NAME_CANDIDATE_PRESENTATION_COPY.instruction,
+      candidates: PROTOTYPE_NAME_CANDIDATES,
+      constraintState: cloneDirectionConstraintState(PROTOTYPE_DIRECTION_CONSTRAINTS)
+    });
+  }
+
+  function buildNameCandidatePrototypePresentationModel() {
+    return Object.freeze({
+      type: "name-candidate",
+      payload: buildNameCandidatePrototypePayload()
+    });
+  }
+
   function slugifyChoiceId(text, index) {
     var base = String(text || "")
       .toLowerCase()
@@ -4103,6 +4328,9 @@
 
   function normalizeProviderPresentation(rawPresentation, sourceMessageId) {
     if (!rawPresentation || typeof rawPresentation !== "object") return null;
+    if (rawPresentation.type === "name-candidate") {
+      return normalizeNameCandidatePresentation(rawPresentation, sourceMessageId);
+    }
     if (rawPresentation.type !== "choice") return null;
 
     var payload = normalizeChoicePresentationPayload(
@@ -4133,6 +4361,28 @@
     });
   }
 
+  function normalizeNameCandidatePresentation(rawPresentation, sourceMessageId) {
+    if (!rawPresentation || typeof rawPresentation !== "object") return null;
+    if (rawPresentation.type !== "name-candidate") return null;
+
+    var payload = normalizeNameCandidatePresentationPayload(
+      rawPresentation.payload || rawPresentation
+    );
+    if (!payload) return null;
+
+    return Object.freeze({
+      id:
+        typeof rawPresentation.id === "string" && rawPresentation.id
+          ? rawPresentation.id
+          : "presentation-" + Date.now(),
+      type: "name-candidate",
+      sourceMessageId: sourceMessageId || null,
+      status: "visible",
+      payload: payload,
+      createdAt: Date.now()
+    });
+  }
+
   function buildChoicePresentationFromDirections(directions) {
     return normalizeProviderPresentation(
       {
@@ -4148,6 +4398,36 @@
 
   function clonePresentationSnapshot(presentation) {
     if (!presentation) return null;
+    if (presentation.type === "name-candidate") {
+      return Object.freeze({
+        id: presentation.id,
+        type: presentation.type,
+        sourceMessageId: presentation.sourceMessageId,
+        status: presentation.status,
+        payload: Object.freeze({
+          title: presentation.payload.title,
+          instruction: presentation.payload.instruction,
+          candidates: Object.freeze(
+            presentation.payload.candidates.map(function (candidate) {
+              return Object.freeze({
+                id: candidate.id,
+                name: candidate.name,
+                meaning: candidate.meaning,
+                origin: candidate.origin,
+                sourceDirectionId: candidate.sourceDirectionId,
+                sourceDirectionLabel: candidate.sourceDirectionLabel,
+                similarityReason: candidate.similarityReason
+              });
+            })
+          ),
+          constraintState: cloneDirectionConstraintState(
+            presentation.payload.constraintState
+          )
+        }),
+        createdAt: presentation.createdAt
+      });
+    }
+
     var weights = Object.assign({}, presentation.interaction.weights);
     return Object.freeze({
       id: presentation.id,
@@ -4202,6 +4482,7 @@
     config = config || LOCAL_RESPONSE_PROVIDER_CONFIG;
     var simulateFailureOnce = false;
     var simulateChoiceOnce = false;
+    var simulateNameCandidatesOnce = false;
 
     function randomDelayMs() {
       var min = config.delayMinMs;
@@ -4241,6 +4522,20 @@
       });
     }
 
+    function buildNameCandidateFixtureResult() {
+      var prototype = buildNameCandidatePrototypePresentationModel();
+      return Object.freeze({
+        role: "assistant",
+        content: "这里有几个名字候选，你可以先点一个作为起点。",
+        provider: "local",
+        presentation: Object.freeze({
+          type: "name-candidate",
+          payload: prototype.payload
+        }),
+        focusState: null
+      });
+    }
+
     function buildChoiceSelectionAckResult() {
       return Object.freeze({
         role: "assistant",
@@ -4267,6 +4562,11 @@
               resolve(buildChoiceFixtureResult());
               return;
             }
+            if (simulateNameCandidatesOnce) {
+              simulateNameCandidatesOnce = false;
+              resolve(buildNameCandidateFixtureResult());
+              return;
+            }
             var metadata =
               request && request.metadata && typeof request.metadata === "object"
                 ? request.metadata
@@ -4291,6 +4591,9 @@
       },
       simulateChoicePresentationOnce: function () {
         simulateChoiceOnce = true;
+      },
+      simulateNameCandidatesOnce: function () {
+        simulateNameCandidatesOnce = true;
       },
       getConfig: function () {
         return config;
@@ -4880,7 +5183,163 @@
   }
 
   var interactivePresentationRuntimeInstance = null;
+  var nameCandidateInteractionRuntimeInstance = null;
   var presentationSeq = 0;
+
+  function createNameCandidateInteractionRuntime(deps) {
+    deps = deps || {};
+    var getInputRuntime = deps.getInputRuntime;
+    var onPresentationRender = deps.onPresentationRender || null;
+
+    var constraintState = cloneDirectionConstraintState(
+      PROTOTYPE_DIRECTION_CONSTRAINTS
+    );
+    var candidates = [];
+    var nameSelectionState = {
+      selectedCandidateId: null,
+      draftAnchor: null
+    };
+    var listeners = {
+      stateChange: []
+    };
+
+    function findCandidate(candidateId) {
+      for (var i = 0; i < candidates.length; i++) {
+        if (candidates[i].id === candidateId) return candidates[i];
+      }
+      return null;
+    }
+
+    function getReferenceInsideName() {
+      for (var i = 0; i < candidates.length; i++) {
+        if (candidates[i].origin === NAME_CANDIDATE_ORIGIN.INSIDE_CONSTRAINT) {
+          return candidates[i].name;
+        }
+      }
+      return "Lumi";
+    }
+
+    function buildTooltipContent(candidate) {
+      if (!candidate) return "";
+      if (candidate.origin === NAME_CANDIDATE_ORIGIN.OUTSIDE_CONSTRAINT) {
+        var ref = getReferenceInsideName();
+        var label = candidate.sourceDirectionLabel || candidate.sourceDirectionId;
+        return (
+          "这是一个约束外探索名字。\n" +
+          "它来自你此前排除的「" +
+          label +
+          "」方向，\n" +
+          "但与 " +
+          ref +
+          " 在长度、发音或节奏上相近。\n\n" +
+          "选择它不会重新启用「" +
+          label +
+          "」方向。\n" +
+          "发送后，NANA 只会围绕这个具体名字继续探索。"
+        );
+      }
+      return (
+        "选择这个名字后，你可以在输入框中继续补充想法。\n" +
+        "发送后，NANA 会围绕它继续探索。"
+      );
+    }
+
+    function notifyStateChange() {
+      var snapshot = getState();
+      for (var i = 0; i < listeners.stateChange.length; i++) {
+        try {
+          listeners.stateChange[i](snapshot);
+        } catch (err) {
+          console.error("[NameCandidateInteractionRuntime]", err);
+        }
+      }
+      if (typeof onPresentationRender === "function") {
+        onPresentationRender(snapshot);
+      }
+    }
+
+    function getState() {
+      return Object.freeze({
+        constraintState: cloneDirectionConstraintState(constraintState),
+        candidates: Object.freeze(candidates.slice()),
+        nameSelectionState: Object.freeze({
+          selectedCandidateId: nameSelectionState.selectedCandidateId,
+          draftAnchor: nameSelectionState.draftAnchor
+            ? Object.freeze(Object.assign({}, nameSelectionState.draftAnchor))
+            : null
+        })
+      });
+    }
+
+    function attachPresentation(payload) {
+      payload = payload || {};
+      candidates = Object.freeze((payload.candidates || []).slice());
+      if (payload.constraintState) {
+        constraintState = cloneDirectionConstraintState(payload.constraintState);
+      }
+      notifyStateChange();
+    }
+
+    function resetSelection() {
+      nameSelectionState.selectedCandidateId = null;
+      nameSelectionState.draftAnchor = null;
+      candidates = Object.freeze([]);
+      constraintState = cloneDirectionConstraintState(
+        PROTOTYPE_DIRECTION_CONSTRAINTS
+      );
+      notifyStateChange();
+    }
+
+    function selectCandidate(candidateId) {
+      var candidate = findCandidate(candidateId);
+      if (!candidate) return false;
+
+      nameSelectionState.selectedCandidateId = candidate.id;
+      nameSelectionState.draftAnchor = Object.freeze({
+        name: candidate.name,
+        candidateId: candidate.id,
+        origin: candidate.origin,
+        sourceDirectionId: candidate.sourceDirectionId
+      });
+
+      var inputRuntime =
+        typeof getInputRuntime === "function" ? getInputRuntime() : null;
+      if (
+        inputRuntime &&
+        typeof inputRuntime.applyNameAnchorDraft === "function"
+      ) {
+        inputRuntime.applyNameAnchorDraft({
+          text: candidate.name,
+          candidateId: candidate.id,
+          origin: candidate.origin,
+          sourceDirectionId: candidate.sourceDirectionId
+        });
+      }
+
+      notifyStateChange();
+      return true;
+    }
+
+    return Object.freeze({
+      id: "name-candidate-interaction-runtime",
+      getState: getState,
+      attachPresentation: attachPresentation,
+      selectCandidate: selectCandidate,
+      resetSelection: resetSelection,
+      getTooltipContent: function (candidateId) {
+        return buildTooltipContent(findCandidate(candidateId));
+      },
+      getConstraintState: function () {
+        return cloneDirectionConstraintState(constraintState);
+      },
+      getPrototypePresentationModel: function () {
+        return buildNameCandidatePrototypePresentationModel();
+      },
+      onStateChange: function (handler) {
+        if (typeof handler === "function") listeners.stateChange.push(handler);
+      }
+    });
+  }
 
   function nextPresentationId() {
     presentationSeq += 1;
@@ -4900,6 +5359,7 @@
     deps = deps || {};
     var renderer = deps.renderer || null;
     var getConversationRuntime = deps.getConversationRuntime;
+    var getNameCandidateRuntime = deps.getNameCandidateRuntime;
 
     var state = {
       currentPresentation: null,
@@ -4930,6 +5390,16 @@
       state.currentPresentation = null;
       state.selectionHintVisible = false;
       state.lastError = null;
+      var nameCandidateRuntime =
+        typeof getNameCandidateRuntime === "function"
+          ? getNameCandidateRuntime()
+          : null;
+      if (
+        nameCandidateRuntime &&
+        typeof nameCandidateRuntime.resetSelection === "function"
+      ) {
+        nameCandidateRuntime.resetSelection();
+      }
       if (renderer && typeof renderer.clearDom === "function") {
         renderer.clearDom();
       }
@@ -5013,6 +5483,18 @@
           sourceMessageId: model.sourceMessageId || normalized.sourceMessageId
         })
       );
+      if (
+        normalized.type === "name-candidate" &&
+        typeof getNameCandidateRuntime === "function"
+      ) {
+        var nameCandidateRuntime = getNameCandidateRuntime();
+        if (
+          nameCandidateRuntime &&
+          typeof nameCandidateRuntime.attachPresentation === "function"
+        ) {
+          nameCandidateRuntime.attachPresentation(normalized.payload);
+        }
+      }
       state.selectionHintVisible = false;
       state.lastError = null;
       notifyStateChange();
@@ -5295,7 +5777,10 @@
       .replace(/"/g, "&quot;");
   }
 
-  function createChoicePresentationRenderer(rootEl) {
+  function createInteractivePresentationRenderer(rootEl, rendererDeps) {
+    rendererDeps = rendererDeps || {};
+    var getNameCandidateRuntime = rendererDeps.getNameCandidateRuntime;
+
     function resolveHostEl() {
       if (!rootEl) return null;
       var hosts = rootEl.querySelectorAll("[data-presentation-host]");
@@ -5318,6 +5803,55 @@
     }
 
     var hostEl = resolveHostEl();
+    var tooltipEl = null;
+    var tooltipVisibleFor = null;
+
+    function ensureTooltip() {
+      if (!tooltipEl) {
+        tooltipEl = document.createElement("div");
+        tooltipEl.className = "namora-name-candidate-tooltip";
+        tooltipEl.id = "namoraNameCandidateTooltip";
+        tooltipEl.setAttribute("role", "tooltip");
+        tooltipEl.hidden = true;
+        document.body.appendChild(tooltipEl);
+      }
+      return tooltipEl;
+    }
+
+    function hideTooltip() {
+      if (!tooltipEl) return;
+      tooltipEl.hidden = true;
+      tooltipVisibleFor = null;
+    }
+
+    function positionTooltip(anchorEl) {
+      if (!tooltipEl || !anchorEl) return;
+      var rect = anchorEl.getBoundingClientRect();
+      var tipRect = tooltipEl.getBoundingClientRect();
+      var left = rect.left + rect.width / 2 - tipRect.width / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
+      var top = rect.top - tipRect.height - 10;
+      if (top < 8) {
+        top = rect.bottom + 10;
+      }
+      tooltipEl.style.left = left + "px";
+      tooltipEl.style.top = top + "px";
+    }
+
+    function showTooltipForCandidate(candidateId, anchorEl) {
+      var runtime =
+        typeof getNameCandidateRuntime === "function"
+          ? getNameCandidateRuntime()
+          : null;
+      if (!runtime || !anchorEl) return;
+      var text = runtime.getTooltipContent(candidateId);
+      if (!text) return;
+      var tip = ensureTooltip();
+      tip.textContent = text;
+      tip.hidden = false;
+      tooltipVisibleFor = candidateId;
+      positionTooltip(anchorEl);
+    }
 
     function setRootVisible(visible) {
       if (!rootEl) return;
@@ -5348,13 +5882,15 @@
     }
 
     function clearDom() {
+      hideTooltip();
       hostEl = resolveHostEl();
       if (hostEl) {
         hostEl.innerHTML = "";
       }
       if (rootEl) {
-        // Remove any orphaned choice sections rendered outside the host.
-        var orphans = rootEl.querySelectorAll(".namora-choice-presentation");
+        var orphans = rootEl.querySelectorAll(
+          ".namora-choice-presentation, .namora-name-candidate-presentation"
+        );
         for (var i = 0; i < orphans.length; i++) {
           if (orphans[i].parentNode) {
             orphans[i].parentNode.removeChild(orphans[i]);
@@ -5478,18 +6014,111 @@
       );
     }
 
+    function renderNameCandidateCard(candidate, selectedCandidateId) {
+      var isOutside =
+        candidate.origin === NAME_CANDIDATE_ORIGIN.OUTSIDE_CONSTRAINT;
+      var isSelected = selectedCandidateId === candidate.id;
+      var classes = ["namora-name-candidate-card"];
+      if (isOutside) classes.push("namora-name-candidate-card--outside");
+      if (isSelected) classes.push("is-selected");
+
+      var badgeHtml = isOutside
+        ? '<span class="namora-name-candidate-card__badge">约束外探索</span>'
+        : "";
+      var sourceHtml = isOutside
+        ? '<p class="namora-name-candidate-card__source">来自此前排除的「' +
+          escapePresentationHtml(
+            candidate.sourceDirectionLabel || candidate.sourceDirectionId || ""
+          ) +
+          "」方向</p>"
+        : "";
+      var meaningHtml = candidate.meaning
+        ? '<p class="namora-name-candidate-card__meaning">' +
+          escapePresentationHtml(candidate.meaning) +
+          "</p>"
+        : "";
+      var similarityHtml =
+        isOutside && candidate.similarityReason
+          ? '<p class="namora-name-candidate-card__similarity">' +
+            escapePresentationHtml(candidate.similarityReason) +
+            "</p>"
+          : "";
+
+      return (
+        '<button type="button" class="' +
+        classes.join(" ") +
+        '" data-name-candidate-id="' +
+        escapePresentationHtml(candidate.id) +
+        '" data-candidate-origin="' +
+        escapePresentationHtml(candidate.origin) +
+        '" aria-pressed="' +
+        (isSelected ? "true" : "false") +
+        '" aria-describedby="namoraNameCandidateTooltip"' +
+        '">' +
+        badgeHtml +
+        '<span class="namora-name-candidate-card__marker" aria-hidden="true"></span>' +
+        '<span class="namora-name-candidate-card__name">' +
+        escapePresentationHtml(candidate.name) +
+        "</span>" +
+        meaningHtml +
+        sourceHtml +
+        similarityHtml +
+        "</button>"
+      );
+    }
+
+    function renderNameCandidates(presentation) {
+      var runtime =
+        typeof getNameCandidateRuntime === "function"
+          ? getNameCandidateRuntime()
+          : null;
+      var selectionState = runtime ? runtime.getState().nameSelectionState : null;
+      var selectedCandidateId = selectionState
+        ? selectionState.selectedCandidateId
+        : null;
+      var cardsHtml = presentation.payload.candidates
+        .map(function (candidate) {
+          return renderNameCandidateCard(candidate, selectedCandidateId);
+        })
+        .join("");
+
+      hostEl.innerHTML =
+        '<section class="namora-name-candidate-presentation" data-presentation-id="' +
+        escapePresentationHtml(presentation.id) +
+        '">' +
+        '<header class="namora-name-candidate-presentation__header">' +
+        '<h2 class="namora-name-candidate-presentation__title">' +
+        escapePresentationHtml(presentation.payload.title) +
+        "</h2>" +
+        '<p class="namora-name-candidate-presentation__instruction">' +
+        escapePresentationHtml(presentation.payload.instruction) +
+        "</p>" +
+        "</header>" +
+        '<div class="namora-name-candidate-presentation__cards">' +
+        cardsHtml +
+        "</div>" +
+        "</section>";
+
+      setRootVisible(true);
+    }
+
     function render(snapshot) {
       if (!rootEl) return;
       hostEl = resolveHostEl();
       if (!hostEl) return;
 
       var presentation = snapshot && snapshot.currentPresentation;
-      // Only visible Presentations render. null / submitted / replaced → hard clear.
-      if (
-        !presentation ||
-        presentation.type !== "choice" ||
-        presentation.status !== "visible"
-      ) {
+      if (!presentation || presentation.status !== "visible") {
+        clearDom();
+        return;
+      }
+
+      if (presentation.type === "name-candidate") {
+        renderNameCandidates(presentation);
+        return;
+      }
+
+      if (presentation.type !== "choice") {
         clearDom();
         return;
       }
@@ -5540,6 +6169,26 @@
         var target = event.target;
         if (!target || !runtime) return;
 
+        var nameCandidateBtn = target.closest
+          ? target.closest("[data-name-candidate-id]")
+          : null;
+        if (nameCandidateBtn) {
+          event.preventDefault();
+          var nameCandidateRuntime =
+            typeof getNameCandidateRuntime === "function"
+              ? getNameCandidateRuntime()
+              : null;
+          if (
+            nameCandidateRuntime &&
+            typeof nameCandidateRuntime.selectCandidate === "function"
+          ) {
+            nameCandidateRuntime.selectCandidate(
+              nameCandidateBtn.getAttribute("data-name-candidate-id")
+            );
+          }
+          return;
+        }
+
         var confirmBtn = target.closest
           ? target.closest("[data-choice-confirm]")
           : null;
@@ -5574,6 +6223,28 @@
 
       rootEl.addEventListener("keydown", function (event) {
         if (event.key !== "Enter" && event.key !== " ") return;
+
+        var nameCandidateBtn =
+          event.target && event.target.closest
+            ? event.target.closest("[data-name-candidate-id]")
+            : null;
+        if (nameCandidateBtn) {
+          event.preventDefault();
+          var nameCandidateRuntime =
+            typeof getNameCandidateRuntime === "function"
+              ? getNameCandidateRuntime()
+              : null;
+          if (
+            nameCandidateRuntime &&
+            typeof nameCandidateRuntime.selectCandidate === "function"
+          ) {
+            nameCandidateRuntime.selectCandidate(
+              nameCandidateBtn.getAttribute("data-name-candidate-id")
+            );
+          }
+          return;
+        }
+
         var card =
           event.target && event.target.closest
             ? event.target.closest("[data-option-id]")
@@ -5581,6 +6252,63 @@
         if (!card || !runtime) return;
         event.preventDefault();
         runtime.toggleOption(card.getAttribute("data-option-id"));
+      });
+
+      rootEl.addEventListener("mouseover", function (event) {
+        var target = event.target;
+        var nameCandidateBtn = target && target.closest
+          ? target.closest("[data-name-candidate-id]")
+          : null;
+        if (!nameCandidateBtn) return;
+        var nameCandidateRuntime =
+          typeof getNameCandidateRuntime === "function"
+            ? getNameCandidateRuntime()
+            : null;
+        if (!nameCandidateRuntime) return;
+        var candidateId = nameCandidateBtn.getAttribute("data-name-candidate-id");
+        showTooltipForCandidate(candidateId, nameCandidateBtn);
+      });
+
+      rootEl.addEventListener("mouseout", function (event) {
+        var related = event.relatedTarget;
+        if (
+          related &&
+          related.closest &&
+          related.closest("[data-name-candidate-id]")
+        ) {
+          return;
+        }
+        if (
+          event.target &&
+          event.target.closest &&
+          event.target.closest("[data-name-candidate-id]")
+        ) {
+          hideTooltip();
+        }
+      });
+
+      rootEl.addEventListener("focusin", function (event) {
+        var nameCandidateBtn =
+          event.target && event.target.closest
+            ? event.target.closest("[data-name-candidate-id]")
+            : null;
+        if (!nameCandidateBtn) return;
+        showTooltipForCandidate(
+          nameCandidateBtn.getAttribute("data-name-candidate-id"),
+          nameCandidateBtn
+        );
+      });
+
+      rootEl.addEventListener("focusout", function (event) {
+        var related = event.relatedTarget;
+        if (
+          related &&
+          related.closest &&
+          related.closest("[data-name-candidate-id]")
+        ) {
+          return;
+        }
+        hideTooltip();
       });
 
       rootEl.addEventListener("input", function (event) {
@@ -5644,12 +6372,42 @@
     var presentationRoot = document.getElementById(
       "namoraInteractivePresentation"
     );
-    var presentationRenderer = createChoicePresentationRenderer(presentationRoot);
+    var presentationRenderer = null;
+
+    nameCandidateInteractionRuntimeInstance =
+      createNameCandidateInteractionRuntime({
+        getInputRuntime: function () {
+          return inputRuntimeInstance;
+        },
+        onPresentationRender: function () {
+          if (
+            interactivePresentationRuntimeInstance &&
+            presentationRenderer &&
+            typeof presentationRenderer.render === "function"
+          ) {
+            presentationRenderer.render(
+              interactivePresentationRuntimeInstance.getState()
+            );
+          }
+        }
+      });
+
+    presentationRenderer = createInteractivePresentationRenderer(
+      presentationRoot,
+      {
+        getNameCandidateRuntime: function () {
+          return nameCandidateInteractionRuntimeInstance;
+        }
+      }
+    );
 
     interactivePresentationRuntimeInstance = createInteractivePresentationRuntime({
       renderer: presentationRenderer,
       getConversationRuntime: function () {
         return conversationRuntimeInstance;
+      },
+      getNameCandidateRuntime: function () {
+        return nameCandidateInteractionRuntimeInstance;
       }
     });
 
@@ -12397,6 +13155,9 @@
     getInteractivePresentationRuntime: function () {
       return interactivePresentationRuntimeInstance;
     },
+    getNameCandidateInteractionRuntime: function () {
+      return nameCandidateInteractionRuntimeInstance;
+    },
     getResponsiveLayoutResolver: function () {
       return getResponsiveLayoutResolver();
     },
@@ -12472,6 +13233,28 @@
   };
   Object.freeze(window.InteractivePresentationRuntime);
 
+  window.NameCandidateInteractionRuntime = {
+    get: function () {
+      return nameCandidateInteractionRuntimeInstance;
+    },
+    getState: function () {
+      return nameCandidateInteractionRuntimeInstance
+        ? nameCandidateInteractionRuntimeInstance.getState()
+        : null;
+    },
+    getConstraintState: function () {
+      return nameCandidateInteractionRuntimeInstance
+        ? nameCandidateInteractionRuntimeInstance.getConstraintState()
+        : null;
+    },
+    selectCandidate: function (candidateId) {
+      return nameCandidateInteractionRuntimeInstance
+        ? nameCandidateInteractionRuntimeInstance.selectCandidate(candidateId)
+        : false;
+    }
+  };
+  Object.freeze(window.NameCandidateInteractionRuntime);
+
   window.LocalResponseProvider = {
     get: function () {
       return localResponseProviderInstance;
@@ -12491,6 +13274,15 @@
           "function"
       ) {
         localResponseProviderInstance.simulateChoicePresentationOnce();
+      }
+    },
+    simulateNameCandidatesOnce: function () {
+      if (
+        localResponseProviderInstance &&
+        typeof localResponseProviderInstance.simulateNameCandidatesOnce ===
+          "function"
+      ) {
+        localResponseProviderInstance.simulateNameCandidatesOnce();
       }
     }
   };
@@ -12557,6 +13349,14 @@
   window.InputRuntime = {
     get: function () {
       return inputRuntimeInstance;
+    },
+    getText: function () {
+      return inputRuntimeInstance ? inputRuntimeInstance.getText() : "";
+    },
+    getNameAnchorDraft: function () {
+      return inputRuntimeInstance
+        ? inputRuntimeInstance.getNameAnchorDraft()
+        : null;
     }
   };
   Object.freeze(window.InputRuntime);
