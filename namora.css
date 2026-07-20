@@ -202,15 +202,7 @@
   pointer-events: none !important;
 }
 
-/* Task043 Rev B ? Desktop only: lift whole Presentation Group above Bubble. */
-.namora-body.namora-policy-desktop .namora-presentation-group {
-  transform: translateY(var(--namora-desktop-presentation-offset-y, -64px));
-}
-
-.namora-body.namora-policy-tablet .namora-presentation-group,
-.namora-body.namora-guided-flow .namora-presentation-group {
-  transform: none;
-}
+/* Desktop vertical offset is owned by ResponsiveLayoutResolver (inline transform on #namoraPresentationGroup). */
 
 .namora-presentation-group .namora-interactive-presentation {
   position: relative;

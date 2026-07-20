@@ -2406,7 +2406,9 @@
       );
     }
 
-    function applyDesktopPresentationOffset(policy) {
+    function applyPresentationRegionLayout(policy) {
+      if (!presentationGroupEl) return;
+
       var offsetYPx = 0;
       if (
         policy &&
@@ -2416,6 +2418,15 @@
       ) {
         offsetYPx = policy.presentationRegion.offsetYPx;
       }
+
+      // Single owner: ResponsiveLayoutResolver → #namoraPresentationGroup transform.
+      if (offsetYPx !== 0) {
+        presentationGroupEl.style.transform =
+          "translateY(" + offsetYPx + "px)";
+      } else {
+        presentationGroupEl.style.transform = "";
+      }
+
       var cssValue = offsetYPx + "px";
       if (document.documentElement) {
         document.documentElement.style.setProperty(
@@ -2471,7 +2482,7 @@
 
       applyDocumentClasses(policy.id);
       applyBackground(policy.background);
-      applyDesktopPresentationOffset(policy);
+      applyPresentationRegionLayout(policy);
       if (policy.id !== "mobile") {
         clearMobileRegionLifts();
       }
