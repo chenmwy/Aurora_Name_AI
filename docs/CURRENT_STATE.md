@@ -17,7 +17,7 @@ Active
 
 Version:
 
-1.3.0
+1.4.0
 
 Owner:
 
@@ -38,7 +38,7 @@ DOCUMENTATION_ARCHITECTURE
 
 Last Updated:
 
-2026-07-16
+2026-07-22
 ---
 
 # Current State
@@ -59,6 +59,15 @@ Status:
 
 🟢 Completed
 
+Completed tasks:
+
+- TASK039
+- TASK040
+- TASK041
+- TASK042
+- TASK043
+- TASK044
+
 ---
 
 # Current Focus
@@ -67,15 +76,17 @@ Discovery Runtime Foundation
 
 Status:
 
-🟡 Active
+🟡 Planned Next Phase
 
 Namora now has a verified interaction stack:
 
 Input → Conversation → Provider → Presentation → Layout → UI Layers.
 
-The next phase turns that stack into guided Discovery:
+Name Candidate Interaction is part of that stack.
 
-fewer high-value choices, clearer Direction Tree navigation, and stronger companion intelligence.
+The next planned phase is Discovery Runtime Foundation.
+
+Do not treat Discovery Runtime as started until a dedicated task authorizes it.
 
 ---
 
@@ -83,7 +94,7 @@ fewer high-value choices, clearer Direction Tree navigation, and stronger compan
 
 ## Interaction Architecture Foundation
 
-Completed through the Namora Behavior / Runtime expansion sequence (Task039–Task043).
+Completed through the Namora Behavior / Runtime expansion sequence (Task039–Task044).
 
 These tasks are recorded as one Architecture Milestone, not as separate open workstreams.
 
@@ -97,6 +108,7 @@ Conversation Runtime
 - Loading / error / duplicate-submit protection
 - Chinese IME safety
 - Local Response Provider for offline verification
+- Async `submitUserText()` contract (resolves after provider + presentation routing)
 
 DeepSeek Provider
 
@@ -110,9 +122,22 @@ Interactive Presentation Runtime
 
 - Generic Presentation model
 - Choice Presentation (multi-select + optional weight refinement)
+- Name Candidate Presentation
 - Confirm → Conversation Runtime handoff
 - Structured selection metadata for Provider requests
 - Speech Bubble reserved for short dialogue only
+
+Name Candidate Interaction Foundation (TASK044)
+
+- Name Candidate Presentation type introduced
+- Candidate origin model introduced (`inside-constraint` / `outside-constraint`)
+- Name Anchor Draft introduced
+- Candidate selection synchronizes with Input Runtime
+- Selection does not auto-submit
+- Outside Constraint Exploration introduced
+- Outside candidates are visually and semantically separated
+- Outside candidate selection does not restore excluded directions
+- Conversation Runtime correctly routes Presentation payloads to Interactive Presentation Runtime
 
 Responsive Layout System
 
@@ -161,13 +186,24 @@ Interactive Presentation Runtime (when structured content exists)
 
 Responsive Layout + UI Layers
 
+### Conversation Runtime Async Contract
+
+`submitUserText()` resolves only after:
+
+1. Provider response completed
+2. Assistant message created
+3. Presentation routing completed
+4. Runtime state updated
+
+Callers that `await submitUserText(...)` must not assume earlier completion.
+
 ---
 
 # Immediate Next Work
 
 Priority Order
 
-1. Discovery Runtime
+1. Discovery Runtime Foundation
 2. Discovery Tree Navigation
 3. Direction Weight Propagation
 4. Interaction Intelligence
@@ -184,9 +220,10 @@ They must not reopen Runtime ownership boundaries already established for Conver
 - Conversation Runtime
 - DeepSeek Provider
 - Interactive Presentation Runtime
+- Name Candidate Interaction Foundation
 - Responsive Layout System
 - UI Layer Architecture
-- Interaction Architecture Foundation Completed
+- Interaction Architecture Foundation Completed (TASK039–TASK044)
 
 ---
 
@@ -201,6 +238,10 @@ Response Providers
 🟢 Stable
 
 Interactive Presentation
+
+🟢 Stable
+
+Name Candidate Interaction
 
 🟢 Stable
 
@@ -284,7 +325,19 @@ Active
 
 Version:
 
-1.3.0
+1.4.0
+
+---
+
+## 2026-07-22
+
+### TASK044 Name Candidate Interaction Foundation Completed
+
+Namora completed Name Candidate Interaction Foundation and the Conversation Presentation Routing fix.
+
+Name Candidate Presentation, origin metadata, Name Anchor Draft, and Conversation Runtime presentation routing are now part of the Interaction Architecture Foundation.
+
+Discovery Runtime Foundation remains the next planned phase and is not started.
 
 ---
 
@@ -292,8 +345,8 @@ Version:
 
 ### Interaction Architecture Foundation Completed
 
-Namora completed the Interaction Architecture Foundation milestone.
+Namora completed the Interaction Architecture Foundation milestone through TASK043.
 
-Conversation Runtime, DeepSeek Provider integration, Interactive Presentation Runtime, Responsive Layout System, and UI Layer Architecture now form a coherent replaceable interaction stack.
+Conversation Runtime, DeepSeek Provider integration, Interactive Presentation Runtime, Responsive Layout System, and UI Layer Architecture formed a coherent replaceable interaction stack.
 
-The project focus advances to Discovery Runtime Foundation.
+TASK044 later extended that foundation with Name Candidate Interaction.

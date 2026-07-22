@@ -4930,16 +4930,26 @@
     }
 
     function applyProviderPresentation(result, assistantMessage) {
-      if (!presentationRuntime) return;
+      if (!presentationRuntime) return false;
+
+      // Generic presentation routing: Provider emits intent; Conversation routes;
+      // InteractivePresentationRuntime owns lifecycle / rendering.
       if (result && result.presentation) {
-        presentationRuntime.present(
+        var accepted = presentationRuntime.present(
           Object.assign({}, result.presentation, {
-            sourceMessageId: assistantMessage.id
+            sourceMessageId: assistantMessage ? assistantMessage.id : null
           })
         );
-        return;
+        if (!accepted && isDebugEnabled()) {
+          console.warn(
+            "[ConversationRuntime] presentation routing rejected",
+            result.presentation && result.presentation.type
+          );
+        }
+        return !!accepted;
       }
-      // Non-presentation replies must not leave a prior Choice visible.
+
+      // Non-presentation replies must not leave a prior Presentation visible.
       if (
         typeof presentationRuntime.dismissVisibleKeepHistory === "function"
       ) {
@@ -4947,6 +4957,7 @@
       } else if (typeof presentationRuntime.clear === "function") {
         presentationRuntime.clear();
       }
+      return false;
     }
 
     function buildProviderMetadata(extra) {
@@ -5029,7 +5040,9 @@
 
       var conversationSnapshot = state.messages.map(cloneConversationMessage);
 
-      getResponseProvider()
+      // Return a Promise so await submitUserText(...) resolves only after the
+      // Provider round-trip (and presentation routing) has completed.
+      return getResponseProvider()
         .respond({
           requestId: requestId,
           userMessage: cloneConversationMessage(userMessage),
@@ -5039,12 +5052,12 @@
         })
         .then(function (result) {
           handleProviderSuccess(requestId, result);
+          return true;
         })
         .catch(function (err) {
           handleProviderFailure(requestId, err);
+          return false;
         });
-
-      return true;
     }
 
     function getLatestAssistantContent() {
