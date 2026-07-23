@@ -172,6 +172,11 @@
       preferenceType: preferenceType,
       value: payload.value
     });
+
+    // Anchor + preference → refinement exploration (TASK046 Phase 1).
+    if (state.anchors.length > 0) {
+      state.phase = "name-refinement";
+    }
     return true;
   }
 
@@ -222,11 +227,15 @@
 
     if (state.anchors.length > 0) {
       var latestAnchor = state.anchors[state.anchors.length - 1];
+      var hasPreference = state.preferences.length > 0;
       return {
         type: "refine",
-        reason: "expand-selected-anchor",
+        reason: hasPreference
+          ? "preference-guided-refine"
+          : "expand-selected-anchor",
         payload: {
-          anchor: cloneValue(latestAnchor)
+          anchor: cloneValue(latestAnchor),
+          preferences: cloneValue(state.preferences)
         }
       };
     }

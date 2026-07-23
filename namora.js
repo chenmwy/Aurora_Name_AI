@@ -4546,6 +4546,114 @@
       });
     }
 
+    function buildAskResult(discoveryContext) {
+      return Object.freeze({
+        role: "assistant",
+        content: "想先从哪个名字开始？你可以点一个候选，或直接告诉我一个名字。",
+        provider: "local",
+        presentation: null,
+        focusState: null,
+        discoveryContext: discoveryContext || null
+      });
+    }
+
+    function buildRefineCandidateSet(discoveryContext) {
+      var anchorName =
+        discoveryContext &&
+        discoveryContext.anchor &&
+        discoveryContext.anchor.name
+          ? String(discoveryContext.anchor.name)
+          : "Lumi";
+      var preference =
+        discoveryContext && discoveryContext.userPreference
+          ? discoveryContext.userPreference
+          : null;
+      var preferenceValue =
+        preference && preference.value != null
+          ? String(preference.value)
+          : "";
+      var towardModern =
+        preferenceValue === "more-modern" ||
+        preferenceValue.indexOf("现代") !== -1;
+
+      var constraintState = cloneDirectionConstraintState(
+        PROTOTYPE_DIRECTION_CONSTRAINTS
+      );
+
+      var candidates = [
+        Object.freeze({
+          id: "refine-lux",
+          name: "Lux",
+          meaning: "Modern light",
+          origin: NAME_CANDIDATE_ORIGIN.INSIDE_CONSTRAINT,
+          sourceDirectionId: "modern",
+          sourceDirectionLabel: "现代",
+          similarityReason:
+            "保留 " +
+            anchorName +
+            " 的轻亮感，但更短、更干脆"
+        }),
+        Object.freeze({
+          id: "refine-nova",
+          name: "Nova",
+          meaning: "New brightness",
+          origin: NAME_CANDIDATE_ORIGIN.INSIDE_CONSTRAINT,
+          sourceDirectionId: "modern",
+          sourceDirectionLabel: "现代",
+          similarityReason:
+            "与 " + anchorName + " 同属明亮一脉，气质更当代"
+        }),
+        Object.freeze({
+          id: "refine-liora",
+          name: "Liora",
+          meaning: "Light with soft edge",
+          origin: NAME_CANDIDATE_ORIGIN.INSIDE_CONSTRAINT,
+          sourceDirectionId: "modern",
+          sourceDirectionLabel: "现代",
+          similarityReason:
+            "延续 " + anchorName + " 的 L 起音，节奏更流畅"
+        }),
+        Object.freeze({
+          id: "refine-vela",
+          name: "Vela",
+          meaning: "Open modern air",
+          origin: NAME_CANDIDATE_ORIGIN.OUTSIDE_CONSTRAINT,
+          sourceDirectionId: "minimal",
+          sourceDirectionLabel: "简约",
+          similarityReason:
+            "长度与元音收尾接近 " +
+            anchorName +
+            "，但不回到已排除方向的主导感"
+        })
+      ];
+
+      var dialogue = towardModern
+        ? "围绕 " +
+          anchorName +
+          "，我按「更现代一点」往同族名字再靠近了一步。"
+        : "围绕 " +
+          anchorName +
+          "，这里有几个相近的探索方向。";
+
+      return Object.freeze({
+        role: "assistant",
+        content: dialogue,
+        provider: "local",
+        presentation: Object.freeze({
+          type: "name-candidate",
+          payload: Object.freeze({
+            title: NAME_CANDIDATE_PRESENTATION_COPY.title,
+            instruction: NAME_CANDIDATE_PRESENTATION_COPY.instruction,
+            candidates: Object.freeze(candidates),
+            constraintState: constraintState
+          })
+        }),
+        focusState: null,
+        discoveryContext: discoveryContext || null,
+        refinementOf: anchorName
+      });
+    }
+
     return Object.freeze({
       id: "local-response-provider",
       respond: function (request) {
@@ -4572,7 +4680,29 @@
                 ? request.metadata
                 : {};
             if (metadata.interactionType === "choice-selection") {
+              // Discovery-aware choice path may still carry context; prefer it.
+              if (
+                metadata.discoveryContext &&
+                metadata.discoveryContext.action === "refine"
+              ) {
+                resolve(buildRefineCandidateSet(metadata.discoveryContext));
+                return;
+              }
               resolve(buildChoiceSelectionAckResult());
+              return;
+            }
+            if (
+              metadata.discoveryContext &&
+              metadata.discoveryContext.action === "refine"
+            ) {
+              resolve(buildRefineCandidateSet(metadata.discoveryContext));
+              return;
+            }
+            if (
+              metadata.discoveryContext &&
+              metadata.discoveryContext.action === "ask"
+            ) {
+              resolve(buildAskResult(metadata.discoveryContext));
               return;
             }
             resolve(
@@ -4677,6 +4807,12 @@
       }
       if (metadata.selections) {
         payload.selections = metadata.selections;
+      }
+      if (
+        metadata.discoveryContext &&
+        typeof metadata.discoveryContext === "object"
+      ) {
+        payload.discoveryContext = metadata.discoveryContext;
       }
 
       var startedAt = Date.now();
@@ -4825,12 +4961,142 @@
     });
   }
 
+  /**
+   * Collect observable Discovery external events from a Conversation submit.
+   * Emits facts only — Discovery Runtime decides the next action.
+   * TASK046 Phase 1: draft commit, lightweight preference cues, free-text names.
+   */
+  function collectDiscoveryExternalEventsFromSubmit(options) {
+    options = options || {};
+    var text = String(options.text || "").trim();
+    var draft = options.draft || null;
+    var selections = Array.isArray(options.selections) ? options.selections : [];
+    var events = [];
+
+    function findPrototypeByName(name) {
+      var needle = String(name || "").trim().toLowerCase();
+      if (!needle) return null;
+      for (var i = 0; i < PROTOTYPE_NAME_CANDIDATES.length; i++) {
+        if (
+          String(PROTOTYPE_NAME_CANDIDATES[i].name || "")
+            .trim()
+            .toLowerCase() === needle
+        ) {
+          return PROTOTYPE_NAME_CANDIDATES[i];
+        }
+      }
+      return null;
+    }
+
+    function pushDirection(directionId, label, weight) {
+      var id = String(directionId || "").trim();
+      if (!id) return;
+      events.push({
+        type: "direction-selected",
+        payload: {
+          directionId: id,
+          label: label != null ? String(label) : id,
+          weight:
+            typeof weight === "number" && isFinite(weight) ? weight : null
+        }
+      });
+    }
+
+    function pushNameSelected(payload) {
+      if (!payload || !payload.name || !payload.candidateId) return;
+      if (payload.sourceDirectionId) {
+        pushDirection(payload.sourceDirectionId, payload.sourceDirectionId, null);
+      }
+      events.push({
+        type: "name-selected",
+        payload: {
+          candidateId: String(payload.candidateId),
+          name: String(payload.name),
+          origin: payload.origin != null ? String(payload.origin) : null,
+          sourceDirectionId:
+            payload.sourceDirectionId != null
+              ? String(payload.sourceDirectionId)
+              : null
+        }
+      });
+    }
+
+    for (var s = 0; s < selections.length; s++) {
+      var sel = selections[s] || {};
+      pushDirection(
+        sel.id || sel.directionId || sel.title,
+        sel.title || sel.label || sel.id,
+        sel.weight
+      );
+    }
+
+    if (draft && draft.text && draft.candidateId) {
+      pushNameSelected({
+        name: draft.text,
+        candidateId: draft.candidateId,
+        origin: draft.origin,
+        sourceDirectionId: draft.sourceDirectionId
+      });
+    } else if (text) {
+      var latinMatch = text.match(/\b([A-Za-z][A-Za-z'-]{1,24})\b/);
+      if (latinMatch) {
+        var mentioned = latinMatch[1];
+        var proto = findPrototypeByName(mentioned);
+        if (proto) {
+          pushNameSelected({
+            name: proto.name,
+            candidateId: proto.id,
+            origin: proto.origin,
+            sourceDirectionId: proto.sourceDirectionId
+          });
+        } else {
+          pushNameSelected({
+            name: mentioned,
+            candidateId: "text-" + mentioned.toLowerCase(),
+            origin: "user-text",
+            sourceDirectionId: null
+          });
+        }
+      }
+    }
+
+    if (text) {
+      if (/更现代|现代一点|更潮|more\s*modern|modern(?:er)?/i.test(text)) {
+        events.push({
+          type: "user-preference-added",
+          payload: {
+            preferenceType: "style",
+            value: "more-modern"
+          }
+        });
+      } else if (/更柔|柔和一点|softer|softer/i.test(text)) {
+        events.push({
+          type: "user-preference-added",
+          payload: {
+            preferenceType: "style",
+            value: "softer"
+          }
+        });
+      }
+    }
+
+    if (text) {
+      events.push({
+        type: "user-input",
+        payload: { text: text }
+      });
+    }
+
+    return events;
+  }
+
   function createConversationRuntime(deps) {
     deps = deps || {};
     var inputRuntime = deps.inputRuntime || null;
     var pearlRuntime = deps.pearlRuntime || null;
     var speechBubbleRuntime = deps.speechBubbleRuntime || null;
     var presentationRuntime = deps.presentationRuntime || null;
+    var getDiscoveryCoordinator = deps.getDiscoveryCoordinator || null;
     var getResponseProvider = deps.getResponseProvider;
     if (typeof getResponseProvider !== "function") {
       var fixedResponseProvider =
@@ -4971,6 +5237,71 @@
         });
       }
       return Object.freeze(metadata);
+    }
+
+    function resolveDiscoveryCoordinator() {
+      if (typeof getDiscoveryCoordinator === "function") {
+        return getDiscoveryCoordinator();
+      }
+      return discoveryCoordinatorInstance;
+    }
+
+    /**
+     * Emit exploration facts into Discovery. Conversation does not decide
+     * refine/generate/ask — Discovery Runtime does.
+     */
+    function runDiscoverySubmitPipeline(options) {
+      options = options || {};
+      var coordinator = resolveDiscoveryCoordinator();
+      if (!coordinator || typeof coordinator.handleEvent !== "function") {
+        return null;
+      }
+
+      var events = collectDiscoveryExternalEventsFromSubmit(options);
+      var lastResult = null;
+      for (var i = 0; i < events.length; i++) {
+        lastResult = coordinator.handleEvent(events[i]);
+      }
+
+      var stateSnapshot =
+        lastResult && lastResult.state
+          ? lastResult.state
+          : typeof coordinator.getDiscoveryState === "function"
+            ? coordinator.getDiscoveryState()
+            : null;
+      var action = lastResult && lastResult.action ? lastResult.action : null;
+
+      var discoveryContext = null;
+      if (
+        window.NamoraDiscoveryProviderAdapter &&
+        typeof window.NamoraDiscoveryProviderAdapter.buildDiscoveryContext ===
+          "function"
+      ) {
+        discoveryContext =
+          window.NamoraDiscoveryProviderAdapter.buildDiscoveryContext(
+            stateSnapshot,
+            action
+          );
+      }
+
+      if (isDebugEnabled()) {
+        console.info("[ConversationRuntime] discovery submit pipeline", {
+          eventCount: events.length,
+          action: action && action.type,
+          reason: action && action.reason,
+          phase: stateSnapshot && stateSnapshot.phase,
+          anchor:
+            discoveryContext && discoveryContext.anchor
+              ? discoveryContext.anchor.name
+              : null
+        });
+      }
+
+      return {
+        discoveryContext: discoveryContext,
+        discoveryAction: action,
+        discoveryState: stateSnapshot
+      };
     }
 
     function handleProviderSuccess(requestId, result) {
@@ -5115,15 +5446,33 @@
         return false;
       }
 
+      var draft =
+        inputRuntime && typeof inputRuntime.getNameAnchorDraft === "function"
+          ? inputRuntime.getNameAnchorDraft()
+          : null;
+
       var userMessage = createMessage("user", normalized, "submitted");
       commitMessages(state.messages.concat([userMessage]));
       notifyMessage("user-message-created", userMessage);
+
+      var discoveryMeta = runDiscoverySubmitPipeline({
+        text: normalized,
+        draft: draft
+      });
 
       if (inputRuntime) {
         inputRuntime.clear();
       }
 
-      return beginProviderRequest(userMessage, null);
+      return beginProviderRequest(
+        userMessage,
+        discoveryMeta
+          ? {
+              discoveryContext: discoveryMeta.discoveryContext,
+              discoveryAction: discoveryMeta.discoveryAction
+            }
+          : null
+      );
     }
 
     function submitChoiceSelection(selectionResult) {
@@ -5147,11 +5496,23 @@
       commitMessages(state.messages.concat([userMessage]));
       notifyMessage("user-message-created", userMessage);
 
-      return beginProviderRequest(userMessage, {
+      var discoveryMeta = runDiscoverySubmitPipeline({
+        text: readable,
+        draft: null,
+        selections: selectionResult.selections
+      });
+
+      var metadataExtra = {
         interactionType: "choice-selection",
         selections: selectionResult.selections.slice(),
         presentationId: selectionResult.presentationId || null
-      });
+      };
+      if (discoveryMeta) {
+        metadataExtra.discoveryContext = discoveryMeta.discoveryContext;
+        metadataExtra.discoveryAction = discoveryMeta.discoveryAction;
+      }
+
+      return beginProviderRequest(userMessage, metadataExtra);
     }
 
     return Object.freeze({
@@ -5197,6 +5558,7 @@
 
   var interactivePresentationRuntimeInstance = null;
   var nameCandidateInteractionRuntimeInstance = null;
+  var discoveryCoordinatorInstance = null;
   var presentationSeq = 0;
 
   function createNameCandidateInteractionRuntime(deps) {
@@ -6439,6 +6801,9 @@
       pearlRuntime: pearlRuntimeInstance,
       speechBubbleRuntime: speechBubbleRuntimeInstance,
       presentationRuntime: interactivePresentationRuntimeInstance,
+      getDiscoveryCoordinator: function () {
+        return discoveryCoordinatorInstance;
+      },
       getResponseProvider: function () {
         return responseProviderRegistryInstance.getProvider();
       },
@@ -6447,6 +6812,110 @@
 
     conversationRuntimeInstance.bootstrap();
     return conversationRuntimeInstance;
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /* Discovery Coordinator — boot + first loop handlers (TASK046 Phase 1)      */
+  /* Orchestration singleton. Conversation emits facts; Discovery decides.     */
+  /* ------------------------------------------------------------------------ */
+
+  function registerDiscoveryHandlers(actionExecutor) {
+    if (!actionExecutor || typeof actionExecutor.registerHandler !== "function") {
+      return false;
+    }
+
+    // Provider generation stays on Conversation submit lifecycle.
+    // Handlers acknowledge DiscoveryActions without owning messages/UI state.
+    function deferredProviderHandler(action) {
+      return {
+        handled: true,
+        deferredToProvider: true,
+        type: action.type,
+        reason: action.reason || null
+      };
+    }
+
+    actionExecutor.registerHandler("refine", deferredProviderHandler);
+    actionExecutor.registerHandler("generate", deferredProviderHandler);
+    actionExecutor.registerHandler("ask", deferredProviderHandler);
+    actionExecutor.registerHandler("present", deferredProviderHandler);
+
+    if (isDebugEnabled()) {
+      console.info(
+        "[DiscoveryCoordinator] handlers registered (provider-deferred)",
+        actionExecutor.listRegisteredTypes
+          ? actionExecutor.listRegisteredTypes()
+          : []
+      );
+    }
+    return true;
+  }
+
+  function initDiscoveryCoordinator() {
+    if (discoveryCoordinatorInstance) return discoveryCoordinatorInstance;
+
+    if (
+      !window.NamoraDiscoveryCoordinator ||
+      typeof window.NamoraDiscoveryCoordinator.createDiscoveryCoordinator !==
+        "function"
+    ) {
+      console.error(
+        "[DiscoveryCoordinator] NamoraDiscoveryCoordinator factory missing; " +
+          "ensure discovery-*.js scripts load before namora.js"
+      );
+      return null;
+    }
+
+    var eventBridge =
+      window.NamoraDiscoveryEventBridge &&
+      typeof window.NamoraDiscoveryEventBridge.createDiscoveryEventBridge ===
+        "function"
+        ? window.NamoraDiscoveryEventBridge.createDiscoveryEventBridge()
+        : null;
+    var discoveryRuntime =
+      window.NamoraDiscoveryRuntime &&
+      typeof window.NamoraDiscoveryRuntime.createDiscoveryRuntime === "function"
+        ? window.NamoraDiscoveryRuntime.createDiscoveryRuntime()
+        : null;
+    var actionExecutor =
+      window.NamoraDiscoveryActionExecutor &&
+      typeof window.NamoraDiscoveryActionExecutor.createDiscoveryActionExecutor ===
+        "function"
+        ? window.NamoraDiscoveryActionExecutor.createDiscoveryActionExecutor()
+        : null;
+
+    try {
+      discoveryCoordinatorInstance =
+        window.NamoraDiscoveryCoordinator.createDiscoveryCoordinator({
+          eventBridge: eventBridge,
+          discoveryRuntime: discoveryRuntime,
+          actionExecutor: actionExecutor
+        });
+    } catch (err) {
+      console.error("[DiscoveryCoordinator] boot composition failed:", err);
+      discoveryCoordinatorInstance = null;
+      return null;
+    }
+
+    var modules =
+      discoveryCoordinatorInstance &&
+      typeof discoveryCoordinatorInstance.getModules === "function"
+        ? discoveryCoordinatorInstance.getModules()
+        : null;
+    if (modules && modules.actionExecutor) {
+      registerDiscoveryHandlers(modules.actionExecutor);
+    }
+
+    if (isDebugEnabled()) {
+      console.info("[DiscoveryCoordinator] initialized (boot composition only)", {
+        id: discoveryCoordinatorInstance.id,
+        phase: discoveryCoordinatorInstance.getDiscoveryState
+          ? discoveryCoordinatorInstance.getDiscoveryState().phase
+          : null
+      });
+    }
+
+    return discoveryCoordinatorInstance;
   }
 
   /* ------------------------------------------------------------------------ */
@@ -13019,6 +13488,7 @@
       initLegacyChat();
       initUserInputRuntime();
       initConversationRuntime();
+      initDiscoveryCoordinator();
       layoutEditorInstance = createLayoutEditor();
       if (isLayoutEditorQueryEnabled()) {
         layoutEditorInstance.enable();
@@ -13171,6 +13641,9 @@
     getNameCandidateInteractionRuntime: function () {
       return nameCandidateInteractionRuntimeInstance;
     },
+    getDiscoveryCoordinator: function () {
+      return discoveryCoordinatorInstance;
+    },
     getResponsiveLayoutResolver: function () {
       return getResponsiveLayoutResolver();
     },
@@ -13267,6 +13740,43 @@
     }
   };
   Object.freeze(window.NameCandidateInteractionRuntime);
+
+  window.DiscoveryCoordinator = {
+    get: function () {
+      return discoveryCoordinatorInstance;
+    },
+    getState: function () {
+      return discoveryCoordinatorInstance &&
+        typeof discoveryCoordinatorInstance.getDiscoveryState === "function"
+        ? discoveryCoordinatorInstance.getDiscoveryState()
+        : null;
+    },
+    handleEvent: function (externalEvent) {
+      return discoveryCoordinatorInstance &&
+        typeof discoveryCoordinatorInstance.handleEvent === "function"
+        ? discoveryCoordinatorInstance.handleEvent(externalEvent)
+        : null;
+    },
+    process: function (discoveryEvent) {
+      return discoveryCoordinatorInstance &&
+        typeof discoveryCoordinatorInstance.process === "function"
+        ? discoveryCoordinatorInstance.process(discoveryEvent)
+        : null;
+    },
+    execute: function (action) {
+      return discoveryCoordinatorInstance &&
+        typeof discoveryCoordinatorInstance.execute === "function"
+        ? discoveryCoordinatorInstance.execute(action)
+        : null;
+    },
+    getModules: function () {
+      return discoveryCoordinatorInstance &&
+        typeof discoveryCoordinatorInstance.getModules === "function"
+        ? discoveryCoordinatorInstance.getModules()
+        : null;
+    }
+  };
+  Object.freeze(window.DiscoveryCoordinator);
 
   window.LocalResponseProvider = {
     get: function () {

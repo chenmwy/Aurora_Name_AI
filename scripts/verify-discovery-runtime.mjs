@@ -153,6 +153,13 @@ function run() {
       state.preferences[0].value === "stronger",
     "5. preference value preserved"
   );
+  assert(state.phase === "name-refinement", "5. phase becomes name-refinement");
+  assert(
+    result.action &&
+      result.action.type === "refine" &&
+      result.action.reason === "preference-guided-refine",
+    "5. preference guides refine action"
+  );
 
   // 6. CandidateRejected
   const constraintsBeforeReject = JSON.stringify(state.constraints);
@@ -196,10 +203,10 @@ function run() {
   assert(
     action &&
       action.type === "refine" &&
-      action.reason === "expand-selected-anchor" &&
+      action.reason === "preference-guided-refine" &&
       action.payload.anchor &&
       action.payload.anchor.candidateId === "name-miu",
-    "8. resolveAction returns refine for latest anchor"
+    "8. resolveAction returns preference-guided refine for latest anchor"
   );
 
   // 9. Unknown event
